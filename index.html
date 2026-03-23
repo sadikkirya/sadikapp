@@ -2899,9 +2899,9 @@ let currentUser = {
 // --- FIREBASE INTEGRATION START ---
 // 1. REPLACE THESE VALUES WITH YOUR FIREBASE CONSOLE CONFIG
 //
-// FOR NETLIFY/PRODUCTION DEPLOYMENT:
-// 1. Go to Google Cloud Console -> Credentials -> Edit API Key -> HTTP Referrers -> Add your Netlify URL
-// 2. Ensure Firestore Database Rules allow access (Rules tab in Firebase Console)
+// DEPLOYMENT SETUP (FIREBASE CONSOLE ONLY):
+// 1. Authentication > Settings > Authorized Domains > Add your Netlify domain (e.g., app.netlify.app)
+// 2. Firestore Database > Rules > Allow read/write access
 const firebaseConfig = {
     apiKey: "AIzaSyBBU2fUlkRf7VqVJmT-Vh7TfNpPgmQrqWU",
     authDomain: "kirya-e2248.firebaseapp.com",
@@ -3012,7 +3012,10 @@ function setupFirebaseListeners() {
         if (document.getElementById('admin-riders') && document.getElementById('admin-riders').style.display !== 'none') {
             renderAdminRiders();
         }
-    }, (error) => console.error("Rider listener error:", error));
+    }, (error) => {
+        console.error("Rider listener error:", error);
+        if(error.code === 'permission-denied') showToast("⚠️ DB Permission Denied (Riders)");
+    });
     
     // Listen for Customers
     firebaseUnsubs.customers = db.collection("customers").onSnapshot((snapshot) => {
@@ -3024,7 +3027,10 @@ function setupFirebaseListeners() {
         if (document.getElementById('admin-customers') && document.getElementById('admin-customers').style.display !== 'none') {
             renderAdminCustomers();
         }
-    }, (error) => console.error("Customer listener error:", error));
+    }, (error) => {
+        console.error("Customer listener error:", error);
+        if(error.code === 'permission-denied') showToast("⚠️ DB Permission Denied (Customers)");
+    });
 
     // Listen for Promotions
     firebaseUnsubs.promotions = db.collection("promotions").onSnapshot((snapshot) => {
