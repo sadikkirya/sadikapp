@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Admin Dashboard - Sadik App</title>
 
+<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2897,6 +2898,10 @@ let currentUser = {
 
 // --- FIREBASE INTEGRATION START ---
 // 1. REPLACE THESE VALUES WITH YOUR FIREBASE CONSOLE CONFIG
+//
+// FOR NETLIFY/PRODUCTION DEPLOYMENT:
+// 1. Go to Google Cloud Console -> Credentials -> Edit API Key -> HTTP Referrers -> Add your Netlify URL
+// 2. Ensure Firestore Database Rules allow access (Rules tab in Firebase Console)
 const firebaseConfig = {
     apiKey: "AIzaSyBBU2fUlkRf7VqVJmT-Vh7TfNpPgmQrqWU",
     authDomain: "kirya-e2248.firebaseapp.com",
@@ -2981,7 +2986,10 @@ function setupFirebaseListeners() {
         if (document.getElementById('riderScreen').classList.contains('active')) {
             updateRiderNearbyOrders();
         }
-    }, (error) => console.error("Order listener error:", error));
+    }, (error) => {
+        console.error("Order listener error:", error);
+        if(error.code === 'permission-denied') showToast("⚠️ DB Permission Denied. Check Firestore Rules.");
+    });
 
     // Listen for Restaurants
     firebaseUnsubs.restaurants = db.collection("restaurants").onSnapshot((snapshot) => {
