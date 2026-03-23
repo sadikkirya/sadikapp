@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#FFA500">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Admin Dashboard - Sadik App</title>
+<title>Kirya Delivery App</title>
 
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
@@ -2517,6 +2517,10 @@ input:checked + .slider:before { transform: translateX(22px); }
             <div style="font-size:0.85em; color:#666;">Flat 402, Al Majaz 2</div>
         </div>
     </div>
+    <!-- Placeholder for driver notes -->
+    <div id="riderOrderNotes" style="display:none; margin-top:10px; background:#fff8e1; padding:10px; border-radius:10px; border:1px solid #ffe0b2;">
+        <!-- Notes will be injected here by JS -->
+    </div>
     <div class="btn-row">
         <button class="btn-decline" id="riderDeclineBtn">Decline</button>
         <button class="btn-accept" id="riderAcceptBtn">Accept Order</button>
@@ -2601,8 +2605,7 @@ input:checked + .slider:before { transform: translateX(22px); }
       </div>
 
       <div style="margin-top: auto; padding: 20px; border-top: 1px solid #eee;">
-        <button onclick="document.getElementById('adminScreen').classList.remove('active')" style="width: 100%; padding: 10px; background: #fff; border: 1px solid #eee; border-radius: 8px; color: #ff4757; font-weight: 600; cursor: pointer; transition: all 0.2s;">🚪 Close Panel</button>
-        <button onclick="handleLogout()" style="width: 100%; margin-top: 10px; padding: 10px; background: #ff4757; border: none; border-radius: 8px; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.2s;">🛑 Log Out</button>
+        <button onclick="handleLogout()" style="width: 100%; padding: 12px; background: #ff4757; border: none; border-radius: 8px; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap;">🛑 Log Out</button>
       </div>
     </div>
 
@@ -2895,6 +2898,9 @@ input:checked + .slider:before { transform: translateX(22px); }
 let map, marker;
 let cart = [];
 let appReady = false;
+
+// --- CONFIGURATION ---
+const OSRM_SERVER_URL = "https://router.project-osrm.org"; // REPLACE WITH YOUR PRIVATE OSRM URL
 
 // --- USER PROFILE INTEGRATION START ---
 let currentUser = {
@@ -3679,27 +3685,32 @@ function initWebSocket() {
 }
 
 function handleLogout() {
-    if(confirm('Are you sure you want to log out?')) {
-        // Clear User Data
-        localStorage.removeItem('kirya_user_profile');
-        localStorage.removeItem('kirya_cart');
-        localStorage.removeItem('kirya_user_settings');
-        localStorage.removeItem('kirya_last_screen');
-        localStorage.removeItem('kirya_notifications');
-        
-        // Reset variables
-        currentUser = { name: '', phone: '', points: 500, walletBalance: 0, favorites: [], savedAddresses: [], isGuest: true };
-        favorites = new Set();
-        cart = [];
-        notifications = [];
-        
-        // UI Reset
-        updateCartView();
-        updateBellDots();
-        
-        // Force Reload to clear state cleanly and show Login screen
-        window.location.reload();
-    }
+    document.getElementById('logoutModal').style.display = 'flex';
+}
+
+function confirmLogout() {
+    // Clear User Data
+    localStorage.removeItem('kirya_user_profile');
+    localStorage.removeItem('kirya_cart');
+    localStorage.removeItem('kirya_user_settings');
+    localStorage.removeItem('kirya_last_screen');
+    localStorage.removeItem('kirya_notifications');
+    
+    // Reset variables
+    currentUser = { name: '', phone: '', points: 500, walletBalance: 0, favorites: [], savedAddresses: [], isGuest: true };
+    favorites = new Set();
+    cart = [];
+    notifications = [];
+    
+    // UI Reset
+    updateCartView();
+    updateBellDots();
+    
+    // Close Modal
+    document.getElementById('logoutModal').style.display = 'none';
+
+    // Force Reload to clear state cleanly and show Login screen
+    window.location.reload();
 }
 
 // Initialize app after DOM is loaded
@@ -5717,6 +5728,18 @@ document.addEventListener('click', (e) => {
             deliveryOptSection.appendChild(deliveryOptBody);
             checkoutContent.appendChild(deliveryOptSection);
 
+            // Driver Notes Section
+            const driverNotesSection = document.createElement('div');
+            driverNotesSection.className = 'checkout-section';
+            driverNotesSection.style.marginTop = '20px';
+            driverNotesSection.innerHTML = `
+                <div class="checkout-section-header">
+                    <h4>📝 Driver Instructions</h4>
+                </div>
+                <textarea id="driverNotesInput" placeholder="e.g. Call when near, leave at door, gate code..." style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-family:inherit; resize:vertical; min-height:60px; font-size:0.95em;"></textarea>
+            `;
+            checkoutContent.appendChild(driverNotesSection);
+
             // 4. Payment Method
             const paymentSection = document.createElement('div');
             paymentSection.className = 'checkout-section';
@@ -5910,6 +5933,8 @@ if (placeOrderBtn) {
                 const orderId = 'ORD' + Date.now();
                 const itemsTotal = cart.reduce((sum, item) => sum + (item.basePrice * item.quantity), 0);
                 const tipAmount = itemsTotal * (tipPercentage / 100);
+            const driverNotes = document.getElementById('driverNotesInput') ? document.getElementById('driverNotesInput').value.trim() : '';
+
                 const newOrder = {
                     id: orderId,
                     status: scheduledTime ? 'scheduled' : 'pending', // Initial status
@@ -5918,6 +5943,7 @@ if (placeOrderBtn) {
                     items: [...cart],
                     total: itemsTotal,
                     tip: tipAmount,
+                driverNotes: driverNotes,
                     customerName: recipientDetails.name || 'Valued Customer',
                     customerPhone: recipientDetails.phone || userPhoneNumber,
                     deliveryAddress: document.getElementById('selectedAddressText').textContent || 'Not set',
@@ -7135,7 +7161,7 @@ function riderDeliverOrder(orderId) {
 async function getOSRMRoute(startLat, startLng, endLat, endLng) {
     try {
         // Fetch route from OSRM (Driving profile)
-        const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
+        const url = `${OSRM_SERVER_URL}/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
         const response = await fetch(url);
         const data = await response.json();
         if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
@@ -8120,6 +8146,8 @@ function triggerRiderOrder(orderId = null) {
     
     const modal = document.getElementById('riderOrderModal');
     const timerFill = document.getElementById('riderTimerFill');
+    const notesContainer = document.getElementById('riderOrderNotes');
+    if(notesContainer) notesContainer.style.display = 'none'; // Reset
     
     // Update modal details if we have a real order
     if(currentRiderOrderId && window.allOrders) {
@@ -8128,6 +8156,11 @@ function triggerRiderOrder(orderId = null) {
             modal.querySelector('.order-price').textContent = `UGX ${order.total.toLocaleString()}`;
             const msgDiv = document.createElement('div');
             if(order.rider) modal.querySelector('.order-meta').innerHTML += `<br><span style="color:#019E81; font-weight:bold;">Assigned to: ${order.rider}</span>`;
+            
+            if(order.driverNotes && notesContainer) {
+                notesContainer.innerHTML = `<div style="font-weight:bold; color:#f57c00; font-size:0.8em; margin-bottom:4px;">📝 Customer Notes</div><div style="color:#333; font-size:0.9em; line-height:1.4;">${order.driverNotes}</div>`;
+                notesContainer.style.display = 'block';
+            }
         }
     }
     
@@ -8941,13 +8974,22 @@ function renderAdminDashboard() {
     // Sidebar badges are now handled by the auto-updater function
     const activeRiders = adminRiders.filter(r => r.status === 'online' || r.status === 'busy').length;
     
+    // Filter for TODAY'S DATE
+    const todayStr = new Date().toDateString();
+    const ordersTodayList = adminOrders.filter(o => {
+        if (!o.timestamp && !o.time) return false;
+        // Check timestamp first, fallback to time string if it contains date info or assume 'Just now' implies today for new sessions
+        const dateRef = new Date(o.timestamp || new Date().toLocaleString()); 
+        return !isNaN(dateRef.getTime()) && dateRef.toDateString() === todayStr;
+    });
+
     // REAL DATA CALCULATION: Calculate revenue from loaded orders (from Firebase)
     // This replaces mock data with actual sums from the synced 'adminOrders' array
-    const realRevenue = adminOrders
+    const realRevenue = ordersTodayList
         .filter(o => o.status !== 'cancelled')
         .reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
     
-    const ordersToday = adminOrders.length; // Simply showing all loaded orders for 'Today' in this context
+    const ordersToday = ordersTodayList.length;
     
     content.innerHTML = `
         <div class="dashboard-card">
@@ -10948,7 +10990,7 @@ function saveAdminData(type) {
 function renderAdminLiveMap() { setTimeout(initAdminLiveMap, 100); }
 
 let adminPathMap;
-function viewOrderPath(orderId) {
+async function viewOrderPath(orderId) {
     const order = adminOrders.find(o => o.id === orderId);
     if(!order) return;
     
@@ -10969,31 +11011,34 @@ function viewOrderPath(orderId) {
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(adminPathMap);
 
     // Mock Start (Restaurant) and End (Customer)
-    const start = [order.lat || 24.46, order.lng || 54.38];
-    // Randomize customer loc slightly if missing
+    // Use actual coordinates if available, otherwise fallback
+    const start = [order.restaurantLat || order.lat || 24.46, order.restaurantLng || order.lng || 54.38];
     const end = [order.userLat || 24.47, order.userLng || 54.40]; 
     
     // Create Markers
     L.marker(start, {icon: L.divIcon({html:'🏪', className:'delivery-pin-icon', iconSize:[30,30], iconAnchor:[15,15]})}).bindPopup(order.restaurant).addTo(adminPathMap);
     L.marker(end, {icon: L.divIcon({html:'👤', className:'delivery-pin-icon', iconSize:[30,30], iconAnchor:[15,15]})}).bindPopup(order.customer).addTo(adminPathMap);
     
-    // Generate Path (Mock wiggle)
-    const path = [start];
-    const steps = 10;
-    for(let i=1; i<steps; i++) {
-        const lat = start[0] + (end[0] - start[0]) * (i/steps) + (Math.random()-0.5)*0.005;
-        const lng = start[1] + (end[1] - start[1]) * (i/steps) + (Math.random()-0.5)*0.005;
-        path.push([lat, lng]);
+    // Fetch Actual Route from OSRM
+    showToast("Fetching route history...");
+    let routePoints = await getOSRMRoute(start[0], start[1], end[0], end[1]);
+
+    if (!routePoints || routePoints.length === 0) {
+        // Fallback to straight line if API fails
+        routePoints = [start, end];
     }
-    path.push(end);
-    
-    // Draw Polyline
-    const polyline = L.polyline(path, {color: '#019E81', weight: 5, opacity: 0.8}).addTo(adminPathMap);
+
+    // Draw Polyline (Actual Route)
+    const polyline = L.polyline(routePoints, {color: '#019E81', weight: 5, opacity: 0.8}).addTo(adminPathMap);
     
     // Add arrows or dots
-    path.forEach(p => {
-        L.circleMarker(p, {radius: 3, color: '#019E81', fillColor:'#fff', fillOpacity:1}).addTo(adminPathMap);
-    });
+    // Only add a few dots along the path to not clutter
+    if (routePoints.length > 2) {
+        const step = Math.floor(routePoints.length / 5);
+        for (let i = step; i < routePoints.length - 1; i += step) {
+            L.circleMarker(routePoints[i], {radius: 3, color: '#019E81', fillColor:'#fff', fillOpacity:1}).addTo(adminPathMap);
+        }
+    }
 
     setTimeout(() => {
         adminPathMap.invalidateSize();
@@ -11020,6 +11065,10 @@ function viewOrderDetails(orderId) {
     const content = document.getElementById('adminOrderDetailsContent');
     
     content.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;">
+            <h3 style="margin:0; color:#333;">Order Details</h3>
+            <div onclick="document.getElementById('adminOrderDetailsModal').style.display='none'" style="cursor:pointer; font-weight:bold; font-size:1.5em; line-height:1;">✕</div>
+        </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
             <div>
                 <div style="font-size:0.85em; color:#888;">Order ID</div>
@@ -11047,6 +11096,11 @@ function viewOrderDetails(orderId) {
                 <div style="font-weight:bold;">${riderName}</div>
             </div>
         </div>
+
+        ${order.driverNotes ? `<div style="margin-bottom:20px; background:#fff8e1; padding:12px; border-radius:8px; border:1px solid #ffe0b2;">
+            <div style="font-size:0.85em; color:#f57c00; font-weight:bold; margin-bottom:5px;">📝 Driver Notes</div>
+            <div style="font-size:0.95em; color:#333; line-height:1.4;">${order.driverNotes}</div>
+        </div>` : ''}
         
         <div style="margin-bottom:20px;">
             <div style="font-size:0.85em; color:#888; margin-bottom:5px;">Order Items</div>
@@ -11075,10 +11129,6 @@ function viewOrderDetails(orderId) {
                 <span>Platform Commission (${commissionRate}%):</span>
                 <span>UGX ${commissionVal}</span>
             </div>
-        </div>
-        
-        <div style="margin-top:20px; text-align:right;">
-            <button onclick="document.getElementById('adminOrderDetailsModal').style.display='none'" style="padding:10px 20px; background:#333; color:#fff; border:none; border-radius:6px; cursor:pointer;">Close</button>
         </div>
     `;
     
@@ -11233,8 +11283,6 @@ function renderAdminLogs() {
 
 <div id="adminOrderDetailsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:11000; align-items:center; justify-content:center;">
     <div style="background:#fff; padding:25px; border-radius:16px; width:90%; max-width:500px; max-height:80vh; overflow-y:auto; position:relative; box-shadow:0 4px 25px rgba(0,0,0,0.2);">
-        <div style="position:absolute; top:15px; right:20px; cursor:pointer; font-weight:bold; font-size:1.2em; color:#999;" onclick="document.getElementById('adminOrderDetailsModal').style.display='none'">✕</div>
-        <h3 style="margin-bottom:20px; color:#333; border-bottom:1px solid #eee; padding-bottom:10px;">Order Details</h3>
         <div id="adminOrderDetailsContent"></div>
     </div>
 </div>
@@ -11320,6 +11368,18 @@ function fillDemo(role) {
         <h3 style="margin-bottom:15px; color:#333;">📢 Broadcast Message</h3>
         <textarea id="adminBroadcastText" style="width:100%; height:100px; padding:10px; border:1px solid #ddd; border-radius:8px; font-family:inherit; resize:vertical; font-size:1em;" placeholder="Type your message to all riders..."></textarea>
         <button onclick="sendAdminBroadcast()" style="width:100%; padding:12px; background:#FFBF42; color:#333; border:none; border-radius:8px; font-weight:bold; margin-top:15px; cursor:pointer;">Send Broadcast</button>
+    </div>
+</div>
+
+<div id="logoutModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:12000; align-items:center; justify-content:center;">
+    <div style="background:#fff; padding:25px; border-radius:16px; width:85%; max-width:320px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.3); animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <div style="font-size:3em; margin-bottom:15px;">🚪</div>
+        <h3 style="margin-bottom:10px; color:#333;">Signing Out?</h3>
+        <p style="color:#666; margin-bottom:25px;">You will need to log in again to access your account.</p>
+        <div style="display:flex; gap:10px;">
+            <button onclick="document.getElementById('logoutModal').style.display='none'" style="flex:1; padding:12px; border:1px solid #ddd; background:#fff; border-radius:10px; font-weight:bold; color:#666; cursor:pointer;">Cancel</button>
+            <button onclick="confirmLogout()" style="flex:1; padding:12px; background:#ff4757; color:#fff; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">Sign Out</button>
+        </div>
     </div>
 </div>
 
