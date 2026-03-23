@@ -1252,17 +1252,28 @@ input:checked + .slider:before { transform: translateX(22px); }
   align-items: center; justify-content: center; padding: 30px;
 }
 #loginScreen.active { display: flex; }
-.login-logo { font-size: 5em; margin-bottom: 20px; animation: bounce 2s infinite; }
-.login-title { font-size: 1.8em; font-weight: 900; color: #333; margin-bottom: 10px; text-align: center; }
-.login-subtitle { font-size: 1em; color: #666; margin-bottom: 40px; text-align: center; }
+.login-logo { font-size: 3.5em; margin-bottom: 15px; animation: bounce 2s infinite; }
+.login-title { font-size: 1.4em; font-weight: 900; color: #333; margin-bottom: 5px; text-align: center; }
+.login-subtitle { font-size: 0.9em; color: #666; margin-bottom: 25px; text-align: center; }
 .login-form { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 20px; }
 .login-input-group { display: flex; flex-direction: column; gap: 8px; }
 .login-label { font-weight: 700; font-size: 0.9em; color: #333; margin-left: 4px; }
-.login-input { padding: 16px; border: 1px solid #ddd; border-radius: 12px; font-size: 1.1em; background: #f9f9f9; outline: none; transition: border-color 0.2s; }
+.login-input { padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 1em; background: #f9f9f9; outline: none; transition: border-color 0.2s; }
 .login-input:focus { border-color: #019E81; background: #fff; }
-.login-btn { padding: 18px; background: #019E81; color: #fff; font-weight: 800; font-size: 1.1em; border: none; border-radius: 12px; cursor: pointer; transition: transform 0.2s, background 0.2s; margin-top: 10px; box-shadow: 0 4px 15px rgba(1, 158, 129, 0.3); }
+.login-btn { padding: 14px; background: #019E81; color: #fff; font-weight: 800; font-size: 1em; border: none; border-radius: 10px; cursor: pointer; transition: transform 0.2s, background 0.2s; margin-top: 5px; box-shadow: 0 4px 15px rgba(1, 158, 129, 0.3); }
 .login-btn:active { transform: scale(0.98); background: #017a63; }
 .login-skip { margin-top: 20px; color: #999; font-weight: 600; cursor: pointer; font-size: 0.9em; }
+
+/* Role Selector */
+.role-selector { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+.role-btn { padding: 8px 12px; border: 1px solid #ddd; border-radius: 20px; font-size: 0.85em; font-weight: 600; cursor: pointer; white-space: nowrap; background: #fff; transition: all 0.2s; color: #555; }
+.role-btn.active { background: #019E81; color: #fff; border-color: #019E81; box-shadow: 0 2px 8px rgba(1, 158, 129, 0.3); }
+
+/* Demo Credentials */
+.demo-credentials { margin-top: 20px; text-align: center; font-size: 0.8em; color: #888; background: #f5f5f5; padding: 15px; border-radius: 12px; border: 1px solid #eee; }
+.demo-tags { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+.demo-tag { background: #fff; padding: 4px 10px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer; font-weight: 600; transition: background 0.2s; color: #333; }
+.demo-tag:active { background: #e0e0e0; }
 
 /* Rider Pulse Effect */
 .rider-pulse-ring {
@@ -2438,6 +2449,8 @@ input:checked + .slider:before { transform: translateX(22px); }
             <div id="riderTabHistory" class="rider-tab-content">
                 <h3 style="margin-bottom:15px; font-weight:800; font-size:1.3em; color:#333;">Completed Orders</h3>
                 <div id="riderHistoryList" style="max-height: 300px; overflow-y: auto;"></div>
+                <!-- Added Logout Button for Rider -->
+                <button onclick="handleLogout()" style="width:100%; margin-top:15px; padding:12px; background:#ff4757; color:#fff; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">🚪 Log Out</button>
             </div>
             <div style="margin-top:15px; text-align:center;">
                 <button id="enableGPSBtn" style="background:#019E81; color:#fff; border:none; padding:12px 24px; border-radius:25px; font-weight:bold; cursor:pointer; display:none;" onclick="requestRiderGPSAccess()">📍 Enable GPS Tracking</button>
@@ -2589,6 +2602,7 @@ input:checked + .slider:before { transform: translateX(22px); }
 
       <div style="margin-top: auto; padding: 20px; border-top: 1px solid #eee;">
         <button onclick="document.getElementById('adminScreen').classList.remove('active')" style="width: 100%; padding: 10px; background: #fff; border: 1px solid #eee; border-radius: 8px; color: #ff4757; font-weight: 600; cursor: pointer; transition: all 0.2s;">🚪 Close Panel</button>
+        <button onclick="handleLogout()" style="width: 100%; margin-top: 10px; padding: 10px; background: #ff4757; border: none; border-radius: 8px; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.2s;">🛑 Log Out</button>
       </div>
     </div>
 
@@ -2783,6 +2797,7 @@ input:checked + .slider:before { transform: translateX(22px); }
     <div class="dashboard-card">
       <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 10px;">Store Status: 🟢 Open</div>
       <button style="width:100%; padding:10px; background:#ff4757; color:white; border:none; border-radius:8px; font-weight:bold;">Close Store</button>
+      <button onclick="handleLogout()" style="width:100%; margin-top:10px; padding:10px; background:#333; color:white; border:none; border-radius:8px; font-weight:bold;">🚪 Log Out</button>
     </div>
     <div class="dashboard-card">
         <h3 style="margin-bottom: 20px; font-weight: 800;">Analytics</h3>
@@ -3300,9 +3315,17 @@ function proceedToHome() {
     updateProfileUI();
 }
 
+let selectedLoginRole = 'user';
+function selectRole(role) {
+    selectedLoginRole = role;
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.role-btn[data-role="${role}"]`).classList.add('active');
+}
+
 async function handleLogin() {
     const name = document.getElementById('loginName').value.trim();
     const phone = document.getElementById('loginPhone').value.trim();
+    const role = selectedLoginRole;
     
     if(name.length < 2 || phone.length < 5) {
         showToast("Please enter a valid name and phone number");
@@ -3310,6 +3333,16 @@ async function handleLogin() {
     }
     
     const formattedPhone = phone.startsWith('+') ? phone : "+971 " + phone;
+    
+    // Role-based Direct Access (Bypassing User DB for Demo roles)
+    if (role !== 'user') {
+        document.getElementById('loginScreen').classList.remove('active');
+        if (role === 'admin') openAdmin();
+        else if (role === 'rider') openRider();
+        else if (role === 'vendor') openShopPortal();
+        return;
+    }
+
     showToast("Verifying credentials...");
 
     // 4. CHECK DATABASE FOR USER OR REGISTER NEW
@@ -3673,6 +3706,13 @@ function handleLogout() {
 function startApp() {
   // Restore Last Screen
   try {
+      // Check URL Params for direct portal access (act as separate app)
+      const urlParams = new URLSearchParams(window.location.search);
+      const portalParam = urlParams.get('portal');
+      if (portalParam) {
+          localStorage.setItem('kirya_last_screen', portalParam === 'admin' ? 'adminScreen' : (portalParam === 'rider' ? 'riderScreen' : (portalParam === 'vendor' ? 'shopPortalScreen' : 'home')));
+      }
+
       const lastScreenId = localStorage.getItem('kirya_last_screen');
       if (lastScreenId && lastScreenId !== 'home' && lastScreenId !== 'splash' && lastScreenId !== 'notificationsScreen') {
           const screen = document.getElementById(lastScreenId);
@@ -8901,13 +8941,21 @@ function renderAdminDashboard() {
     // Sidebar badges are now handled by the auto-updater function
     const activeRiders = adminRiders.filter(r => r.status === 'online' || r.status === 'busy').length;
     
+    // REAL DATA CALCULATION: Calculate revenue from loaded orders (from Firebase)
+    // This replaces mock data with actual sums from the synced 'adminOrders' array
+    const realRevenue = adminOrders
+        .filter(o => o.status !== 'cancelled')
+        .reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
+    
+    const ordersToday = adminOrders.length; // Simply showing all loaded orders for 'Today' in this context
+    
     content.innerHTML = `
         <div class="dashboard-card">
             <h3 style="font-size:1.2em; font-weight:800; margin-bottom:15px;">📊 Platform Stats</h3>
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:15px;">
               <div style="padding:15px; background:#e0f2f1; border-radius:12px;">
                 <div style="font-size:0.85em; color:#666; margin-bottom:8px;">Orders Today</div>
-                <div style="font-size:1.8em; font-weight:900; color:#019E81;">${adminOrders.filter(o => o.status !== 'cancelled').length}</div>
+                <div style="font-size:1.8em; font-weight:900; color:#019E81;">${ordersToday}</div>
               </div>
               <div style="padding:15px; background:#fff8e1; border-radius:12px;">
                 <div style="font-size:0.85em; color:#666; margin-bottom:8px;">Active Riders</div>
@@ -8915,7 +8963,7 @@ function renderAdminDashboard() {
               </div>
               <div style="padding:15px; background:#f0f0f0; border-radius:12px;">
                 <div style="font-size:0.85em; color:#666; margin-bottom:8px;">Revenue Today</div>
-                <div style="font-size:1.8em; font-weight:900; color:#333;">UGX ${adminAnalytics.revenueToday.toLocaleString()}</div>
+                <div style="font-size:1.8em; font-weight:900; color:#333;">UGX ${realRevenue.toLocaleString()}</div>
               </div>
             </div>
         </div>
@@ -11191,12 +11239,44 @@ function renderAdminLogs() {
     </div>
 </div>
 
+<script>
+function fillDemo(role) {
+    const nameInput = document.getElementById('loginName');
+    const phoneInput = document.getElementById('loginPhone');
+    
+    selectRole(role);
+    
+    if(role === 'user') {
+        nameInput.value = "John Doe";
+        phoneInput.value = "50 123 4567";
+    } else if(role === 'rider') {
+        nameInput.value = "Ahmed Hassan";
+        phoneInput.value = "50 111 2222";
+    } else if(role === 'vendor') {
+        nameInput.value = "Burger King";
+        phoneInput.value = "4 123 4567";
+    } else if(role === 'admin') {
+        nameInput.value = "Sadik Admin";
+        phoneInput.value = "56 288 9428";
+    }
+}
+</script>
+
 <div id="loginScreen">
   <div class="login-logo">🚴‍♂️</div>
   <div class="login-title">Welcome to Kirya</div>
   <div class="login-subtitle">Delivery made simple. Sign in to continue.</div>
   
   <div class="login-form">
+    <div class="login-input-group">
+      <label class="login-label">Select Mode</label>
+      <div class="role-selector" id="roleSelector">
+        <div class="role-btn active" data-role="user" onclick="selectRole('user')">👤 User</div>
+        <div class="role-btn" data-role="rider" onclick="selectRole('rider')">🚴‍♂️ Rider</div>
+        <div class="role-btn" data-role="vendor" onclick="selectRole('vendor')">🏪 Vendor</div>
+        <div class="role-btn" data-role="admin" onclick="selectRole('admin')">🔐 Admin</div>
+      </div>
+    </div>
     <div class="login-input-group">
       <label class="login-label">Full Name</label>
       <input type="text" id="loginName" class="login-input" placeholder="e.g. John Doe">
@@ -11212,7 +11292,16 @@ function renderAdminLogs() {
 
     <button class="login-btn" onclick="handleLogin()">Start Ordering</button>
   </div>
-  <!-- <div class="login-skip" onclick="skipLogin()">Continue as Guest</div> -->
+  
+  <div class="demo-credentials">
+    <div>⚡ <strong>Quick Demo Login</strong> (Tap to fill)</div>
+    <div class="demo-tags">
+        <div class="demo-tag" onclick="fillDemo('user')">👤 User</div>
+        <div class="demo-tag" onclick="fillDemo('rider')">🚴‍♂️ Rider</div>
+        <div class="demo-tag" onclick="fillDemo('vendor')">🏪 Vendor</div>
+        <div class="demo-tag" onclick="fillDemo('admin')">🔐 Admin</div>
+    </div>
+  </div>
 </div>
 
 <div id="adminAssignRiderModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:11000; align-items:center; justify-content:center;">
