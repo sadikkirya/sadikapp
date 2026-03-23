@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#FFA500">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Admin Dashboard - Sadik App</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
@@ -1119,6 +1121,20 @@ input:checked + .slider:before { transform: translateX(22px); }
 .vendor-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 0.95em; transition: opacity 0.2s; }
 .vendor-btn:active { opacity: 0.8; }
 
+/* Star Rating */
+.star-rating { display: flex; gap: 8px; justify-content: center; margin: 15px 0; }
+.star-rating span { font-size: 2.2em; cursor: pointer; color: #ddd; transition: color 0.2s, transform 0.2s; }
+.star-rating span.active { color: #FFD700; transform: scale(1.1); }
+
+/* Rider History & Tabs */
+.rider-tabs { display: flex; background: #f0f0f0; padding: 4px; border-radius: 12px; margin-bottom: 15px; }
+.rider-tab-item { flex: 1; text-align: center; padding: 8px; font-weight: bold; font-size: 0.9em; border-radius: 10px; cursor: pointer; color: #666; transition: all 0.2s; }
+.rider-tab-item.active { background: #fff; color: #019E81; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.rider-tab-content { display: none; }
+.rider-tab-content.active { display: block; }
+.rider-history-card { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; }
+.rider-history-card:last-child { border-bottom: none; }
+
 /* Updated Profile Screen */
 .profile-header-new { background: linear-gradient(135deg, #019E81, #00b894); padding: 30px 20px 50px; color: #fff; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; box-shadow: 0 4px 15px rgba(1, 158, 129, 0.3); display: flex; flex-direction: column; align-items: center; position: relative; }
 .profile-header-new .close-btn { position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.2); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; transition: background 0.2s; }
@@ -1228,6 +1244,25 @@ input:checked + .slider:before { transform: translateX(22px); }
     font-size: 0.9em;
     margin-bottom: 10px;
 }
+/* Login Screen */
+#loginScreen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: #fff; z-index: 11000; display: none; flex-direction: column;
+  align-items: center; justify-content: center; padding: 30px;
+}
+#loginScreen.active { display: flex; }
+.login-logo { font-size: 5em; margin-bottom: 20px; animation: bounce 2s infinite; }
+.login-title { font-size: 1.8em; font-weight: 900; color: #333; margin-bottom: 10px; text-align: center; }
+.login-subtitle { font-size: 1em; color: #666; margin-bottom: 40px; text-align: center; }
+.login-form { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 20px; }
+.login-input-group { display: flex; flex-direction: column; gap: 8px; }
+.login-label { font-weight: 700; font-size: 0.9em; color: #333; margin-left: 4px; }
+.login-input { padding: 16px; border: 1px solid #ddd; border-radius: 12px; font-size: 1.1em; background: #f9f9f9; outline: none; transition: border-color 0.2s; }
+.login-input:focus { border-color: #019E81; background: #fff; }
+.login-btn { padding: 18px; background: #019E81; color: #fff; font-weight: 800; font-size: 1.1em; border: none; border-radius: 12px; cursor: pointer; transition: transform 0.2s, background 0.2s; margin-top: 10px; box-shadow: 0 4px 15px rgba(1, 158, 129, 0.3); }
+.login-btn:active { transform: scale(0.98); background: #017a63; }
+.login-skip { margin-top: 20px; color: #999; font-weight: 600; cursor: pointer; font-size: 0.9em; }
+
 /* Rider Pulse Effect */
 .rider-pulse-ring {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -2188,6 +2223,12 @@ input:checked + .slider:before { transform: translateX(22px); }
             <span>></span>
         </div>
     </div>
+
+    <div style="background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-top: 20px;">
+        <div class="profile-menu-item" id="profileLogoutBtn" style="color: #ff4757;">
+            <div><span class="menu-icon">🚪</span> Log Out</div>
+        </div>
+    </div>
     
     <div style="margin-top: 25px; text-align: center; color: #999; font-size: 0.9em;">
         Version 1.0.0
@@ -2371,19 +2412,31 @@ input:checked + .slider:before { transform: translateX(22px); }
     <div id="riderBottomPanel" class="rider-bottom-panel">
         <!-- State: Offline/Online Idle -->
         <div id="riderDashboardState">
-            <h3 style="margin-bottom:15px; font-weight:800; font-size:1.3em; color:#333;">Today's Performance</h3>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                <div style="background:#f9f9f9; padding:15px; border-radius:12px; text-align:center;">
-                    <div style="font-size:0.9em; color:#666;">Earnings</div>
-                    <div style="font-size:1.4em; font-weight:900; color:#333; margin-top:5px;">UGX <span id="riderEarningsToday">0.00</span></div>
+            <div class="rider-tabs">
+                <div class="rider-tab-item active" onclick="switchRiderTab('overview')">Overview</div>
+                <div class="rider-tab-item" onclick="switchRiderTab('history')">Completed</div>
+            </div>
+            
+            <div id="riderTabOverview" class="rider-tab-content active">
+                <h3 style="margin-bottom:15px; font-weight:800; font-size:1.3em; color:#333;">Today's Performance</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                    <div style="background:#f9f9f9; padding:15px; border-radius:12px; text-align:center;">
+                        <div style="font-size:0.9em; color:#666;">Earnings</div>
+                        <div style="font-size:1.4em; font-weight:900; color:#333; margin-top:5px;">UGX <span id="riderEarningsToday">0.00</span></div>
+                    </div>
+                    <div style="background:#f9f9f9; padding:15px; border-radius:12px; text-align:center;">
+                        <div style="font-size:0.9em; color:#666;">Trips</div>
+                        <div style="font-size:1.4em; font-weight:900; color:#333; margin-top:5px;" id="riderTripsToday">0</div>
+                    </div>
                 </div>
-                <div style="background:#f9f9f9; padding:15px; border-radius:12px; text-align:center;">
-                    <div style="font-size:0.9em; color:#666;">Trips</div>
-                    <div style="font-size:1.4em; font-weight:900; color:#333; margin-top:5px;" id="riderTripsToday">0</div>
+                <div style="margin-top:20px; font-size:0.9em; color:#888; text-align:center; padding: 10px; background: #f0f0f0; border-radius: 8px;" id="riderIdleMsg">
+                    Go Online to start receiving orders.
                 </div>
             </div>
-            <div style="margin-top:20px; font-size:0.9em; color:#888; text-align:center; padding: 10px; background: #f0f0f0; border-radius: 8px;" id="riderIdleMsg">
-                Go Online to start receiving orders.
+            
+            <div id="riderTabHistory" class="rider-tab-content">
+                <h3 style="margin-bottom:15px; font-weight:800; font-size:1.3em; color:#333;">Completed Orders</h3>
+                <div id="riderHistoryList" style="max-height: 300px; overflow-y: auto;"></div>
             </div>
             <div style="margin-top:15px; text-align:center;">
                 <button id="enableGPSBtn" style="background:#019E81; color:#fff; border:none; padding:12px 24px; border-radius:25px; font-weight:bold; cursor:pointer; display:none;" onclick="requestRiderGPSAccess()">📍 Enable GPS Tracking</button>
@@ -2570,6 +2623,7 @@ input:checked + .slider:before { transform: translateX(22px); }
           <div class="dashboard-card">
             <h3 style="margin-bottom:15px;">Quick Actions</h3>
             <button style="width:100%; padding:12px; background:#333; color:#fff; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px; cursor:pointer; transition:all 0.2s;" onclick="exportDashboardImage()">📷 Export Dashboard</button>
+            <button style="width:100%; padding:12px; background:#FFBF42; color:#333; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px; cursor:pointer; transition:all 0.2s;" onclick="adminBroadcastToRiders()">📢 Broadcast to Riders</button>
             <button style="width:100%; padding:12px; background:#019E81; color:#fff; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#017a63'" onmouseout="this.style.background='#019E81'">➕ Create Order</button>
             <button style="width:100%; padding:12px; background:#fff; color:#019E81; border:2px solid #019E81; border-radius:8px; font-weight:bold; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#f5f7fa'" onmouseout="this.style.background='#fff'">📊 Generate Report</button>
           </div>
@@ -2641,10 +2695,30 @@ input:checked + .slider:before { transform: translateX(22px); }
 
         <!-- Configuration Tab -->
         <div id="admin-config" class="admin-tab-content" style="display:none;">
-          <div class="dashboard-card">
-            <h3 style="margin-bottom:15px;">⚙️ Configuration</h3>
-            <p>Configuration options will appear here.</p>
-          </div>
+            <div class="dashboard-card">
+                <h3 style="margin-bottom:15px;">⚙️ Configuration</h3>
+                <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee; margin-bottom:20px;">
+                    <h4 style="margin-bottom:10px;">🔥 Firebase Connection</h4>
+                    <p style="font-size:0.9em; color:#666; margin-bottom:10px;">
+                        To connect real-time data, create a project at <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> and paste the config in <code>index.html</code> (lines ~1780).
+                    </p>
+                    <div style="font-family:monospace; background:#333; color:#fff; padding:10px; border-radius:6px; font-size:0.8em; margin-bottom:10px;">
+                        const firebaseConfig = {<br>
+                        &nbsp;&nbsp;apiKey: "...",<br>
+                        &nbsp;&nbsp;projectId: "...",<br>
+                        &nbsp;&nbsp;...<br>
+                        };
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="initFirebase()" style="padding:10px 15px; background:#019E81; color:#fff; border:none; border-radius:6px; cursor:pointer;">Retry Connection</button>
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <h4 style="margin-bottom:10px;">📂 Data Migration</h4>
+                    <p style="font-size:0.9em; color:#666; margin-bottom:10px;">Upload current local sample data (Orders, Riders, Restaurants) to Firebase Firestore.</p>
+                    <button onclick="seedDatabase()" style="padding:12px 20px; background:#FFBF42; color:#333; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">⬆️ Upload Sample Data to Firebase</button>
+                </div>
+            </div>
         </div>
 
         <!-- Accounts Tab -->
@@ -2675,6 +2749,7 @@ input:checked + .slider:before { transform: translateX(22px); }
                         <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" onchange="toggleAdminLayer('customers')"> 👥 Customers</label>
                         <label style="cursor:pointer; display:flex; align-items:center; gap:5px;"><input type="checkbox" checked onchange="toggleAdminLayer('zones')"> 🛑 Zones</label>
                         <label style="cursor:pointer; display:flex; align-items:center; gap:5px; background: #e0f2f1; padding: 2px 8px; border-radius: 4px;"><input type="checkbox" id="toggleActiveOnly" onchange="toggleAdminMapActiveOnly(this)"> ⚡ Active Only</label>
+                        <label style="cursor:pointer; display:flex; align-items:center; gap:5px; background: #e0f2f1; padding: 2px 8px; border-radius: 4px;"><input type="checkbox" id="toggleReadyOnly" onchange="toggleAdminReadyOnly(this)"> 🥡 Ready</label>
                         <label style="cursor:pointer; display:flex; align-items:center; gap:5px; background: #fff3e0; padding: 2px 8px; border-radius: 4px;"><input type="checkbox" id="toggleHeatmap" onchange="toggleAdminHeatmap(this)"> 🔥 Heatmap</label>
                     </div>
                 </div>
@@ -2796,44 +2871,533 @@ input:checked + .slider:before { transform: translateX(22px); }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://unpkg.com/leaflet-simple-map-screenshoter"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 let map, marker;
 let cart = [];
 let appReady = false;
-try {
-    const savedCart = localStorage.getItem('kirya_cart');
-    if (savedCart) {
-        cart = JSON.parse(savedCart);
+
+// --- USER PROFILE INTEGRATION START ---
+let currentUser = {
+    name: '',
+    phone: '',
+    points: 500, // Welcome bonus
+    walletBalance: 0,
+    favorites: [], // Stores restaurant names
+    savedAddresses: [],
+    orders: [],
+    cart: [],
+    notifications: [],
+    settings: {}, 
+    isGuest: true
+};
+
+// --- FIREBASE INTEGRATION START ---
+// 1. REPLACE THESE VALUES WITH YOUR FIREBASE CONSOLE CONFIG
+const firebaseConfig = {
+    apiKey: "AIzaSyBBU2fUlkRf7VqVJmT-Vh7TfNpPgmQrqWU",
+    authDomain: "kirya-e2248.firebaseapp.com",
+    projectId: "kirya-e2248",
+    storageBucket: "kirya-e2248.firebasestorage.app",
+    messagingSenderId: "308339449512",
+    appId: "1:308339449512:web:d2b1fb44c4ba36a505ac9d",
+    measurementId: "G-YZ3NFWDS89"
+};
+
+let db = null;
+let auth = null;
+let rtdb = null;
+// Store unsubscribe functions to prevent duplicate listeners
+let firebaseUnsubs = { orders: null, riders: null, customers: null, restaurants: null, promotions: null, payments: null, support: null, accounts: null, logs: null, analytics: null };
+
+function initFirebase() {
+    if (typeof firebase === 'undefined') {
+        showToast("⚠️ Firebase SDK not loaded. Check internet.");
+        return;
     }
+
+    try {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase Initialized");
+        }
+        
+        // Ensure references exist
+        if (!db) db = firebase.firestore();
+        if (!auth) auth = firebase.auth();
+        if (!rtdb) rtdb = firebase.database();
+
+        // 1. ENABLE OFFLINE PERSISTENCE (Local Sync)
+        db.enablePersistence()
+            .catch((err) => {
+                if (err.code == 'failed-precondition') console.log('Persistence: Multiple tabs open');
+                else if (err.code == 'unimplemented') console.log('Persistence: Browser not supported');
+            });
+        
+        // Start/Restart Listeners
+        setupFirebaseListeners();
+        showToast("✅ Firebase Connected");
+        
+        // Re-attach user listener if logged in
+        if(currentUser && currentUser.id) setupUserProfileListener(currentUser.id);
+    } catch (e) {
+        console.error("Firebase Init Error:", e);
+    }
+}
+
+function setupFirebaseListeners() {
+    if(!db) return;
+
+    // Unsubscribe previous listeners if they exist (prevents duplicates on retry)
+    if (firebaseUnsubs.orders) firebaseUnsubs.orders();
+    if (firebaseUnsubs.riders) firebaseUnsubs.riders();
+    if (firebaseUnsubs.customers) firebaseUnsubs.customers();
+    if (firebaseUnsubs.restaurants) firebaseUnsubs.restaurants();
+    if (firebaseUnsubs.promotions) firebaseUnsubs.promotions();
+    if (firebaseUnsubs.payments) firebaseUnsubs.payments();
+    if (firebaseUnsubs.support) firebaseUnsubs.support();
+    if (firebaseUnsubs.accounts) firebaseUnsubs.accounts();
+    if (firebaseUnsubs.logs) firebaseUnsubs.logs();
+    if (firebaseUnsubs.analytics) firebaseUnsubs.analytics();
+
+    // Listen for Orders
+    firebaseUnsubs.orders = db.collection("orders").onSnapshot((snapshot) => {
+        const orders = [];
+        snapshot.forEach((doc) => {
+            orders.push(doc.data());
+        });
+        // Update global state
+        window.allOrders = orders;
+        adminOrders = orders;
+        
+        // Refresh UI if needed
+        if (document.getElementById('adminScreen').classList.contains('active')) {
+            renderAdminOrders();
+            updateAdminDashboard();
+        }
+        if (document.getElementById('riderScreen').classList.contains('active')) {
+            updateRiderNearbyOrders();
+        }
+    }, (error) => console.error("Order listener error:", error));
+
+    // Listen for Restaurants
+    firebaseUnsubs.restaurants = db.collection("restaurants").onSnapshot((snapshot) => {
+        const restaurants = [];
+        snapshot.forEach((doc) => {
+            restaurants.push({ id: doc.id, ...doc.data() });
+        });
+        adminRestaurants = restaurants;
+        // Update Admin UI
+        if (document.getElementById('admin-restaurants') && document.getElementById('admin-restaurants').style.display !== 'none') renderAdminRestaurants();
+    });
+
+    // Listen for Riders
+    firebaseUnsubs.riders = db.collection("riders").onSnapshot((snapshot) => {
+        const riders = [];
+        snapshot.forEach((doc) => {
+            riders.push(doc.data());
+        });
+        adminRiders = riders;
+        if (document.getElementById('admin-riders') && document.getElementById('admin-riders').style.display !== 'none') {
+            renderAdminRiders();
+        }
+    }, (error) => console.error("Rider listener error:", error));
+    
+    // Listen for Customers
+    firebaseUnsubs.customers = db.collection("customers").onSnapshot((snapshot) => {
+        const customers = [];
+        snapshot.forEach((doc) => {
+            customers.push({ id: doc.id, ...doc.data() });
+        });
+        adminCustomers = customers;
+        if (document.getElementById('admin-customers') && document.getElementById('admin-customers').style.display !== 'none') {
+            renderAdminCustomers();
+        }
+    }, (error) => console.error("Customer listener error:", error));
+
+    // Listen for Promotions
+    firebaseUnsubs.promotions = db.collection("promotions").onSnapshot((snapshot) => {
+        const items = []; snapshot.forEach(doc => items.push(doc.data()));
+        adminPromotions = items;
+        if (document.getElementById('admin-promotions').style.display !== 'none') renderAdminPromotions();
+    });
+
+    // Listen for Payments
+    firebaseUnsubs.payments = db.collection("payments").onSnapshot((snapshot) => {
+        const items = []; snapshot.forEach(doc => items.push(doc.data()));
+        adminPayments = items;
+        if (document.getElementById('admin-payments').style.display !== 'none') renderAdminPayments();
+    });
+
+    // Listen for Support Tickets
+    firebaseUnsubs.support = db.collection("support").onSnapshot((snapshot) => {
+        const items = []; snapshot.forEach(doc => items.push(doc.data()));
+        adminSupportTickets = items;
+        if (document.getElementById('admin-support').style.display !== 'none') renderAdminSupport();
+        updateAdminSidebarBadges();
+    });
+
+    // Listen for Admin Accounts
+    firebaseUnsubs.accounts = db.collection("admin_accounts").onSnapshot((snapshot) => {
+        const items = []; snapshot.forEach(doc => items.push(doc.data()));
+        adminAccounts = items;
+        if (document.getElementById('admin-accounts').style.display !== 'none') renderAdminAccounts();
+    });
+
+    // Listen for Logs
+    firebaseUnsubs.logs = db.collection("logs").orderBy('time', 'desc').limit(50).onSnapshot((snapshot) => {
+        const items = []; snapshot.forEach(doc => items.push(doc.data()));
+        adminLogs = items;
+        if (document.getElementById('admin-logs').style.display !== 'none') renderAdminLogs();
+    });
+    
+    // Listen for Analytics Summary
+    firebaseUnsubs.analytics = db.collection("analytics").doc("summary").onSnapshot((doc) => {
+        if (doc.exists) {
+            adminAnalytics = doc.data();
+            if (document.getElementById('admin-analytics').style.display !== 'none') renderAdminAnalytics();
+            if (document.getElementById('admin-dashboard').style.display !== 'none') renderAdminDashboard();
+        }
+    });
+}
+
+// --- AUTO-RECONNECT LOGIC ---
+window.addEventListener('online', () => {
+    showToast("🌐 Connection Restored. Reconnecting...");
+    console.log("Network online. Retrying Firebase...");
+    initFirebase();
+});
+
+window.addEventListener('offline', () => {
+    showToast("⚠️ No Internet Connection. Working offline.");
+});
+
+async function seedDatabase() {
+    if (!db) { showToast("Firebase not connected! Check Config."); return; }
+    if (!confirm("This will upload local sample data to Firebase. Continue?")) return;
+
+    showToast("Uploading data...");
+    const batch = db.batch();
+
+    // Upload Restaurants
+    (typeof MOCK_RESTAURANTS !== 'undefined' ? MOCK_RESTAURANTS : adminRestaurants).forEach(r => {
+        const ref = db.collection("restaurants").doc(r.id.toString());
+        batch.set(ref, r);
+    });
+
+    // Upload Riders
+    (typeof MOCK_RIDERS !== 'undefined' ? MOCK_RIDERS : adminRiders).forEach(r => {
+        const ref = db.collection("riders").doc(r.id.toString());
+        batch.set(ref, r);
+    });
+
+    // Upload Customers
+    (typeof MOCK_CUSTOMERS !== 'undefined' ? MOCK_CUSTOMERS : adminCustomers).forEach(c => {
+        const ref = db.collection("customers").doc(c.id.toString());
+        batch.set(ref, c);
+    });
+
+    // Upload Promotions
+    if(typeof MOCK_PROMOTIONS !== 'undefined') {
+        MOCK_PROMOTIONS.forEach(p => {
+            const ref = db.collection("promotions").doc(p.id.toString());
+            batch.set(ref, p);
+        });
+    }
+
+    // Upload Payments
+    if(typeof MOCK_PAYMENTS !== 'undefined') {
+        MOCK_PAYMENTS.forEach(p => {
+            const ref = db.collection("payments").doc(p.id.toString());
+            batch.set(ref, p);
+        });
+    }
+
+    // Upload Support Tickets
+    if(typeof MOCK_SUPPORT_TICKETS !== 'undefined') {
+        MOCK_SUPPORT_TICKETS.forEach(t => {
+            const ref = db.collection("support").doc(t.id.toString());
+            batch.set(ref, t);
+        });
+    }
+
+    // Upload Admin Accounts
+    if(typeof MOCK_ACCOUNTS !== 'undefined') {
+        MOCK_ACCOUNTS.forEach(a => {
+            const ref = db.collection("admin_accounts").doc(a.id.toString());
+            batch.set(ref, a);
+        });
+    }
+    
+    // Upload Analytics Summary
+    if(typeof MOCK_ANALYTICS !== 'undefined') {
+        batch.set(db.collection("analytics").doc("summary"), MOCK_ANALYTICS);
+    }
+
+    // Upload Orders
+    if(typeof MOCK_ORDERS !== 'undefined') {
+        MOCK_ORDERS.forEach(o => {
+            const ref = db.collection("orders").doc(o.id.toString());
+            batch.set(ref, o);
+        });
+    }
+
+    await batch.commit();
+    showToast("Data Migration Complete! 🎉");
+}
+
+// 2. REAL-TIME USER PROFILE SYNC LISTENER
+function setupUserProfileListener(userId) {
+    if(!db) return;
+    db.collection('customers').doc(userId).onSnapshot(doc => {
+        if(doc.exists) {
+            const data = doc.data();
+            
+            // Real-time Verification Logic
+            if(data.status === 'active' && currentUser.status !== 'active') {
+                showToast("✅ Account Verified! Logging in...");
+                currentUser.status = 'active';
+                
+                // Reset login button if visible
+                const btn = document.querySelector('.login-btn');
+                if(btn) { btn.textContent = "Start Ordering"; btn.disabled = false; btn.style.background = ""; }
+                
+                proceedToHome();
+            }
+            // Sync other fields
+            currentUser.points = data.points || 0;
+            currentUser.walletBalance = data.walletBalance || 0;
+            // Update UI
+            updateCartView();
+        }
+    });
+}
+// --- FIREBASE INTEGRATION END ---
+
+// New function to update all profile-related UI elements
+function updateProfileUI() {
+    if (currentUser.isGuest) {
+        document.getElementById('profileNameDisplay').textContent = 'Guest User';
+        document.getElementById('profilePhoneDisplay').textContent = 'Log in to see your details';
+        return;
+    }
+
+    document.getElementById('profileNameDisplay').textContent = currentUser.name;
+    document.getElementById('profilePhoneDisplay').textContent = currentUser.phone;
+    
+    const walletStat = document.querySelector('#profileScreen .stat-item:nth-child(2) .stat-value');
+    const pointsStat = document.querySelector('#profileScreen .stat-item:nth-child(3) .stat-value');
+    const ordersStat = document.querySelector('#profileScreen .stat-item:nth-child(1) .stat-value');
+
+    if(walletStat) walletStat.textContent = `UGX ${(currentUser.walletBalance || 0).toLocaleString()}`;
+    if(pointsStat) pointsStat.textContent = (currentUser.points || 0).toLocaleString();
+    if(ordersStat) ordersStat.textContent = (currentUser.orders?.length || 0);
+
+    // Update profile picture if available
+    // ... (logic for profile pic can be added here) ...
+}
+
+// Initialize User
+function loadUserProfile() {
+    try {
+        const storedProfile = localStorage.getItem('kirya_user_profile');
+        if (storedProfile) {
+            const parsed = JSON.parse(storedProfile);
+            // Merge to ensure structure integrity if schema changes
+            currentUser = { ...currentUser, ...parsed, isGuest: false };
+            
+            // Sync Favorites Set from Array
+            favorites = new Set(currentUser.favorites || []);
+            
+            // Sync Global Vars (Backward Compatibility)
+            userPoints = currentUser.points || 0;
+            userWalletBalance = currentUser.walletBalance || 0;
+            recipientDetails = { name: currentUser.name, phone: currentUser.phone };
+            userPhoneNumber = currentUser.phone;
+            
+            // Sync Cart
+            if (currentUser.cart && Array.isArray(currentUser.cart)) {
+                cart = currentUser.cart;
+            }
+
+            // Sync Notifications
+            if (currentUser.notifications && Array.isArray(currentUser.notifications)) {
+                notifications = currentUser.notifications;
+            }
+
+            // Sync Settings
+            if (currentUser.settings) {
+                const s = currentUser.settings;
+                if(s.allergyNotes) allergyNotes = s.allergyNotes;
+                if(s.address) {
+                    document.getElementById('selectedAddressText').textContent = s.address;
+                    document.getElementById('selectedAddress').textContent = s.addressFull || s.address;
+                }
+                // Other settings (push, loc) are UI toggles handled in startApp or when screen opens
+            }
+
+            // If online, re-hook listener
+            if (currentUser.id) setTimeout(() => setupUserProfileListener(currentUser.id), 1000);
+
+            updateProfileUI(); // Update all profile UI elements
+
+            return true; // User loaded
+        }
+    } catch (e) { console.error('Profile load error', e); }
+    return false; // No user
+}
+
+function saveUserProfile(syncToDb = true) {
+    // Sync Global Vars back to Object
+    currentUser.favorites = Array.from(favorites);
+    currentUser.points = userPoints;
+    currentUser.walletBalance = userWalletBalance;
+    currentUser.cart = cart;
+    currentUser.notifications = notifications;
+    // currentUser.settings is updated via saveUserSettings
+    // currentUser.orders is updated via placeOrder logic
+    
+    localStorage.setItem('kirya_user_profile', JSON.stringify(currentUser));
+    
+    // 3. PUSH LOCAL CHANGES TO DATABASE
+    if (syncToDb && db && currentUser.id && !currentUser.isGuest) {
+        db.collection('customers').doc(currentUser.id).set(currentUser, { merge: true })
+            .catch(e => console.error("Profile sync error", e));
+    }
+}
+
+function proceedToHome() {
+    saveUserProfile(false); // Save locally
+    
+    // Init global vars
+    recipientDetails = { name: currentUser.name, phone: currentUser.phone };
+    userPhoneNumber = currentUser.phone;
+    
+    // Transition
+    document.getElementById('loginScreen').classList.remove('active');
+    
+    // Move to Home if app is ready
+    if(appReady) {
+        document.getElementById('home').style.display = 'block';
+    }
+    updateProfileUI();
+}
+
+async function handleLogin() {
+    const name = document.getElementById('loginName').value.trim();
+    const phone = document.getElementById('loginPhone').value.trim();
+    
+    if(name.length < 2 || phone.length < 5) {
+        showToast("Please enter a valid name and phone number");
+        return;
+    }
+    
+    const formattedPhone = phone.startsWith('+') ? phone : "+971 " + phone;
+    showToast("Verifying credentials...");
+
+    // 4. CHECK DATABASE FOR USER OR REGISTER NEW
+    if (db) {
+        try {
+            const snapshot = await db.collection('customers').where('phone', '==', formattedPhone).limit(1).get();
+            
+            if (!snapshot.empty) {
+                // Login existing
+                const doc = snapshot.docs[0];
+                const data = doc.data();
+                
+                // Check status
+                if(data.status === 'pending_verification') {
+                    showToast("⏳ Account pending verification. Please wait for Admin...");
+                    currentUser = { ...currentUser, ...data, id: doc.id, isGuest: false };
+                    setupUserProfileListener(doc.id);
+                    return; // STOP: Do not enter app
+                }
+                
+                currentUser = { ...currentUser, ...data, id: doc.id, isGuest: false };
+                showToast(`Welcome back, ${data.name}!`);
+                setupUserProfileListener(doc.id);
+                proceedToHome();
+            } else {
+                // Register new (Submit Credentials)
+                const newCustomer = {
+                    name: name,
+                    phone: formattedPhone,
+                    email: '',
+                    orders: 0,
+                    totalSpent: 0,
+                    status: 'pending_verification', // Waits for Admin
+                    joined: new Date().toISOString().slice(0, 10),
+                    address: 'Not set',
+                    savedAddresses: [],
+                    walletBalance: 0,
+                    points: 500
+                };
+                const docRef = await db.collection('customers').add(newCustomer);
+                currentUser = { ...currentUser, ...newCustomer, id: docRef.id, isGuest: false };
+                
+                showToast("✅ Credentials Submitted! Waiting for Verification...");
+                
+                // Disable login button to indicate waiting
+                const btn = document.querySelector('.login-btn');
+                if(btn) {
+                    btn.textContent = "Waiting for Verification...";
+                    btn.disabled = true;
+                    btn.style.background = "#ccc";
+                }
+
+                setupUserProfileListener(docRef.id);
+                // STOP: Do not enter app
+            }
+        } catch (e) {
+            console.error("Login Error", e);
+            showToast("Login failed: " + e.message);
+            return;
+        }
+    } else {
+        // Offline Fallback
+        currentUser.name = name;
+        currentUser.phone = formattedPhone;
+        currentUser.isGuest = false;
+        proceedToHome();
+    }
+}
+// --- USER PROFILE INTEGRATION END ---
+
+try {
+    // Cart loaded via loadUserProfile now
 } catch (e) { console.error(e); }
 
 function saveCart() {
-    localStorage.setItem('kirya_cart', JSON.stringify(cart));
+    currentUser.cart = cart;
+    saveUserProfile();
     updateCartView();
 }
 
 function saveUserSettings() {
     try {
-        const existing = JSON.parse(localStorage.getItem('kirya_user_settings') || '{}');
+        // const existing = JSON.parse(localStorage.getItem('kirya_user_settings') || '{}');
         const settings = {
-            ...existing,
+            ...currentUser.settings,
             recipientDetails,
-            userPhoneNumber,
-            allergyNotes,
             address: document.getElementById('selectedAddressText').textContent,
             addressFull: document.getElementById('selectedAddress').textContent,
             push: document.getElementById('settingPushToggle')?.checked,
-            loc: document.getElementById('settingLocToggle')?.checked
+            loc: document.getElementById('settingLocToggle')?.checked,
+            allergyNotes: allergyNotes
         };
         if (typeof marker !== 'undefined' && marker) {
             settings.coords = marker.getLatLng();
         }
-        localStorage.setItem('kirya_user_settings', JSON.stringify(settings));
+        currentUser.settings = settings;
+        saveUserProfile();
     } catch(e) { console.error('Error saving settings', e); }
 }
 
 let suggestedScrollInterval;
-let favorites = new Set(['Burger King', 'Pizza Hut']);
+let favorites = new Set(); // Initialized in loadUserProfile
 let isCheckoutAccordionOpen = false; let allergyNotes = ''; let recipientDetails = { name: '', phone: '' }; let userPhoneNumber = '+971 50 123 4567'; let selectedPaymentMethod = { value: 'cod', icon: '💵', text: 'Cash on Delivery' }; let tipPercentage = 0;
 let riderMarker, riderRoutePolyline, riderProgressPolyline, routeAnimationFrame;
 let dailySalesChartInstance, topItemsChartInstance;
@@ -2872,7 +3436,7 @@ let walletTransactions = [
 ];
 
 /* Sample Data for Admin Panel */
-let adminOrders = [
+const MOCK_ORDERS = [
     { id: '#9901', customer: 'John Doe', customerPhone: '+971 50 123 4567', restaurant: 'Burger King', items: ['2x Cheese Burger', '1x Cola'], total: 30.00, status: 'pending', payment: 'cod', time: 'Just now', address: 'Dubai Marina, Building 12', rider: null, lat: 24.455, lng: 54.380 },
     { id: '#9902', customer: 'Sarah Ahmed', customerPhone: '+971 55 987 6543', restaurant: 'Pizza Hut', items: ['1x Family Pizza', '2x Garlic Bread'], total: 85.00, status: 'confirmed', payment: 'card', time: '5 mins ago', address: 'Jumeirah Beach, Villa 45', rider: 'Ahmed Hassan', lat: 24.470, lng: 54.375 },
     { id: '#9903', customer: 'Mike Johnson', customerPhone: '+971 52 456 7890', restaurant: 'KFC', items: ['3x Spicy Wings', '1x Fries'], total: 45.00, status: 'preparing', payment: 'wallet', time: '15 mins ago', address: 'Business Bay, Office Tower', rider: 'Fatima Al-Zahra', lat: 24.450, lng: 54.390 },
@@ -2882,8 +3446,9 @@ let adminOrders = [
     { id: '#9907', customer: 'Robert Kim', customerPhone: '+971 55 147 2589', restaurant: 'Domino\'s', items: ['2x Medium Pizza', '1x Coke'], total: 65.00, status: 'pending', payment: 'card', time: '3 mins ago', address: 'Jumeirah, Villa Complex', rider: null, lat: 24.465, lng: 54.388 },
     { id: '#9908', customer: 'Lisa Thompson', customerPhone: '+971 52 369 8520', restaurant: 'Costa Coffee', items: ['1x Cappuccino', '2x Muffins'], total: 28.00, status: 'confirmed', payment: 'wallet', time: '8 mins ago', address: 'Dubai Marina Walk', rider: 'Youssef Al-Rashid', lat: 24.452, lng: 54.378 }
 ];
+let adminOrders = [...MOCK_ORDERS];
 
-let adminRestaurants = [
+const MOCK_RESTAURANTS = [
     { id: 1, name: 'Burger King', category: 'Fast Food', rating: 4.5, status: 'active', orders: 245, revenue: 12500.00, phone: '+971 4 123 4567', address: 'Dubai Mall', owner: 'BK UAE LLC', commission: 15 },
     { id: 2, name: 'Pizza Hut', category: 'Pizza', rating: 4.7, status: 'active', orders: 189, revenue: 18900.00, phone: '+971 4 234 5678', address: 'Mall of Emirates', owner: 'PH Middle East', commission: 12 },
     { id: 3, name: 'KFC', category: 'Chicken', rating: 4.6, status: 'active', orders: 312, revenue: 15600.00, phone: '+971 4 345 6789', address: 'Dubai Festival City', owner: 'KFC UAE', commission: 18 },
@@ -2893,7 +3458,9 @@ let adminRestaurants = [
     { id: 7, name: 'Domino\'s Pizza', category: 'Pizza', rating: 4.5, status: 'active', orders: 203, revenue: 20300.00, phone: '+971 4 789 0123', address: 'Dubai Marina', owner: 'Domino\'s UAE', commission: 13 },
     { id: 8, name: 'Costa Coffee', category: 'Coffee', rating: 4.6, status: 'active', orders: 134, revenue: 10720.00, phone: '+971 4 890 1234', address: 'Dubai Marina Walk', owner: 'Costa UAE', commission: 11 }
 ];
-let adminRiders = [
+let adminRestaurants = [...MOCK_RESTAURANTS];
+
+const MOCK_RIDERS = [
     { id: 1, name: 'Ahmed Hassan', phone: '+971 50 111 2222', email: 'ahmed.hassan@email.com', status: 'offline', rating: 4.8, completedOrders: 1247, earnings: 8750.00, vehicle: 'Motorcycle', license: 'DL123456', joined: '2023-01-15', lastSeen: '2 mins ago' },
     { id: 2, name: 'Fatima Al-Zahra', phone: '+971 55 333 4444', email: 'fatima.zahra@email.com', status: 'offline', rating: 4.9, completedOrders: 892, earnings: 6240.00, vehicle: 'Scooter', license: 'DL234567', joined: '2023-03-22', lastSeen: '1 hour ago' },
     { id: 3, name: 'Omar Khalid', phone: '+971 52 555 6666', email: 'omar.khalid@email.com', status: 'offline', rating: 4.7, completedOrders: 1563, earnings: 10941.00, vehicle: 'Motorcycle', license: 'DL345678', joined: '2022-11-08', lastSeen: '5 mins ago' },
@@ -2901,13 +3468,14 @@ let adminRiders = [
     { id: 5, name: 'Youssef Al-Rashid', phone: '+971 58 999 0000', email: 'youssef.rashid@email.com', status: 'offline', rating: 4.8, completedOrders: 1102, earnings: 7714.00, vehicle: 'Motorcycle', license: 'DL567890', joined: '2023-02-28', lastSeen: '10 mins ago' },
     { id: 6, name: 'Aisha Al-Mansoori', phone: '+971 50 222 3333', email: 'aisha.mansoori@email.com', status: 'offline', rating: 4.9, completedOrders: 945, earnings: 6615.00, vehicle: 'Scooter', license: 'DL678901', joined: '2023-04-10', lastSeen: 'Just now' }
 ];
+let adminRiders = [...MOCK_RIDERS];
 // Load persisted restaurants to enable saving
 try {
     const savedRes = localStorage.getItem('kirya_restaurants');
     if(savedRes) adminRestaurants = JSON.parse(savedRes);
 } catch(e) { console.error(e); }
 
-let adminCustomers = [
+const MOCK_CUSTOMERS = [
     { id: 1, name: 'John Doe', phone: '+971 50 123 4567', email: 'john.doe@email.com', orders: 24, totalSpent: 1240.00, status: 'active', joined: '2023-01-15', lastOrder: 'Today', address: 'Dubai Marina' },
     { id: 2, name: 'Sarah Ahmed', phone: '+971 55 987 6543', email: 'sarah.ahmed@email.com', orders: 18, totalSpent: 890.00, status: 'active', joined: '2023-02-20', lastOrder: 'Yesterday', address: 'Jumeirah Beach' },
     { id: 3, name: 'Mike Johnson', phone: '+971 52 456 7890', email: 'mike.johnson@email.com', orders: 31, totalSpent: 1560.00, status: 'active', joined: '2022-12-05', lastOrder: '2 days ago', address: 'Business Bay' },
@@ -2917,8 +3485,9 @@ let adminCustomers = [
     { id: 7, name: 'Robert Kim', phone: '+971 55 147 2589', email: 'robert.kim@email.com', orders: 27, totalSpent: 1350.00, status: 'active', joined: '2023-01-08', lastOrder: 'Today', address: 'Jumeirah' },
     { id: 8, name: 'Lisa Thompson', phone: '+971 52 369 8520', email: 'lisa.thompson@email.com', orders: 19, totalSpent: 950.00, status: 'active', joined: '2023-02-14', lastOrder: '4 days ago', address: 'Dubai Marina Walk' }
 ];
+let adminCustomers = [...MOCK_CUSTOMERS];
 
-let adminPayments = [
+const MOCK_PAYMENTS = [
     { id: 'TXN001', orderId: '#9901', customer: 'John Doe', amount: 30.00, method: 'cod', status: 'pending', date: '2024-01-15 14:30:00' },
     { id: 'TXN002', orderId: '#9902', customer: 'Sarah Ahmed', amount: 85.00, method: 'card', status: 'completed', date: '2024-01-15 14:25:00' },
     { id: 'TXN003', orderId: '#9903', customer: 'Mike Johnson', amount: 45.00, method: 'wallet', status: 'completed', date: '2024-01-15 14:15:00' },
@@ -2928,19 +3497,28 @@ let adminPayments = [
     { id: 'TXN007', orderId: '#9907', customer: 'Robert Kim', amount: 65.00, method: 'card', status: 'pending', date: '2024-01-15 14:27:00' },
     { id: 'TXN008', orderId: '#9908', customer: 'Lisa Thompson', amount: 28.00, method: 'wallet', status: 'completed', date: '2024-01-15 14:22:00' }
 ];
+let adminPayments = [...MOCK_PAYMENTS];
 
-let adminSupportTickets = [
+const MOCK_SUPPORT_TICKETS = [
     { id: 'TKT001', customer: 'John Doe', subject: 'Wrong order delivered', status: 'open', priority: 'high', created: '2024-01-15 10:30:00', lastUpdate: '2024-01-15 14:15:00' },
     { id: 'TKT002', customer: 'Sarah Ahmed', subject: 'Late delivery', status: 'in_progress', priority: 'medium', created: '2024-01-14 16:45:00', lastUpdate: '2024-01-15 09:20:00' },
     { id: 'TKT003', customer: 'Mike Johnson', subject: 'Refund request', status: 'open', priority: 'medium', created: '2024-01-13 11:20:00', lastUpdate: '2024-01-14 15:30:00' },
     { id: 'TKT004', customer: 'Emma Wilson', subject: 'App not working', status: 'closed', priority: 'low', created: '2024-01-12 14:10:00', lastUpdate: '2024-01-13 10:45:00' },
     { id: 'TKT005', customer: 'David Chen', subject: 'Missing items', status: 'in_progress', priority: 'high', created: '2024-01-15 08:15:00', lastUpdate: '2024-01-15 13:40:00' }
 ];
+let adminSupportTickets = [...MOCK_SUPPORT_TICKETS];
 
-let adminLogs = [
+const MOCK_ACCOUNTS = [
+    { id: 1, name: 'Sadik', email: 'sadik@kirya.app', phone: '+971 56 288 9428', role: 'Super Admin', lastLogin: 'Today' },
+    { id: 2, name: 'Admin User', email: 'admin@kirya.app', phone: '+971 50 000 0000', role: 'Manager', lastLogin: 'Yesterday' }
+];
+let adminAccounts = [...MOCK_ACCOUNTS];
+
+const MOCK_LOGS = [
     { time: '2024-01-15 14:30:05', action: 'Order Placed', user: 'System', details: 'Order #9901 created' },
     { time: '2024-01-15 14:25:10', action: 'Login', user: 'Admin', details: 'Admin user logged in' }
 ];
+let adminLogs = [...MOCK_LOGS];
 
 function logActivity(action, details, user = 'System') {
     const time = new Date().toLocaleString();
@@ -2949,14 +3527,15 @@ function logActivity(action, details, user = 'System') {
     if(document.getElementById('admin-logs') && document.getElementById('admin-logs').style.display === 'block') renderAdminLogs();
 }
 
-let adminPromotions = [
+const MOCK_PROMOTIONS = [
     { id: 1, title: 'Weekend Special', description: '20% off on all orders', discount: 20, type: 'percentage', validFrom: '2024-01-15', validTo: '2024-01-21', status: 'active', usage: 145 },
     { id: 2, title: 'First Order Free Delivery', description: 'Free delivery on first order', discount: 0, type: 'free_delivery', validFrom: '2024-01-01', validTo: '2024-12-31', status: 'active', usage: 89 },
     { id: 3, title: 'Pizza Day', description: 'Buy 1 Get 1 Free on pizzas', discount: 50, type: 'percentage', validFrom: '2024-01-10', validTo: '2024-01-16', status: 'expired', usage: 234 },
     { id: 4, title: 'Student Discount', description: '15% off with student ID', discount: 15, type: 'percentage', validFrom: '2024-01-01', validTo: '2024-12-31', status: 'active', usage: 67 }
 ];
+let adminPromotions = [...MOCK_PROMOTIONS];
 
-let adminAnalytics = {
+const MOCK_ANALYTICS = {
     totalOrders: 1247,
     totalRevenue: 62350.00,
     totalCustomers: 892,
@@ -2980,6 +3559,7 @@ let adminAnalytics = {
         { hour: '21:00', orders: 43 }
     ]
 };
+let adminAnalytics = {...MOCK_ANALYTICS};
 
 // --- SYNC LOGIC START ---
 // Initialize from LocalStorage or use Mock Data
@@ -2989,11 +3569,11 @@ try {
         window.allOrders = JSON.parse(savedOrders);
         adminOrders = window.allOrders; // Keep references synced
     } else {
-        window.allOrders = adminOrders; // Use mock data as base
+        window.allOrders = [...MOCK_ORDERS]; // Use mock data as base
     }
 } catch (e) {
     console.error("Sync Init Error", e);
-    window.allOrders = adminOrders;
+    window.allOrders = [...MOCK_ORDERS];
 }
 
 function syncOrders() {
@@ -3051,12 +3631,36 @@ function initWebSocket() {
     }
 }
 
+function handleLogout() {
+    if(confirm('Are you sure you want to log out?')) {
+        // Clear User Data
+        localStorage.removeItem('kirya_user_profile');
+        localStorage.removeItem('kirya_cart');
+        localStorage.removeItem('kirya_user_settings');
+        localStorage.removeItem('kirya_last_screen');
+        localStorage.removeItem('kirya_notifications');
+        
+        // Reset variables
+        currentUser = { name: '', phone: '', points: 500, walletBalance: 0, favorites: [], savedAddresses: [], isGuest: true };
+        favorites = new Set();
+        cart = [];
+        notifications = [];
+        
+        // UI Reset
+        updateCartView();
+        updateBellDots();
+        
+        // Force Reload to clear state cleanly and show Login screen
+        window.location.reload();
+    }
+}
+
 // Initialize app after DOM is loaded
 function startApp() {
   // Restore Last Screen
   try {
       const lastScreenId = localStorage.getItem('kirya_last_screen');
-      if (lastScreenId && lastScreenId !== 'home' && lastScreenId !== 'splash') {
+      if (lastScreenId && lastScreenId !== 'home' && lastScreenId !== 'splash' && lastScreenId !== 'notificationsScreen') {
           const screen = document.getElementById(lastScreenId);
           if (screen) {
               // Hide home first
@@ -3082,9 +3686,13 @@ function startApp() {
   console.log('Initializing app...');
   
   try {
+  initFirebase(); // Try to connect to Firebase on startup
   // Ensure admin screen is hidden on start
   const adminScreen = document.getElementById('adminScreen');
   if(adminScreen) adminScreen.classList.remove('active');
+
+  // Load Profile Logic
+  const userExists = loadUserProfile();
 
   // Safe initialization of updateAddAddressBtn calls
   try {
@@ -3092,23 +3700,16 @@ function startApp() {
     
     // Load User Settings
     try {
-        const savedSettings = localStorage.getItem('kirya_user_settings');
-        if (savedSettings) {
-            const s = JSON.parse(savedSettings);
-            if(s.recipientDetails) recipientDetails = s.recipientDetails;
-            if(s.userPhoneNumber) userPhoneNumber = s.userPhoneNumber;
-            if(s.allergyNotes) allergyNotes = s.allergyNotes;
-            if(s.address) {
-                document.getElementById('selectedAddressText').textContent = s.address;
-                document.getElementById('selectedAddress').textContent = s.addressFull || s.address;
-                const catAddr = document.getElementById('catAddressText');
-                if(catAddr) catAddr.textContent = s.address;
-            }
+        if (currentUser.settings) {
+            const s = currentUser.settings;
             if(s.push !== undefined && document.getElementById('settingPushToggle')) document.getElementById('settingPushToggle').checked = s.push;
             if(s.loc !== undefined && document.getElementById('settingLocToggle')) document.getElementById('settingLocToggle').checked = s.loc;
+            
+            const catAddr = document.getElementById('catAddressText');
+            if(catAddr && s.address) catAddr.textContent = s.address;
             // Coordinates are set when map initializes
         }
-    } catch(e) { console.error('Error loading settings', e); }
+    } catch(e) { console.error('Error loading UI settings', e); }
     
     // Fix: Hydrate orders with missing coordinates to prevent animation errors
     if(window.allOrders) {
@@ -3136,7 +3737,12 @@ function startApp() {
         splash.style.opacity='0';
         setTimeout(()=>{
           splash.style.display='none';
-          home.style.display='block';
+          
+          if (!userExists) {
+              document.getElementById('loginScreen').classList.add('active');
+          } else {
+              home.style.display='block';
+          }
           console.log('Home screen displayed');
           appReady = true;
         },500);
@@ -3148,7 +3754,11 @@ function startApp() {
       // Emergency fallback
       const splash = document.getElementById('splash');
       if(splash) splash.style.display='none';
-      document.getElementById('home').style.display='block';
+      if (!userExists) {
+          document.getElementById('loginScreen').classList.add('active');
+      } else {
+          document.getElementById('home').style.display='block';
+      }
       appReady = true;
     }
 
@@ -3196,10 +3806,10 @@ function startApp() {
             
             // showToast("Data synced from other tab");
         }
-        if (e.key === 'kirya_cart' && e.newValue) {
-            cart = JSON.parse(e.newValue);
+        if (e.key === 'kirya_user_profile' && e.newValue) {
+            // Optionally sync profile changes across tabs if needed
+            // loadUserProfile();
             updateCartView();
-            if(document.getElementById('cartScreen').classList.contains('active')) openCart();
         }
         if (e.key === 'kirya_riders' && e.newValue) {
             adminRiders = JSON.parse(e.newValue);
@@ -3213,11 +3823,6 @@ function startApp() {
                 updateAdminSidebarBadges();
                 showToast("Rider data synced from another tab.");
             }
-        }
-        if (e.key === 'kirya_cart' && e.newValue) {
-            cart = JSON.parse(e.newValue);
-            updateCartView();
-            if(document.getElementById('cartScreen').classList.contains('active')) openCart();
         }
         if (e.key === 'kirya_vendor_orders' && e.newValue) {
             const oldOrders = e.oldValue ? JSON.parse(e.oldValue) : [];
@@ -3235,6 +3840,22 @@ function startApp() {
                 showToast("🔔 New Order Received!");
             }
         }
+        /* if (e.key === 'kirya_notifications' && e.newValue) {
+            // Notifs are now in profile, sync handled above if we add loadUserProfile call
+            const newNotifs = JSON.parse(e.newValue);
+            const oldNotifs = notifications;
+            notifications = newNotifs;
+            renderNotifications();
+            updateBellDots();
+            
+            if (newNotifs.length > oldNotifs.length) {
+                const latest = newNotifs[0];
+                if (latest.role === 'rider' && document.getElementById('riderScreen').classList.contains('active')) {
+                    showToast(`📢 Admin Broadcast: ${latest.body}`);
+                    playNotificationSound();
+                }
+            }
+        } */
     });
   },1000); // Reduced from 3000 to 1000 for faster testing
 
@@ -3343,7 +3964,7 @@ document.getElementById('openMapBtn').addEventListener('click',()=>{
     });
     // Load saved coords if available
     try {
-        const s = JSON.parse(localStorage.getItem('kirya_user_settings') || '{}');
+        const s = currentUser.settings || {};
         if(s.coords) { marker.setLatLng(s.coords); map.setView(s.coords, 15); }
     } catch(e){}
   }
@@ -5196,6 +5817,15 @@ if (cartBackBtn) {
 const placeOrderBtn = document.getElementById('placeOrderBtn');
 if (placeOrderBtn) {
     placeOrderBtn.addEventListener('click', () => {
+        // Verification Check
+        if (currentUser.isGuest || currentUser.status !== 'active') {
+            showToast("Your account must be verified to place orders.");
+            if (currentUser.isGuest) {
+                document.getElementById('loginScreen').classList.add('active');
+            }
+            return;
+        }
+
         if (cart.length > 0) {
             // Check Schedule
             const deliveryType = document.querySelector('input[name="deliveryType"]:checked')?.value;
@@ -5224,13 +5854,16 @@ if (placeOrderBtn) {
             if (confirm("Are you sure you want to place this order?")) {
                 // Create new order with initial status
                 const orderId = 'ORD' + Date.now();
+                const itemsTotal = cart.reduce((sum, item) => sum + (item.basePrice * item.quantity), 0);
+                const tipAmount = itemsTotal * (tipPercentage / 100);
                 const newOrder = {
                     id: orderId,
                     status: scheduledTime ? 'scheduled' : 'pending', // Initial status
                     statusText: scheduledTime ? 'Order Scheduled' : 'Order Placed - Waiting for confirmation',
                     statusColor: '#FFBF42',
                     items: [...cart],
-                    total: cart.reduce((sum, item) => sum + (item.basePrice * item.quantity), 0),
+                    total: itemsTotal,
+                    tip: tipAmount,
                     customerName: recipientDetails.name || 'Valued Customer',
                     customerPhone: recipientDetails.phone || userPhoneNumber,
                     deliveryAddress: document.getElementById('selectedAddressText').textContent || 'Not set',
@@ -5250,20 +5883,17 @@ if (placeOrderBtn) {
                 // Add to global orders array
                 if (!window.allOrders) window.allOrders = [];
                 window.allOrders.push(newOrder);
+                
+                // Add to User Profile Orders
+                if (!currentUser.orders) currentUser.orders = [];
+                currentUser.orders.unshift(newOrder);
+                saveUserProfile();
 
-                // Add to Vendor Orders for Shop Portal
-                if (!scheduledTime) {
-                    const vOrder = {
-                        id: newOrder.id,
-                        time: 'Just now',
-                        items: newOrder.items.map(i => `${i.quantity}x ${i.title}`),
-                        total: newOrder.total.toFixed(2),
-                        status: 'new'
-                    };
-                    if(typeof vendorOrders !== 'undefined') {
-                        vendorOrders.unshift(vOrder);
-                        syncVendorOrders();
-                    }
+                // Firebase Save
+                if(db) {
+                    db.collection("orders").doc(newOrder.id).set(newOrder)
+                    .then(() => console.log("Order saved to Firebase"))
+                    .catch(e => console.error("Order save error", e));
                 }
 
                 // Celebration and order acknowledgment
@@ -5336,6 +5966,22 @@ function updateOrderStatus(orderId, status, statusText, statusColor = '#019E81')
             playNotificationSound();
             showToast(`🔔 New Order Update: ${statusText}`);
         }
+        
+        if (status === 'confirmed') {
+            if (!document.getElementById('adminScreen').classList.contains('active')) {
+                playNotificationSound();
+            }
+            notifications.unshift({
+                type: 'order',
+                title: 'Order Confirmed',
+                body: `Your order ${orderId} has been confirmed.`,
+                time: 'Just now',
+                unread: true,
+                role: 'user'
+            });
+            saveNotifications();
+            updateBellDots();
+        }
 
         // Update all relevant screens
         updateTrackOrderScreen(order);
@@ -5358,6 +6004,13 @@ function updateOrderStatus(orderId, status, statusText, statusColor = '#019E81')
 
         // Show notification to user
         syncOrders(); // Persist changes
+        
+        // Firebase Sync
+        if(db) {
+            db.collection("orders").doc(orderId).update({ status: status, statusText: statusText, statusColor: statusColor })
+            .catch(e => console.error("Firebase update failed", e));
+        }
+        
         showToast(statusText);
         updateRiderPendingBadge();
     }
@@ -5429,6 +6082,30 @@ function updateTrackOrderScreen(order) {
                 step.classList.add('active');
             }
         });
+        
+        // Show Rating UI if Delivered
+        if (order.status === 'delivered') {
+            const bottomSheet = trackScreen.querySelector('.track-bottom-sheet');
+            if (bottomSheet && !document.getElementById('ratingContainer')) {
+                // Clear existing content to show rating focus
+                bottomSheet.innerHTML = `
+                    <div id="ratingContainer" style="text-align:center; padding: 20px 0;">
+                        <div style="font-size:3em;">🎉</div>
+                        <h3 style="margin:10px 0; color:#333;">Order Delivered!</h3>
+                        <p style="color:#666; margin-bottom:20px;">How was your experience with ${order.rider || 'the rider'}?</p>
+                        
+                        <div class="star-rating">
+                            <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span><span onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span onclick="setRating(5)">★</span>
+                        </div>
+                        
+                        <textarea id="ratingComment" placeholder="Add a comment (optional)" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:12px; margin-bottom:15px; font-family:inherit;"></textarea>
+                        
+                        <button onclick="submitRating('${order.id}')" style="width:100%; padding:15px; background:#019E81; color:#fff; border:none; border-radius:12px; font-weight:bold; font-size:1.1em; cursor:pointer;">Submit Review</button>
+                        <button onclick="document.getElementById('trackOrderScreen').classList.remove('active')" style="margin-top:10px; background:none; border:none; color:#666; cursor:pointer;">Skip</button>
+                    </div>
+                `;
+            }
+        }
     }
 
     // Update ETA and distance
@@ -5446,6 +6123,36 @@ function updateTrackOrderScreen(order) {
             etaEl.innerHTML = '15-20 <span style="font-size:0.4em; vertical-align:middle; color:#888;">MINS</span>';
             etaLabel.textContent = 'Estimated Arrival';
         }
+    }
+}
+
+let currentRating = 0;
+function setRating(n) {
+    currentRating = n;
+    const stars = document.querySelectorAll('.star-rating span');
+    stars.forEach((s, i) => {
+        if (i < n) s.classList.add('active');
+        else s.classList.remove('active');
+    });
+}
+
+function submitRating(orderId) {
+    if (currentRating === 0) {
+        showToast('Please select a star rating');
+        return;
+    }
+    const comment = document.getElementById('ratingComment').value;
+    const order = window.allOrders.find(o => o.id === orderId);
+    if (order) {
+        order.rating = currentRating;
+        order.ratingComment = comment;
+        syncOrders(); // Save
+        
+        showToast('Thank you for your feedback!');
+        document.getElementById('trackOrderScreen').classList.remove('active');
+        
+        // Log for admin
+        logActivity('Rating Submitted', `Order ${orderId} rated ${currentRating} stars`, 'User');
     }
 }
 
@@ -5655,6 +6362,7 @@ function toggleFavorite(resName, btnElement) {
         btnElement.classList.add('liked');
         showToast('Added to favorites');
     }
+    saveUserProfile(); // Persist changes
     // If on favorites screen, refresh list
     if (favoritesScreen.classList.contains('active')) {
         renderFavorites();
@@ -5972,7 +6680,7 @@ function openProfile() {
     
     nameDisplay.textContent = recipientDetails.name || 'Guest User';
     phoneDisplay.textContent = userPhoneNumber || recipientDetails.phone || 'No phone set';
-    if(pointsStat) pointsStat.textContent = userPoints.toLocaleString();
+    if(pointsStat) pointsStat.textContent = (userPoints || 0).toLocaleString();
     if(walletStat) walletStat.textContent = `UGX ${userWalletBalance.toLocaleString()}`;
     
     profileScreen.classList.add('active');
@@ -6251,8 +6959,34 @@ function adminSubmitOrderToVendor(orderId) {
         
         // Also update vendor side status
         if (typeof vendorOrders !== 'undefined') {
-            const vOrder = vendorOrders.find(v => v.id === orderId);
-            if (vOrder) { vOrder.status = 'processing'; syncVendorOrders(); }
+            let vOrder = vendorOrders.find(v => v.id === orderId);
+            
+            if (!vOrder) {
+                // Create vendor order entry if missing
+                vOrder = {
+                    id: order.id,
+                    time: order.time || 'Just now',
+                    items: order.items.map(i => `${i.quantity}x ${i.title}`),
+                    total: order.total.toFixed(2),
+                    status: 'new' // Explicitly 'new'
+                };
+                vendorOrders.unshift(vOrder);
+            } else {
+                // If exists, ensure it is 'new' so it appears in New tab
+                vOrder.status = 'new';
+            }
+            
+            syncVendorOrders();
+            
+            // Broadcast update for same-window instances
+            const shopPortal = document.getElementById('shopPortalScreen');
+            if(shopPortal && shopPortal.classList.contains('active')) {
+                const activeTab = document.querySelector('.vendor-tab.active');
+                if(activeTab && activeTab.dataset.tab === 'new') {
+                    renderVendorOrders('new');
+                }
+                updateVendorTabsCounts();
+            }
         }
         
         showToast('Order submitted to vendor');
@@ -6332,6 +7066,7 @@ function riderDeliverOrder(orderId) {
         // Add Loyalty Points
         const points = Math.floor(order.total / 100);
         userPoints += points;
+        saveUserProfile(); // Persist points
         pointsHistory.unshift({
             title: `Order ${orderId}`,
             date: 'Just now',
@@ -6706,21 +7441,12 @@ if(termsBackBtn) termsBackBtn.addEventListener('click', () => termsScreen.classL
 /* Notification Data & Logic */
 let notifications = [];
 try {
-    const savedNotifs = localStorage.getItem('kirya_notifications');
-    if (savedNotifs) {
-        notifications = JSON.parse(savedNotifs);
-    } else {
-        notifications = [
-            { type: 'order', title: 'Order Delivered', body: 'Your order #8820 has been delivered successfully. Enjoy your meal!', time: '2 hours ago', unread: true, role: 'user' },
-            { type: 'promo', title: '50% Off Pizza', body: 'Get 50% off on all pizza orders this weekend! Use code PIZZA50.', time: '5 hours ago', unread: true, role: 'user' },
-            { type: 'order', title: 'Order on the way', body: 'Rider John has picked up your order #8820.', time: '2 hours 15 mins ago', unread: false, role: 'user' },
-            { type: 'promo', title: 'Free Delivery', body: 'Free delivery on all orders above UGX 20,000.', time: '1 day ago', unread: false, role: 'user' }
-        ];
-    }
+    // Loaded from profile now
 } catch (e) { console.error('Error loading notifications', e); }
 
 function saveNotifications() {
-    localStorage.setItem('kirya_notifications', JSON.stringify(notifications));
+    currentUser.notifications = notifications;
+    saveUserProfile();
 }
 
 function getCurrentRole() {
@@ -6809,7 +7535,8 @@ function openNotifications() {
 }
 
 function updateBellDots() {
-    const unreadCount = notifications.filter(n => n.unread).length;
+    const role = getCurrentRole();
+    const unreadCount = notifications.filter(n => n.unread && (n.role === role || n.role === 'all' || !n.role)).length;
     document.querySelectorAll('.header-bell-dot').forEach(dot => {
         if(unreadCount > 0) {
             dot.classList.add('active');
@@ -6828,6 +7555,7 @@ if(notifBackBtn) notifBackBtn.addEventListener('click', () => notifScreen.classL
 const settingsScreen = document.getElementById('settingsScreen');
 const settingsBackBtn = document.getElementById('settingsBackBtn');
 const profileSettingsBtn = document.getElementById('profileSettingsBtn');
+if(document.getElementById('profileLogoutBtn')) document.getElementById('profileLogoutBtn').addEventListener('click', handleLogout);
 
 if(profileSettingsBtn) profileSettingsBtn.addEventListener('click', () => settingsScreen.classList.add('active'));
 if(settingsBackBtn) settingsBackBtn.addEventListener('click', () => settingsScreen.classList.remove('active'));
@@ -6929,6 +7657,7 @@ document.getElementById('rewardsContent').addEventListener('click', e => {
         const cost = parseInt(e.target.dataset.cost, 10);
         if (userPoints >= cost) {
             userPoints -= cost;
+            saveUserProfile(); // Persist points
             const couponTitle = e.target.closest('.coupon-card').querySelector('.coupon-title').textContent;
             showToast(`"${couponTitle}" redeemed!`);
             
@@ -7164,6 +7893,20 @@ function startRiderLocationTracking() {
             // Update marker position
             if (riderLocationMarker) {
                 riderLocationMarker.setLatLng([lat, lng]);
+                // --- RTDB UPDATE START ---
+                if (rtdb && isRiderOnline) {
+                    // Simulating a unique ID for the current user/rider
+                    const myRiderId = 'rider_123'; 
+                    rtdb.ref('locations/riders/' + myRiderId).set({
+                        lat: lat,
+                        lng: lng,
+                        heading: position.coords.heading || 0,
+                        status: 'online',
+                        timestamp: firebase.database.ServerValue.TIMESTAMP,
+                        name: 'My Rider' // You can pull this from profile
+                    });
+                }
+                // --- RTDB UPDATE END ---
             } else {
                 updateRiderPositionOnAllMaps([lat, lng]);
                 
@@ -7306,13 +8049,15 @@ function toggleRiderStatus() {
     // Sync with Admin Data (Simulating Real-time update)
     // Assuming current user corresponds to Rider ID 1 for demo purposes
     const myRiderId = 1; 
-    const riderIndex = adminRiders.findIndex(r => r.id === myRiderId);
-    if(riderIndex !== -1) {
-        adminRiders[riderIndex].status = isRiderOnline ? 'online' : 'offline';
-        syncRiders();
-        // Instant Refresh if Admin Screen is open
-        if(document.getElementById('admin-riders').style.display === 'block') renderAdminRiders();
-        if(document.getElementById('admin-livemap').style.display === 'block') initAdminLiveMap();
+    const statusStr = isRiderOnline ? 'online' : 'offline';
+    
+    // FIREBASE SYNC: Update Rider Status
+    if(db) {
+        // Using ID 1 as string for demo consistency, usually actual Auth UID
+        db.collection('riders').doc(myRiderId.toString()).update({ 
+            status: statusStr,
+            lastSeen: 'Just now'
+        }).catch(err => console.log("Rider status sync local only (mock)"));
     }
 }
 
@@ -7608,6 +8353,29 @@ function updateRiderPendingBadge() {
     }
 }
 
+function switchRiderTab(tab) {
+    document.querySelectorAll('.rider-tab-item').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.rider-tab-item[onclick*="${tab}"]`).classList.add('active');
+    
+    document.querySelectorAll('.rider-tab-content').forEach(c => c.classList.remove('active'));
+    if(tab === 'overview') document.getElementById('riderTabOverview').classList.add('active');
+    if(tab === 'history') {
+        document.getElementById('riderTabHistory').classList.add('active');
+        renderRiderHistory();
+    }
+}
+
+function renderRiderHistory() {
+    const list = document.getElementById('riderHistoryList');
+    if(!list) return;
+    // Filter for delivered orders
+    const history = window.allOrders ? window.allOrders.filter(o => o.status === 'delivered').reverse() : [];
+    
+    if(history.length === 0) { list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">No completed orders yet</div>'; return; }
+    
+    list.innerHTML = history.map(o => `<div class="rider-history-card"><div><div style="font-weight:bold; color:#333;">Order #${o.id}</div><div style="font-size:0.85em; color:#666;">${o.restaurant} • ${o.time || o.timestamp}</div></div><div style="text-align:right;"><div style="font-weight:bold; color:#019E81;">UGX ${Math.floor(o.total * 0.15 + 2000).toLocaleString()}</div><div style="font-size:0.7em; background:#e0f2f1; color:#019E81; padding:2px 6px; border-radius:4px; display:inline-block;">Delivered</div></div></div>`).join('');
+}
+
 // Initialize map when rider screen opens
 document.querySelector('.nav-item:nth-child(5)').addEventListener('click', () => {
     setTimeout(initRiderMap, 300);
@@ -7780,17 +8548,42 @@ document.getElementById('saveItemBtn').addEventListener('click', () => {
     const img = document.getElementById('editItemImg').value;
 
     if (!name || isNaN(price)) { showToast('Please enter a valid name and price.'); return; }
-
-    if (id) { // Update existing
-        const item = merchantMenuItems.find(i => i.id == id);
-        if (item) { Object.assign(item, { name, price, img }); }
-    } else { // Add new
-        const newId = Math.max(0, ...merchantMenuItems.map(i => i.id)) + 1;
-        merchantMenuItems.push({ id: newId, name, price, img, active: true });
+    
+    // FIREBASE SYNC: Menu
+    // Using a 'menus' collection for demo, linked to current vendor
+    if(db) {
+        const itemData = { name, price, img, active: true };
+        if (id) {
+            db.collection('menu_items').doc(id).update(itemData)
+              .then(() => showToast("Item Updated in DB"));
+        } else {
+            db.collection('menu_items').add(itemData)
+              .then(() => showToast("Item Added to DB"));
+        }
+        // For local simulation without full menu listener setup in this block:
+        setTimeout(() => {
+             if (id) {
+                const item = merchantMenuItems.find(i => i.id == id);
+                if (item) Object.assign(item, itemData);
+            } else {
+                merchantMenuItems.push({ id: Date.now(), ...itemData });
+            }
+            renderMerchantMenuItems();
+            merchantEditItemScreen.classList.remove('active');
+        }, 500);
+    } else {
+        // Offline Fallback
+        if (id) { 
+            const item = merchantMenuItems.find(i => i.id == id);
+            if (item) { Object.assign(item, { name, price, img }); }
+        } else { 
+            const newId = Math.max(0, ...merchantMenuItems.map(i => i.id)) + 1;
+            merchantMenuItems.push({ id: newId, name, price, img, active: true });
+        }
+        renderMerchantMenuItems();
+        merchantEditItemScreen.classList.remove('active');
+        showToast('Menu saved locally');
     }
-    renderMerchantMenuItems();
-    merchantEditItemScreen.classList.remove('active');
-    showToast('Menu updated successfully!');
 });
 
 document.getElementById('deleteItemBtn').addEventListener('click', () => {
@@ -7879,6 +8672,7 @@ const profileSavedAddressesBtn = document.getElementById('profileSavedAddressesB
 
 if(profileSavedAddressesBtn && savedAddressScreen) {
     profileSavedAddressesBtn.addEventListener('click', () => {
+        renderSavedAddresses();
         savedAddressScreen.classList.add('active');
     });
 }
@@ -7886,6 +8680,81 @@ if(savedAddressBackBtn && savedAddressScreen) {
     savedAddressBackBtn.addEventListener('click', () => {
         savedAddressScreen.classList.remove('active');
     });
+}
+
+function renderSavedAddresses() {
+    const container = document.querySelector('#savedAddressScreen .sa-content');
+    if(!container) return;
+    container.innerHTML = '';
+    
+    // Add "Save Current" button at top
+    const btn = document.createElement('button');
+    btn.textContent = '+ Save Current Location';
+    btn.style.cssText = 'width:100%; margin-bottom:15px; padding:12px; background:#f0f0f0; color:#333; border:1px dashed #ccc; border-radius:8px; font-weight:bold; cursor:pointer;';
+    btn.onclick = saveCurrentLocationToAddresses;
+    container.appendChild(btn);
+
+    if(!currentUser.savedAddresses || currentUser.savedAddresses.length === 0) {
+        const emptyMsg = document.createElement('div');
+        emptyMsg.style.cssText = 'text-align:center; padding:20px; color:#999;';
+        emptyMsg.textContent = 'No saved addresses yet.';
+        container.appendChild(emptyMsg);
+        return;
+    }
+
+    currentUser.savedAddresses.forEach((addr, index) => {
+        const card = document.createElement('div');
+        card.className = 'saved-addr-card';
+        card.innerHTML = `
+            <div class="saved-addr-icon">${addr.icon || '📍'}</div>
+            <div class="saved-addr-info">
+                <div class="saved-addr-type">${addr.label || 'Address'}</div>
+                <div class="saved-addr-text">${addr.address}</div>
+                <div class="saved-addr-actions">
+                    <div class="saved-addr-action" onclick="useSavedAddress(${index})">Select</div>
+                    <div class="saved-addr-action" style="color:#ff4757;" onclick="deleteSavedAddress(${index})">Delete</div>
+                </div>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function saveCurrentLocationToAddresses() {
+    const addr = document.getElementById('selectedAddress').textContent;
+    if(addr && addr !== 'Select a location on the map') {
+        const label = prompt("Label this address (e.g., Home, Work):", "Home");
+        if(label) {
+            currentUser.savedAddresses.push({
+                label: label,
+                address: addr,
+                icon: label.toLowerCase() === 'home' ? '🏠' : (label.toLowerCase() === 'work' ? '🏢' : '📍')
+            });
+            saveUserProfile();
+            renderSavedAddresses();
+            showToast('Address saved!');
+        }
+    } else {
+        showToast('Please select a location on the map first');
+    }
+}
+
+function deleteSavedAddress(index) {
+    if(confirm('Delete this address?')) {
+        currentUser.savedAddresses.splice(index, 1);
+        saveUserProfile();
+        renderSavedAddresses();
+    }
+}
+
+function useSavedAddress(index) {
+    const addr = currentUser.savedAddresses[index];
+    document.getElementById('selectedAddressText').textContent = addr.address;
+    document.getElementById('selectedAddress').textContent = addr.address;
+    // In a real app we would save coords too if stored
+    saveUserSettings();
+    document.getElementById('savedAddressScreen').classList.remove('active');
+    showToast(`Selected ${addr.label}`);
 }
 
 /* Auto-scroll function for horizontal lists */
@@ -7995,6 +8864,12 @@ function renderAdminTabContent(tabName) {
             break;
         case 'analytics':
             renderAdminAnalytics();
+            break;
+        case 'config':
+            renderAdminConfig();
+            break;
+        case 'accounts':
+            renderAdminAccounts();
             break;
         case 'livemap':
             renderAdminLiveMap();
@@ -8156,7 +9031,8 @@ function renderAdminOrdersList(status) {
                 <td style="font-weight:bold;">UGX ${order.total.toFixed(2)}</td>
                 <td><span style="background:${statusColors[order.status] || '#999'}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${statusDisplay}</span></td>
                 <td onclick="event.stopPropagation()">
-                    ${order.status === 'pending' ? `<button onclick="updateAdminOrderStatus('${order.id}', 'processing')" class="action-btn-table" style="background:#FFBF42; color:#333;">Submit to Vendor</button><button onclick="updateAdminOrderStatus('${order.id}', 'cancelled')" class="action-btn-table" style="background:#f44336; color:#fff;">Reject</button>` : ''}
+                    ${order.status === 'pending' ? `<button onclick="updateOrderStatus('${order.id}', 'confirmed', 'Order Confirmed', '#2196f3')" class="action-btn-table" style="background:#2196f3; color:#fff;">Confirm</button><button onclick="updateOrderStatus('${order.id}', 'cancelled', 'Order Rejected', '#f44336')" class="action-btn-table" style="background:#f44336; color:#fff;">Reject</button>` : ''}
+                    ${order.status === 'confirmed' ? `<button onclick="adminSubmitOrderToVendor('${order.id}')" class="action-btn-table" style="background:#FFBF42; color:#333;">Submit to Vendor</button>` : ''}
                     ${['ready', 'rider_cancelled'].includes(order.status) ? `<button onclick="openAssignRiderModal('${order.id}')" class="action-btn-table" style="background:#019E81; color:#fff;">Assign Rider</button>` : ''}
                     <button onclick="viewOrderPath('${order.id}')" class="action-btn-table" style="background:#607d8b; color:#fff;">Map History</button>
                 </td>
@@ -8221,10 +9097,9 @@ function renderAdminRestaurants() {
                 <table class="admin-table">
                     <thead>
                         <tr>
-                            <th onclick="sortAdminTable('restaurants', 'name')">Name ↕</th>
-                            <th onclick="sortAdminTable('restaurants', 'category')">Category ↕</th>
-                            <th onclick="sortAdminTable('restaurants', 'orders')">Orders ↕</th>
-                            <th onclick="sortAdminTable('restaurants', 'revenue')">Revenue ↕</th>
+                            <th onclick="sortAdminTable('restaurants', 'name')">Restaurant</th>
+                            <th>Contact</th>
+                            <th>Stats</th>
                             <th onclick="sortAdminTable('restaurants', 'status')">Status ↕</th>
                             <th>Actions</th>
                         </tr>
@@ -8271,12 +9146,12 @@ function renderAdminRestaurantsList() {
     
     return filteredRestaurants.map(restaurant => `
         <tr>
-            <td><div style="font-weight:bold;">${restaurant.name}</div><div style="font-size:0.8em; color:#666;">⭐ ${restaurant.rating}</div></td>
-            <td>${restaurant.category}</td>
-            <td>${restaurant.orders}</td>
-            <td>UGX ${restaurant.revenue.toLocaleString()}</td>
+            <td><div style="font-weight:bold;">${restaurant.name}</div><div style="font-size:0.8em; color:#666;">${restaurant.category}</div></td>
+            <td><div style="font-weight:600;">${restaurant.phone || 'N/A'}</div><div style="font-size:0.8em; color:#666;">${restaurant.owner || 'No owner'}</div></td>
+            <td><div style="font-weight:600;">${restaurant.orders} orders</div><div style="font-size:0.8em;">UGX ${restaurant.revenue.toLocaleString()}</div></td>
             <td><span style="background:${restaurant.status === 'active' ? '#4caf50' : '#f44336'}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${restaurant.status.toUpperCase()}</span></td>
             <td>
+                <button onclick="verifyCustomerWhatsApp('${restaurant.phone}')" class="action-btn-table" style="background:#25D366; color:#fff;">Verify WA</button>
                 <button onclick="toggleRestaurantStatus(${restaurant.id})" class="action-btn-table" style="background:#2196f3; color:#fff;">${restaurant.status === 'active' ? 'Deactivate' : 'Activate'}</button>
                 <button onclick="editRestaurant(${restaurant.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
                 <button onclick="deleteRestaurant(${restaurant.id})" class="action-btn-table" style="background:#f44336; color:#fff;">Delete</button>
@@ -8288,9 +9163,10 @@ function renderAdminRestaurantsList() {
 function toggleRestaurantStatus(restaurantId) {
     const restaurant = adminRestaurants.find(r => r.id === restaurantId);
     if (restaurant) {
-        restaurant.status = restaurant.status === 'active' ? 'inactive' : 'active';
-        showToast(`Restaurant ${restaurant.name} ${restaurant.status === 'active' ? 'activated' : 'deactivated'}`);
-        renderAdminRestaurants();
+        const newStatus = restaurant.status === 'active' ? 'inactive' : 'active';
+        // Firebase Update
+        if(db) db.collection('restaurants').doc(restaurantId.toString()).update({ status: newStatus });
+        showToast(`Updating status...`);
     }
 }
 
@@ -8300,11 +9176,11 @@ function editRestaurant(restaurantId) {
 
 function deleteRestaurant(restaurantId) {
     if(confirm('Are you sure you want to delete this restaurant? This cannot be undone.')) {
-        adminRestaurants = adminRestaurants.filter(r => r.id !== restaurantId);
-        // Persist to local storage
-        localStorage.setItem('kirya_restaurants', JSON.stringify(adminRestaurants));
-        renderAdminRestaurants();
-        showToast('Restaurant deleted successfully');
+        if(db) {
+            db.collection('restaurants').doc(restaurantId.toString()).delete()
+                .then(() => showToast('Restaurant deleted from Database'))
+                .catch(e => showToast('Error deleting: ' + e.message));
+        }
     }
 }
 
@@ -8316,6 +9192,7 @@ function renderAdminRiders() {
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
                 <h3 style="margin:0;">🚴‍♂️ Riders Management</h3>
                 <div style="display:flex; gap:10px;">
+                    <button onclick="adminBroadcastToRiders()" style="padding:8px 12px; background:#FFBF42; color:#333; border:none; border-radius:6px; cursor:pointer; font-size:0.9em; display:flex; align-items:center; gap:5px;">📢 Broadcast</button>
                     <button onclick="openAdminModal('rider')" style="padding:8px 12px; background:#019E81; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:0.9em; display:flex; align-items:center; gap:5px;">➕ Add Rider</button>
                     <button onclick="exportAdminData('riders')" style="padding:8px 12px; background:#333; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:0.9em; display:flex; align-items:center; gap:5px;">📥 Export CSV</button>
                 </div>
@@ -8334,6 +9211,7 @@ function renderAdminRiders() {
                     <thead>
                         <tr>
                             <th onclick="sortAdminTable('riders', 'name')">Name ↕</th>
+                            <th onclick="sortAdminTable('riders', 'phone')">Contact ↕</th>
                             <th onclick="sortAdminTable('riders', 'vehicle')">Vehicle ↕</th>
                             <th onclick="sortAdminTable('riders', 'earnings')">Earnings ↕</th>
                             <th onclick="sortAdminTable('riders', 'status')" style="width:100px;">Status ↕</th>
@@ -8370,12 +9248,14 @@ function renderAdminRidersList() {
         
         return `
             <tr>
-                <td><div style="font-weight:bold;">${rider.name}</div><div style="font-size:0.8em; color:#666;">${rider.phone}</div></td>
+                <td><div style="font-weight:bold;">${rider.name}</div></td>
+                <td><div style="font-weight:600;">${rider.phone}</div></td>
                 <td>${rider.vehicle}<br><span style="font-size:0.8em; color:#888;">${rider.license}</span></td>
                 <td><div style="font-weight:600;">${rider.completedOrders} orders</div><div style="font-size:0.8em;">UGX ${rider.earnings.toLocaleString()}</div></td>
                 <td><span style="background:${statusColors[rider.status]}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${rider.status.toUpperCase()}</span></td>
                 <td style="font-size:0.85em; color:#666;">${rider.lastSeen || 'N/A'}</td>
                 <td>
+                    <button onclick="verifyCustomerWhatsApp('${rider.phone}')" class="action-btn-table" style="background:#25D366; color:#fff;">Verify WA</button>
                     <button onclick="contactRider('${rider.phone}')" class="action-btn-table" style="background:#2196f3; color:#fff;">Call</button>
                     <button onclick="chatWithRider('${rider.id}', '${rider.name}')" class="action-btn-table" style="background:#019E81; color:#fff;">Chat</button>
                     <button onclick="editRider(${rider.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
@@ -8402,6 +9282,35 @@ function editRider(riderId) {
     openAdminModal('rider', riderId);
 }
 
+function adminBroadcastToRiders() {
+    document.getElementById('adminBroadcastText').value = '';
+    document.getElementById('adminBroadcastModal').style.display = 'flex';
+}
+
+function closeAdminBroadcastModal() {
+    document.getElementById('adminBroadcastModal').style.display = 'none';
+}
+
+function sendAdminBroadcast() {
+    const msg = document.getElementById('adminBroadcastText').value.trim();
+    if (msg) {
+        const notif = {
+            type: 'info',
+            title: 'Admin Broadcast',
+            body: msg,
+            time: 'Just now',
+            unread: true,
+            role: 'rider'
+        };
+        notifications.unshift(notif);
+        saveNotifications();
+        showToast('Broadcast sent to riders');
+        closeAdminBroadcastModal();
+    } else {
+        showToast('Please enter a message');
+    }
+}
+
 function renderAdminCustomers() {
     const content = document.getElementById('admin-customers');
     if (!content) return;
@@ -8420,15 +9329,16 @@ function renderAdminCustomers() {
             <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
                 <button onclick="filterAdminCustomers('all')" style="padding:8px 16px; border:1px solid #ddd; background:#fff; border-radius:6px; cursor:pointer;">All (${adminCustomers.length})</button>
                 <button onclick="filterAdminCustomers('active')" style="padding:8px 16px; border:1px solid #ddd; background:#fff; border-radius:6px; cursor:pointer;">Active (${adminCustomers.filter(c => c.status === 'active').length})</button>
+                <button onclick="filterAdminCustomers('pending_verification')" style="padding:8px 16px; border:1px solid #ddd; background:#fff; border-radius:6px; cursor:pointer;">Pending (${adminCustomers.filter(c => c.status === 'pending_verification').length})</button>
                 <button onclick="filterAdminCustomers('inactive')" style="padding:8px 16px; border:1px solid #ddd; background:#fff; border-radius:6px; cursor:pointer;">Inactive (${adminCustomers.filter(c => c.status === 'inactive').length})</button>
             </div>
             <div id="adminCustomersList" style="max-height:500px; overflow:auto;">
                 <table class="admin-table">
                     <thead>
                         <tr>
-                            <th onclick="sortAdminTable('customers', 'name')">Name ↕</th>
-                            <th onclick="sortAdminTable('customers', 'totalSpent')">Spent ↕</th>
-                            <th onclick="sortAdminTable('customers', 'joined')">Joined ↕</th>
+                            <th onclick="sortAdminTable('customers', 'name')">Customer</th>
+                            <th>Contact</th>
+                            <th>Stats</th>
                             <th onclick="sortAdminTable('customers', 'status')">Status ↕</th>
                             <th>Actions</th>
                         </tr>
@@ -8459,16 +9369,37 @@ function renderAdminCustomersList() {
     
     return filteredCustomers.map(customer => `
         <tr>
-            <td><div style="font-weight:bold;">${customer.name}</div><div style="font-size:0.8em; color:#666;">${customer.orders} orders</div></td>
-            <td><div style="font-weight:600;">UGX ${customer.totalSpent.toLocaleString()}</div><div style="font-size:0.8em;">Last: ${customer.lastOrder}</div></td>
-            <td>${customer.joined}</td>
-            <td><span style="background:${customer.status === 'active' ? '#4caf50' : '#f44336'}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${customer.status.toUpperCase()}</span></td>
+            <td><div style="font-weight:bold;">${customer.name}</div><div style="font-size:0.8em; color:#666;">Joined: ${customer.joined}</div></td>
+            <td><div style="font-weight:600;">${customer.phone}</div><div style="font-size:0.8em; color:#666;">${customer.email || 'No email'}</div></td>
+            <td><div style="font-weight:600;">${customer.orders} orders</div><div style="font-size:0.8em;">UGX ${customer.totalSpent.toLocaleString()}</div></td>
+            <td><span style="background:${customer.status === 'active' ? '#4caf50' : (customer.status === 'pending_verification' ? '#FFBF42' : '#f44336')}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${customer.status === 'pending_verification' ? 'PENDING' : customer.status.toUpperCase()}</span></td>
             <td>
+                <button onclick="verifyCustomerWhatsApp('${customer.phone}')" class="action-btn-table" style="background:#25D366; color:#fff;">Verify WA</button>
+                ${customer.status === 'pending_verification' ? `<button onclick="approveCustomer(${customer.id})" class="action-btn-table" style="background:#4caf50; color:#fff;">Approve</button>` : ''}
                 <button onclick="contactCustomer('${customer.phone}')" class="action-btn-table" style="background:#2196f3; color:#fff;">Call</button>
                 <button onclick="editCustomer(${customer.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
             </td>
         </tr>
     `).join('');
+}
+
+function verifyCustomerWhatsApp(phone) {
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    window.open(`https://wa.me/${cleanPhone}`, '_blank');
+}
+
+function approveCustomer(id) {
+    const customer = adminCustomers.find(c => c.id === id);
+    if (customer) {
+        customer.status = 'active';
+        showToast(`${customer.name} marked as Active`);
+        // Refresh list
+        if(db) {
+            db.collection('customers').doc(customer.id.toString()).update({ status: 'active' });
+        }
+        const listContainer = document.getElementById('adminCustomersList');
+        if (listContainer) listContainer.innerHTML = renderAdminCustomersList();
+    }
 }
 
 function contactCustomer(phone) {
@@ -8755,9 +9686,80 @@ function viewSupportTicket(ticketId) {
     }
 }
 
+function renderAdminAccounts() {
+    const content = document.getElementById('admin-accounts');
+    if (!content) return;
+    
+    const listHtml = adminAccounts.map(acc => `
+        <tr>
+            <td><div style="font-weight:bold;">${acc.name}</div><div style="font-size:0.8em; color:#666;">${acc.role}</div></td>
+            <td><div style="font-weight:bold;">${acc.phone}</div><div style="font-size:0.8em; color:#666;">${acc.email}</div></td>
+            <td>${acc.lastLogin}</td>
+            <td>
+                <button onclick="verifyCustomerWhatsApp('${acc.phone}')" class="action-btn-table" style="background:#25D366; color:#fff;">Verify WA</button>
+                <button class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
+            </td>
+        </tr>
+    `).join('');
+
+    content.innerHTML = `
+        <div class="dashboard-card">
+            <h3 style="margin-bottom:15px;">🔐 Admin Accounts</h3>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Name & Role</th>
+                        <th>Contact</th>
+                        <th>Last Login</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${listHtml}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function renderAdminConfig() {
+    const content = document.getElementById('admin-config');
+    if (!content) return;
+    
+    const isConnected = typeof firebase !== 'undefined' && firebase.apps.length > 0;
+    
+    content.innerHTML = `
+        <div class="dashboard-card">
+            <h3 style="margin-bottom:15px;">⚙️ Configuration</h3>
+            <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee; margin-bottom:20px;">
+                <h4 style="margin-bottom:10px;">🔥 Firebase Connection</h4>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                    <div style="width:10px; height:10px; border-radius:50%; background:${isConnected ? '#4caf50' : '#f44336'};"></div>
+                    <div style="font-weight:bold; color:#333;">${isConnected ? 'Connected' : 'Not Connected'}</div>
+                </div>
+                <div style="font-family:monospace; background:#333; color:#fff; padding:10px; border-radius:6px; font-size:0.8em; margin-bottom:10px;">
+                    Project ID: ${firebaseConfig.projectId || 'Unknown'}<br>
+                    Auth Domain: ${firebaseConfig.authDomain || 'Unknown'}
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="initFirebase()" style="padding:10px 15px; background:#019E81; color:#fff; border:none; border-radius:6px; cursor:pointer;">${isConnected ? 'Reconnect' : 'Connect'}</button>
+                </div>
+            </div>
+            <div class="dashboard-card">
+                <h4 style="margin-bottom:10px;">📂 Data Migration</h4>
+                <p style="font-size:0.9em; color:#666; margin-bottom:10px;">Upload current local sample data (Orders, Riders, Restaurants) to Firebase Firestore.</p>
+                <button onclick="seedDatabase()" style="padding:12px 20px; background:#FFBF42; color:#333; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">⬆️ Upload Sample Data to Firebase</button>
+            </div>
+        </div>
+    `;
+}
+
 function renderAdminAnalytics() {
     const content = document.getElementById('admin-analytics');
     if (!content) return;
+    
+    const totalTips = adminOrders.reduce((sum, o) => sum + (o.tip || 0), 0);
+
     content.innerHTML = `
         <div style="overflow-y:auto; height:100%; padding-bottom:80px;">
         <div class="dashboard-card">
@@ -8768,6 +9770,7 @@ function renderAdminAnalytics() {
                     <span style="color:#666;">to</span>
                     <input type="date" id="analyticsEnd" style="padding:6px; border:1px solid #ddd; border-radius:6px;">
                     <button onclick="updateAdminAnalyticsDate()" style="padding:6px 12px; background:#019E81; color:#fff; border:none; border-radius:6px; cursor:pointer;">Filter</button>
+                    <button onclick="exportTipReportPDF()" style="padding:6px 12px; background:#FFBF42; color:#333; border:none; border-radius:6px; cursor:pointer;">💰 Tip Report</button>
                     <button onclick="exportAnalyticsPDF()" style="padding:6px 12px; background:#333; color:#fff; border:none; border-radius:6px; cursor:pointer;">📄 Export Report</button>
                 </div>
             </div>
@@ -8788,6 +9791,10 @@ function renderAdminAnalytics() {
                     <div style="font-size:2em; font-weight:900; color:#f44336; margin-bottom:5px;">${adminAnalytics.totalRiders}</div>
                     <div style="font-size:0.9em; color:#666;">Active Riders</div>
                 </div>
+                <div style="padding:20px; background:#e3f2fd; border-radius:12px; text-align:center;">
+                    <div style="font-size:2em; font-weight:900; color:#2196f3; margin-bottom:5px;">UGX ${totalTips.toLocaleString()}</div>
+                    <div style="font-size:0.9em; color:#666;">Total Tips</div>
+                </div>
             </div>
             
             <!-- Additional Stats Row -->
@@ -8805,9 +9812,84 @@ function renderAdminAnalytics() {
                     <div><div style="font-weight:bold; font-size:1.1em;">85%</div><div style="font-size:0.8em; color:#666;">Retention Rate</div></div>
                 </div>
             </div>
+            
+            <!-- Analytics Charts Grid -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px; margin-bottom:25px;">
+                <div class="dashboard-card" style="margin:0;">
+                    <h4 style="margin-bottom:15px; font-weight:700;">Revenue Overview</h4>
+                    <div style="height:300px; width:100%;"><canvas id="analyticsRevenueChart"></canvas></div>
+                </div>
+                <div class="dashboard-card" style="margin:0;">
+                    <h4 style="margin-bottom:15px; font-weight:700;">Sales by Location</h4>
+                    <div style="height:300px; width:100%;"><canvas id="analyticsLocationChart"></canvas></div>
+                </div>
+            </div>
+            
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
+                <div class="dashboard-card" style="margin:0;">
+                    <h4 style="margin-bottom:15px; font-weight:700;">Peak Ordering Hours</h4>
+                    <div style="height:300px; width:100%;"><canvas id="analyticsHourlyChart"></canvas></div>
+                </div>
+                <div class="dashboard-card" style="margin:0;">
+                    <h4 style="margin-bottom:15px; font-weight:700;">Loyalty Program</h4>
+                    <div style="height:300px; width:100%;"><canvas id="analyticsLoyaltyChart"></canvas></div>
+                </div>
+            </div>
         </div>
         </div>
     `;
+    setTimeout(initAdminCharts, 100);
+}
+
+window.exportTipReportPDF = async function() {
+    // Ensure jspdf is loaded
+    if (!window.jspdf) { showToast("PDF Library loading..."); return; }
+    
+    const { jsPDF } = window.jspdf;
+    
+    // Create a temporary container for the report
+    const reportDiv = document.createElement('div');
+    reportDiv.style.cssText = 'position:fixed; top:-9999px; left:0; width:800px; padding:40px; background:#fff; font-family:sans-serif; color:#333;';
+    
+    // Generate Report Data (Aggregated by Rider)
+    const tipsByRider = {};
+    adminOrders.forEach(o => {
+        if (o.rider && o.tip > 0) {
+            if (!tipsByRider[o.rider]) tipsByRider[o.rider] = 0;
+            tipsByRider[o.rider] += o.tip;
+        }
+    });
+    
+    let rows = Object.entries(tipsByRider).map(([rider, amount]) => 
+        `<tr style="border-bottom:1px solid #eee;"><td style="padding:10px;">${rider}</td><td style="padding:10px; text-align:right;">UGX ${amount.toLocaleString()}</td></tr>`
+    ).join('');
+
+    if(rows === '') rows = '<tr><td colspan="2" style="padding:15px; text-align:center;">No tips recorded for this period.</td></tr>';
+
+    reportDiv.innerHTML = `
+        <h1 style="color:#019E81; text-align:center; margin-bottom:10px;">Monthly Tip Report</h1>
+        <p style="text-align:center; color:#666; margin-bottom:30px;">Generated on ${new Date().toLocaleDateString()}</p>
+        <table style="width:100%; border-collapse:collapse;">
+            <thead><tr style="background:#f9f9f9; text-align:left;"><th style="padding:10px;">Rider Name</th><th style="padding:10px; text-align:right;">Total Tips</th></tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
+        <div style="margin-top:30px; text-align:right; font-weight:bold; font-size:1.2em;">Total Distributed: UGX ${Object.values(tipsByRider).reduce((a,b)=>a+b,0).toLocaleString()}</div>
+    `;
+
+    document.body.appendChild(reportDiv);
+    
+    try {
+        const canvas = await html2canvas(reportDiv);
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, 0); // width 190mm, auto height
+        pdf.save(`Tip_Report_${new Date().toISOString().slice(0,7)}.pdf`);
+        showToast('Tip Report downloaded');
+    } catch(e) {
+        console.error(e);
+        showToast('Failed to generate report');
+    } finally {
+        document.body.removeChild(reportDiv);
+    }
 }
 
 function updateAdminAnalyticsDate() {
@@ -9125,6 +10207,29 @@ function initAdminLiveMap() {
         }).bindPopup(`<b>${c.name}</b><br>Total Spent: ${c.totalSpent}`);
         adminLayers.customers.addLayer(m);
     });
+    
+    // --- RTDB LISTENER START ---
+    if (rtdb) {
+        rtdb.ref('locations/riders').on('value', (snapshot) => {
+            const riders = snapshot.val();
+            if (!riders) return;
+            
+            // Clear static mock riders if we have live data
+            adminLayers.riders.clearLayers();
+            
+            Object.keys(riders).forEach(key => {
+                const r = riders[key];
+                // Check if stale (e.g. > 5 mins)
+                // const isStale = (Date.now() - r.timestamp) > 300000;
+                
+                const m = L.marker([r.lat, r.lng], {
+                    icon: L.divIcon({ html: '<div style="font-size: 3rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">🚴</div>', className: 'delivery-pin-icon', iconSize: [60, 60], iconAnchor: [30, 30] })
+                }).bindPopup(`<b>${r.name || 'Rider'}</b><br>Status: ${r.status}`);
+                adminLayers.riders.addLayer(m);
+            });
+        });
+    }
+    // --- RTDB LISTENER END ---
 
     // Default visibility: Customers hidden
     if(adminMap.hasLayer(adminLayers.customers)) adminMap.removeLayer(adminLayers.customers);
@@ -9163,8 +10268,40 @@ function toggleAdminHeatmap(checkbox) {
     }
 }
 
+function toggleAdminReadyOnly(checkbox) {
+    const isReadyOnly = checkbox.checked;
+    if(isReadyOnly && document.getElementById('toggleActiveOnly')) document.getElementById('toggleActiveOnly').checked = false;
+
+    // Clear all layers
+    adminLayers.riders.clearLayers();
+    adminLayers.vendors.clearLayers();
+    adminLayers.customers.clearLayers();
+
+    if (isReadyOnly) {
+        // Show only Ready orders
+        if (window.allOrders) {
+            window.allOrders.forEach(order => {
+                if (order.status === 'ready') {
+                    // Add Restaurant Marker for ready order
+                    if(order.restaurantLat && order.restaurantLng) {
+                        const m = L.marker([order.restaurantLat, order.restaurantLng], {
+                            icon: L.divIcon({ html: '<div style="font-size: 2.2rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">🥡</div>', className: 'delivery-pin-icon', iconSize: [40, 40], iconAnchor: [20, 20] })
+                        }).bindPopup(`<b>Ready for Pickup</b><br>Order: ${order.id}<br>${order.restaurant}`);
+                        adminLayers.vendors.addLayer(m);
+                    }
+                }
+            });
+        }
+        if(!adminMap.hasLayer(adminLayers.vendors)) adminMap.addLayer(adminLayers.vendors);
+    } else {
+        // If turning off and active isn't on, reset to default (random view)
+        if(!document.getElementById('toggleActiveOnly').checked) toggleAdminMapActiveOnly({checked: false});
+    }
+}
+
 function toggleAdminMapActiveOnly(checkbox) {
     const isActiveOnly = checkbox.checked;
+    if(isActiveOnly && document.getElementById('toggleReadyOnly')) document.getElementById('toggleReadyOnly').checked = false;
     
     // Clear all layers first
     adminLayers.riders.clearLayers();
@@ -9184,9 +10321,12 @@ function toggleAdminMapActiveOnly(checkbox) {
                         adminLayers.riders.addLayer(m);
                     }
                     // Add Customer
+                    const assignBtn = (order.status === 'confirmed' || order.status === 'ready' || order.status === 'processing') 
+                        ? `<br><button onclick="openAssignRiderModal('${order.id}')" style="margin-top:5px; background:#019E81; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; width:100%; font-weight:bold;">Assign Rider</button>` 
+                        : '';
                     const mc = L.marker([order.userLat, order.userLng], {
                         icon: L.divIcon({ html: '👤', className: 'delivery-pin-icon', iconSize: [20, 20], iconAnchor: [10, 10] })
-                    }).bindPopup(`<b>${order.customerName}</b><br>Order: ${order.id}`);
+                    }).bindPopup(`<b>${order.customerName}</b><br>Order: ${order.id}${assignBtn}`);
                     adminLayers.customers.addLayer(mc);
                 }
             });
@@ -9671,7 +10811,6 @@ function closeAdminAddModal() {
 function saveAdminData(type) {
     if (type === 'restaurant') {
         const data = {
-            id: editingAdminId || (Math.max(0, ...adminRestaurants.map(r => r.id)) + 1),
             name: document.getElementById('addRestaurantName').value,
             category: document.getElementById('addRestaurantCategory').value,
             rating: parseFloat(document.getElementById('addRestaurantRating').value) || 0,
@@ -9685,17 +10824,17 @@ function saveAdminData(type) {
         };
         if (!data.name) { showToast('Restaurant name is required.'); return; }
         
-        if(editingAdminId) {
-            const idx = adminRestaurants.findIndex(r => r.id === editingAdminId);
-            if(idx !== -1) adminRestaurants[idx] = data;
+        if(db) {
+            if(editingAdminId) {
+                db.collection('restaurants').doc(editingAdminId.toString()).update(data);
+            } else {
+                db.collection('restaurants').add(data); // Auto ID
+            }
         } else {
-            adminRestaurants.push(data);
+            // Fallback offline
+            adminRestaurants.push({...data, id: Date.now()});
+            renderAdminRestaurants();
         }
-        // Save to local storage
-        localStorage.setItem('kirya_restaurants', JSON.stringify(adminRestaurants));
-        
-        renderAdminRestaurants();
-        filterAdminRestaurants(adminFilters.restaurants.status);
     } else if (type === 'rider') {
         const data = {
             id: editingAdminId || (Math.max(0, ...adminRiders.map(r => r.id)) + 1),
@@ -9713,17 +10852,13 @@ function saveAdminData(type) {
         if (!data.name) { showToast('Rider name is required.'); return; }
         
         if(editingAdminId) {
-            const idx = adminRiders.findIndex(r => r.id === editingAdminId);
-            if(idx !== -1) adminRiders[idx] = data;
+            if(db) db.collection('riders').doc(editingAdminId.toString()).update(data);
         } else {
-            adminRiders.push(data);
+            if(db) db.collection('riders').doc(data.id.toString()).set(data);
         }
-        
-        renderAdminRiders();
-        filterAdminRiders(adminFilters.riders.status);
+        if(!db) { adminRiders.push(data); renderAdminRiders(); } // Offline
     } else if (type === 'customer') {
         const data = {
-            id: editingAdminId || (Math.max(0, ...adminCustomers.map(c => c.id)) + 1),
             name: document.getElementById('addCustomerName').value,
             phone: document.getElementById('addCustomerPhone').value,
             email: document.getElementById('addCustomerEmail').value,
@@ -9737,14 +10872,11 @@ function saveAdminData(type) {
         if (!data.name) { showToast('Customer name is required.'); return; }
         
         if(editingAdminId) {
-            const idx = adminCustomers.findIndex(c => c.id === editingAdminId);
-            if(idx !== -1) adminCustomers[idx] = data;
+            if(db) db.collection('customers').doc(editingAdminId.toString()).update(data);
         } else {
-            adminCustomers.push(data);
+            if(db) db.collection('customers').add(data);
         }
-        
-        renderAdminCustomers();
-        filterAdminCustomers(adminFilters.customers.status);
+        if(!db) { adminCustomers.push(data); renderAdminCustomers(); } // Offline
     }
 
     showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} saved successfully!`);
@@ -10045,6 +11177,30 @@ function renderAdminLogs() {
     </div>
 </div>
 
+<div id="loginScreen">
+  <div class="login-logo">🚴‍♂️</div>
+  <div class="login-title">Welcome to Kirya</div>
+  <div class="login-subtitle">Delivery made simple. Sign in to continue.</div>
+  
+  <div class="login-form">
+    <div class="login-input-group">
+      <label class="login-label">Full Name</label>
+      <input type="text" id="loginName" class="login-input" placeholder="e.g. John Doe">
+    </div>
+    
+    <div class="login-input-group">
+      <label class="login-label">Phone Number</label>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" value="+971" class="login-input" style="width: 80px; text-align: center;" readonly>
+        <input type="tel" id="loginPhone" class="login-input" style="flex: 1;" placeholder="50 123 4567">
+      </div>
+    </div>
+
+    <button class="login-btn" onclick="handleLogin()">Start Ordering</button>
+  </div>
+  <!-- <div class="login-skip" onclick="skipLogin()">Continue as Guest</div> -->
+</div>
+
 <div id="adminAssignRiderModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:11000; align-items:center; justify-content:center;">
     <div style="background:#fff; padding:20px; border-radius:12px; width:90%; max-width:400px; max-height:80vh; display:flex; flex-direction:column; position:relative;">
         <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
@@ -10054,6 +11210,16 @@ function renderAdminLogs() {
         <div id="assignRiderList" style="overflow-y:auto;"></div>
     </div>
 </div>
+
+<div id="adminBroadcastModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:11000; align-items:center; justify-content:center;">
+    <div style="background:#fff; padding:25px; border-radius:12px; width:90%; max-width:500px; position:relative; box-shadow:0 4px 20px rgba(0,0,0,0.2);">
+        <div style="position:absolute; top:10px; right:15px; cursor:pointer; font-weight:bold; font-size:1.2em; color:#999;" onclick="closeAdminBroadcastModal()">✕</div>
+        <h3 style="margin-bottom:15px; color:#333;">📢 Broadcast Message</h3>
+        <textarea id="adminBroadcastText" style="width:100%; height:100px; padding:10px; border:1px solid #ddd; border-radius:8px; font-family:inherit; resize:vertical; font-size:1em;" placeholder="Type your message to all riders..."></textarea>
+        <button onclick="sendAdminBroadcast()" style="width:100%; padding:12px; background:#FFBF42; color:#333; border:none; border-radius:8px; font-weight:bold; margin-top:15px; cursor:pointer;">Send Broadcast</button>
+    </div>
+</div>
+
 <input type="file" id="importCsvInput" accept=".csv" style="display:none" onchange="handleRestaurantImport(event)">
 </body>
 </html>
