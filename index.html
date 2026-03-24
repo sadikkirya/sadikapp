@@ -96,6 +96,10 @@ nav {
   width: 40px;
   height: 40px;
 }
+#backBtn {
+  left: auto;
+  right: 8px;
+}
 #newHomeBackBtn:hover, #backBtn:hover { background-color: #f0f0f0; }
 #newHomeBackBtn:active, #backBtn:active { background-color: #e0e0e0; transform: scale(0.95); }
 #newHomeBackBtn { z-index: 1002; }
@@ -660,7 +664,7 @@ nav {
 #cartScreen .suggested-img-box { height: 80px; background: #f9f9f9; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 2.5em; position: relative; margin-bottom: 4px; }
 #cartScreen .suggested-name { font-weight: 700; font-size: 0.9em; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #cartScreen .suggested-price { font-size: 0.9em; color: #555; font-weight: 600; }
-#cartScreen .suggested-add-btn { position: absolute; bottom: 6px; right: 6px; width: 32px; height: 32px; background: #fff; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2em; color: #019E81; font-weight: bold; transition: background 0.2s, transform 0.2s; }
+#cartScreen .suggested-add-btn { position: absolute; bottom: 8px; right: 8px; width: 30px; height: 30px; background: #fff; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; color: black; font-weight: 600; transition: background 0.2s, transform 0.2s; }
 #cartScreen .suggested-add-btn:hover { background: #f0f0f0; }
 #cartScreen .suggested-add-btn:active { transform: scale(0.9); }
 
@@ -1303,13 +1307,10 @@ input:checked + .slider:before { transform: translateX(22px); }
   </div>
 
   <nav>
-    <div class="nav-item active">🏠<span>Home</span></div>
-    <div class="nav-item">🔍<span>Discover</span></div>
-    <div class="nav-item">🛒<span>Cart</span></div>
-    <div class="nav-item">👤<span>Profile</span></div>
-    <div class="nav-item">🚴‍♂️<span>Rider</span></div>
-    <div class="nav-item">🏪<span>Shop</span></div>
-    <div class="nav-item admin-nav-item">🛎️<span>Admin</span></div>
+    <div class="nav-item active" title="Home">🏠<span>Home</span></div>
+    <div class="nav-item" title="Discover">🔍<span>Discover</span></div>
+    <div class="nav-item" title="Cart">🛒<span>Cart</span></div>
+    <div class="nav-item" title="Profile">👤<span>Profile</span></div>
   </nav>
 </div>
 
@@ -2116,6 +2117,20 @@ input:checked + .slider:before { transform: translateX(22px); }
             </label>
         </div>
      </div>
+
+     <div class="profile-section-title">Security</div>
+     <div class="settings-group">
+        <div class="settings-item">
+            <div class="settings-info">
+                <div class="settings-label">Biometric Login</div>
+                <div class="settings-sub">Use fingerprint, face, or PIN to log in</div>
+            </div>
+            <label class="cutlery-switch">
+                <input type="checkbox" id="settingBiometricToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+     </div>
   </div>
 </div>
 
@@ -2411,7 +2426,6 @@ input:checked + .slider:before { transform: translateX(22px); }
   
   <div class="rider-overlay-ui">
     <div class="rider-header-controls">
-        <div class="generic-back-btn" id="riderBackBtn" style="background:#fff; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,0.1);">⬅️</div>
         <div class="header-bell-btn" style="background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-right: 15px;" onclick="openNotifications()">🔔<span class="header-bell-dot"></span></div>
         <div id="riderStatusToggle" class="rider-status-badge offline" style="position:relative;">
             <span class="status-dot" style="width:10px; height:10px; background:#ff4757; border-radius:50%;"></span>
@@ -2614,7 +2628,6 @@ input:checked + .slider:before { transform: translateX(22px); }
     <!-- Main Content -->
     <div class="admin-main-content">
       <div class="admin-top-bar">
-        <div class="generic-back-btn" onclick="document.getElementById('adminScreen').classList.remove('active')">⬅️</div>
         <div class="generic-title" id="adminTabTitle">Dashboard</div>
         <div class="header-bell-btn" onclick="openNotifications()">🔔<span class="header-bell-dot"></span></div>
       </div>
@@ -2792,15 +2805,13 @@ input:checked + .slider:before { transform: translateX(22px); }
 
 <div id="shopPortalScreen" class="generic-screen">
   <div class="generic-header">
-    <div class="generic-back-btn" onclick="document.getElementById('shopPortalScreen').classList.remove('active')">⬅️</div>
-    <div class="generic-title">Merchant Portal</div>
     <div class="header-bell-btn" onclick="openNotifications()">🔔<span class="header-bell-dot"></span></div>
+    <button title="Close Store" style="margin-left: auto; padding: 8px 12px; background:#ff4757; color:white; border:none; border-radius:8px; font-weight:bold; cursor: pointer; font-size: 0.8em;">Close Store</button>
+    <button title="Log Out" onclick="handleLogout()" style="padding: 8px 12px; background:#333; color:white; border:none; border-radius:8px; font-weight:bold; cursor: pointer; font-size: 0.8em;">🚪 Log Out</button>
   </div>
   <div class="generic-content">
     <div class="dashboard-card">
       <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 10px;">Store Status: 🟢 Open</div>
-      <button style="width:100%; padding:10px; background:#ff4757; color:white; border:none; border-radius:8px; font-weight:bold;">Close Store</button>
-      <button onclick="handleLogout()" style="width:100%; margin-top:10px; padding:10px; background:#333; color:white; border:none; border-radius:8px; font-weight:bold;">🚪 Log Out</button>
     </div>
     <div class="dashboard-card">
         <h3 style="margin-bottom: 20px; font-weight: 800;">Analytics</h3>
@@ -2899,6 +2910,7 @@ let map, marker;
 let cart = [];
 let appReady = false;
 
+
 // --- CONFIGURATION ---
 const OSRM_SERVER_URL = "https://router.project-osrm.org"; // REPLACE WITH YOUR PRIVATE OSRM URL
 
@@ -2908,7 +2920,8 @@ let currentUser = {
     phone: '',
     points: 500, // Welcome bonus
     walletBalance: 0,
-    favorites: [], // Stores restaurant names
+    favorites: [], // Stores restaurant names,
+    rememberMe: true,
     savedAddresses: [],
     orders: [],
     cart: [],
@@ -3238,7 +3251,7 @@ function updateProfileUI() {
 // Initialize User
 function loadUserProfile() {
     try {
-        const storedProfile = localStorage.getItem('kirya_user_profile');
+        const storedProfile = localStorage.getItem('kirya_user_profile') || sessionStorage.getItem('kirya_user_profile');
         if (storedProfile) {
             const parsed = JSON.parse(storedProfile);
             // Merge to ensure structure integrity if schema changes
@@ -3295,7 +3308,13 @@ function saveUserProfile(syncToDb = true) {
     // currentUser.settings is updated via saveUserSettings
     // currentUser.orders is updated via placeOrder logic
     
-    localStorage.setItem('kirya_user_profile', JSON.stringify(currentUser));
+    if (currentUser.rememberMe) {
+        localStorage.setItem('kirya_user_profile', JSON.stringify(currentUser));
+        sessionStorage.removeItem('kirya_user_profile');
+    } else {
+        sessionStorage.setItem('kirya_user_profile', JSON.stringify(currentUser));
+        localStorage.removeItem('kirya_user_profile');
+    }
     
     // 3. PUSH LOCAL CHANGES TO DATABASE
     if (syncToDb && db && currentUser.id && !currentUser.isGuest) {
@@ -3365,11 +3384,13 @@ async function handleLogin() {
                 if(data.status === 'pending_verification') {
                     showToast("⏳ Account pending verification. Please wait for Admin...");
                     currentUser = { ...currentUser, ...data, id: doc.id, isGuest: false };
+                    currentUser.rememberMe = true;
                     setupUserProfileListener(doc.id);
                     return; // STOP: Do not enter app
                 }
                 
                 currentUser = { ...currentUser, ...data, id: doc.id, isGuest: false };
+                currentUser.rememberMe = true;
                 showToast(`Welcome back, ${data.name}!`);
                 setupUserProfileListener(doc.id);
                 proceedToHome();
@@ -3390,6 +3411,7 @@ async function handleLogin() {
                 };
                 const docRef = await db.collection('customers').add(newCustomer);
                 currentUser = { ...currentUser, ...newCustomer, id: docRef.id, isGuest: false };
+                currentUser.rememberMe = true;
                 
                 showToast("✅ Credentials Submitted! Waiting for Verification...");
                 
@@ -3414,6 +3436,7 @@ async function handleLogin() {
         currentUser.name = name;
         currentUser.phone = formattedPhone;
         currentUser.isGuest = false;
+        currentUser.rememberMe = true;
         proceedToHome();
     }
 }
@@ -3439,6 +3462,7 @@ function saveUserSettings() {
             addressFull: document.getElementById('selectedAddress').textContent,
             push: document.getElementById('settingPushToggle')?.checked,
             loc: document.getElementById('settingLocToggle')?.checked,
+        biometric: document.getElementById('settingBiometricToggle')?.checked,
             allergyNotes: allergyNotes
         };
         if (typeof marker !== 'undefined' && marker) {
@@ -3688,6 +3712,7 @@ function handleLogout() {
     document.getElementById('logoutModal').style.display = 'flex';
 }
 
+
 function confirmLogout() {
     // Clear User Data
     localStorage.removeItem('kirya_user_profile');
@@ -3695,6 +3720,7 @@ function confirmLogout() {
     localStorage.removeItem('kirya_user_settings');
     localStorage.removeItem('kirya_last_screen');
     localStorage.removeItem('kirya_notifications');
+    sessionStorage.removeItem('kirya_user_profile'); // Also clear session storage
     
     // Reset variables
     currentUser = { name: '', phone: '', points: 500, walletBalance: 0, favorites: [], savedAddresses: [], isGuest: true };
@@ -3769,6 +3795,7 @@ function startApp() {
             const s = currentUser.settings;
             if(s.push !== undefined && document.getElementById('settingPushToggle')) document.getElementById('settingPushToggle').checked = s.push;
             if(s.loc !== undefined && document.getElementById('settingLocToggle')) document.getElementById('settingLocToggle').checked = s.loc;
+            if(s.biometric !== undefined && document.getElementById('settingBiometricToggle')) document.getElementById('settingBiometricToggle').checked = s.biometric;
             
             const catAddr = document.getElementById('catAddressText');
             if(catAddr && s.address) catAddr.textContent = s.address;
@@ -5155,19 +5182,20 @@ function updateDishDetailTotal() {
     const quantityEl = dishDetailScreen.querySelector('.quantity-value-large');
     const addToCartBtn = dishDetailScreen.querySelector('.add-to-cart-large-btn');
 
-    const basePrice = parseFloat(priceEl.textContent);
+    const basePrice = parseFloat(priceEl.dataset.basePrice);
     const quantity = parseInt(quantityEl.textContent, 10);
 
     let addonsPrice = 0;
     const selectedAddons = dishDetailScreen.querySelectorAll('.addon-checkbox:checked');
     selectedAddons.forEach(checkbox => {
         const priceText = checkbox.closest('.addon-item').querySelector('.addon-price').dataset.price;
-        addonsPrice += parseFloat(priceText);
+        if (priceText) addonsPrice += parseFloat(priceText);
     });
 
     if (!isNaN(basePrice) && !isNaN(quantity)) {
         const total = (basePrice + addonsPrice) * quantity;
-        addToCartBtn.textContent = `Add to cart`;
+        priceEl.textContent = total.toFixed(2);
+        addToCartBtn.textContent = `Add to cart - UGX ${total.toFixed(2)}`;
     }
 }
 
@@ -5186,7 +5214,9 @@ function openDishDetail(itemCard) {
     // Populate the detail screen
     document.getElementById('dishDetailTitle').textContent = title;
     document.getElementById('dishDetailDesc').textContent = desc;
-    document.getElementById('dishDetailPrice').textContent = price;
+    const priceEl = document.getElementById('dishDetailPrice');
+    priceEl.textContent = price;
+    priceEl.dataset.basePrice = price;
     document.getElementById('dishDetailImage').innerHTML = image;
 
     // Reset quantity
@@ -5258,7 +5288,8 @@ if (dishFooter) {
             }
         } else if (e.target.classList.contains('add-to-cart-large-btn')) {
             const title = document.getElementById('dishDetailTitle').textContent;
-            const basePrice = parseFloat(document.getElementById('dishDetailPrice').textContent);
+            const priceEl = document.getElementById('dishDetailPrice');
+            const basePrice = parseFloat(priceEl.dataset.basePrice);
             const currentQuantity = parseInt(quantityEl.textContent, 10);
             const image = document.getElementById('dishDetailImage').innerHTML;
             
@@ -7655,6 +7686,24 @@ document.getElementById('settingSoundToggle')?.addEventListener('change', (e) =>
 });
 if(document.getElementById('settingSoundToggle')) document.getElementById('settingSoundToggle').checked = settingSoundEnabled;
 
+document.getElementById('settingBiometricToggle')?.addEventListener('change', (e) => {
+    if (e.target.checked) {
+        // Placeholder for WebAuthn registration
+        if (navigator.credentials && navigator.credentials.create) {
+            showToast('Setting up biometric login... (demo)');
+            // In a real app, you would call navigator.credentials.create() here
+            // and send the result to your server to store the public key.
+            console.log("WebAuthn supported. Placeholder for registration.");
+        } else {
+            showToast('Biometric login is not supported on this browser.');
+            e.target.checked = false;
+        }
+    } else {
+        showToast('Biometric login disabled.');
+    }
+    saveUserSettings();
+});
+
 /* Rewards Screen Logic */
 const rewardsScreen = document.getElementById('rewardsScreen');
 const rewardsBackBtn = document.getElementById('rewardsBackBtn');
@@ -7760,10 +7809,11 @@ function setupGlobalNavigation() {
         if (!span) return;
         const text = span.textContent.trim();
         
-        if (['Cart', 'Rider', 'Admin', 'Shop', 'Profile'].includes(text)) {
+        if (['Cart', 'Rider', 'Admin', 'Shop', 'Profile', 'Discover'].includes(text)) {
             item.addEventListener('click', () => {
                 if (!appReady) return;
                 if (text === 'Cart') openCart();
+                else if (text === 'Discover') openContentSearch();
                 else if (text === 'Rider') openRider();
                 else if (text === 'Admin') openAdmin();
                 else if (text === 'Shop') openShopPortal();
