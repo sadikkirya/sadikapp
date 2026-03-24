@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#FFA500">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Kirya Delivery App</title>
 
-<link rel="manifest" href="manifest.json">
+<!-- <link rel="manifest" href="manifest.json"> -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -982,7 +983,7 @@ input:checked + .slider:before { transform: translateX(22px); }
 .generic-content { flex: 1; overflow-y: auto; padding: 20px; }
 
 /* Admin Screen with Sidebar */
-#adminScreen { flex-direction: row !important; font-size: 11px; }
+#adminScreen { flex-direction: row !important; font-size: 14px; }
 #adminScreen.active { transform: translateX(0); }
 
 .admin-layout { display: flex; width: 100%; height: 100%; }
@@ -2909,6 +2910,24 @@ input:checked + .slider:before { transform: translateX(22px); }
 let map, marker;
 let cart = [];
 let appReady = false;
+let adminChartUpdateInterval = null;
+let adminChartsInstances = {};
+let adminMap;
+let adminLayers = { riders: null, vendors: null, customers: null, zones: null, heatmap: null };
+let adminDraw = { active: false, center: null, circle: null };
+let adminOrderSearchTerm = '';
+let adminOrderCurrentStatus = 'all';
+let adminFilters = {
+    restaurants: { status: 'all', search: '' },
+    riders: { status: 'all', search: '' },
+    customers: { status: 'all', search: '' }
+};
+let sortState = {
+    orders: { col: null, asc: true },
+    restaurants: { col: null, asc: true },
+    riders: { col: null, asc: true },
+    customers: { col: null, asc: true }
+};
 
 
 // --- CONFIGURATION ---
@@ -2943,7 +2962,8 @@ const firebaseConfig = {
     storageBucket: "kirya-e2248.firebasestorage.app",
     messagingSenderId: "308339449512",
     appId: "1:308339449512:web:d2b1fb44c4ba36a505ac9d",
-    measurementId: "G-YZ3NFWDS89"
+    measurementId: "G-YZ3NFWDS89",
+    databaseURL: "https://kirya-e2248-default-rtdb.firebaseio.com"
 };
 
 let db = null;
@@ -3004,9 +3024,17 @@ function setupFirebaseListeners() {
 
     // Listen for Orders
     firebaseUnsubs.orders = db.collection("orders").onSnapshot((snapshot) => {
+        if (snapshot.empty && adminOrders.length > 0) {
+            console.log("Firebase 'orders' is empty. Retaining local mock data.");
+            if (document.getElementById('adminScreen').classList.contains('active')) {
+                renderAdminDashboard();
+                renderAdminOrders();
+            }
+            return;
+        }
         const orders = [];
         snapshot.forEach((doc) => {
-            orders.push(doc.data());
+            orders.push({ id: doc.id, ...doc.data() });
         });
         // Update global state
         window.allOrders = orders;
@@ -3015,7 +3043,7 @@ function setupFirebaseListeners() {
         // Refresh UI if needed
         if (document.getElementById('adminScreen').classList.contains('active')) {
             renderAdminOrders();
-            updateAdminDashboard();
+            renderAdminDashboard();
         }
         if (document.getElementById('riderScreen').classList.contains('active')) {
             updateRiderNearbyOrders();
@@ -3027,6 +3055,11 @@ function setupFirebaseListeners() {
 
     // Listen for Restaurants
     firebaseUnsubs.restaurants = db.collection("restaurants").onSnapshot((snapshot) => {
+        if (snapshot.empty && adminRestaurants.length > 0) {
+            console.log("Firebase 'restaurants' is empty. Retaining local mock data.");
+            if (document.getElementById('admin-restaurants').style.display !== 'none') renderAdminRestaurants();
+            return;
+        }
         const restaurants = [];
         snapshot.forEach((doc) => {
             restaurants.push({ id: doc.id, ...doc.data() });
@@ -3038,9 +3071,14 @@ function setupFirebaseListeners() {
 
     // Listen for Riders
     firebaseUnsubs.riders = db.collection("riders").onSnapshot((snapshot) => {
+        if (snapshot.empty && adminRiders.length > 0) {
+            console.log("Firebase 'riders' is empty. Retaining local mock data.");
+            if (document.getElementById('admin-riders').style.display !== 'none') renderAdminRiders();
+            return;
+        }
         const riders = [];
         snapshot.forEach((doc) => {
-            riders.push(doc.data());
+            riders.push({ id: doc.id, ...doc.data() });
         });
         adminRiders = riders;
         if (document.getElementById('admin-riders') && document.getElementById('admin-riders').style.display !== 'none') {
@@ -3053,6 +3091,11 @@ function setupFirebaseListeners() {
     
     // Listen for Customers
     firebaseUnsubs.customers = db.collection("customers").onSnapshot((snapshot) => {
+        if (snapshot.empty && adminCustomers.length > 0) {
+            console.log("Firebase 'customers' is empty. Retaining local mock data.");
+            if (document.getElementById('admin-customers').style.display !== 'none') renderAdminCustomers();
+            return;
+        }
         const customers = [];
         snapshot.forEach((doc) => {
             customers.push({ id: doc.id, ...doc.data() });
@@ -3068,21 +3111,24 @@ function setupFirebaseListeners() {
 
     // Listen for Promotions
     firebaseUnsubs.promotions = db.collection("promotions").onSnapshot((snapshot) => {
-        const items = []; snapshot.forEach(doc => items.push(doc.data()));
+        if (snapshot.empty && adminPromotions.length > 0) return;
+        const items = []; snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
         adminPromotions = items;
         if (document.getElementById('admin-promotions').style.display !== 'none') renderAdminPromotions();
     });
 
     // Listen for Payments
     firebaseUnsubs.payments = db.collection("payments").onSnapshot((snapshot) => {
-        const items = []; snapshot.forEach(doc => items.push(doc.data()));
+        if (snapshot.empty && adminPayments.length > 0) return;
+        const items = []; snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
         adminPayments = items;
         if (document.getElementById('admin-payments').style.display !== 'none') renderAdminPayments();
     });
 
     // Listen for Support Tickets
     firebaseUnsubs.support = db.collection("support").onSnapshot((snapshot) => {
-        const items = []; snapshot.forEach(doc => items.push(doc.data()));
+        if (snapshot.empty && adminSupportTickets.length > 0) return;
+        const items = []; snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
         adminSupportTickets = items;
         if (document.getElementById('admin-support').style.display !== 'none') renderAdminSupport();
         updateAdminSidebarBadges();
@@ -3090,14 +3136,16 @@ function setupFirebaseListeners() {
 
     // Listen for Admin Accounts
     firebaseUnsubs.accounts = db.collection("admin_accounts").onSnapshot((snapshot) => {
-        const items = []; snapshot.forEach(doc => items.push(doc.data()));
+        if (snapshot.empty && adminAccounts.length > 0) return;
+        const items = []; snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
         adminAccounts = items;
         if (document.getElementById('admin-accounts').style.display !== 'none') renderAdminAccounts();
     });
 
     // Listen for Logs
     firebaseUnsubs.logs = db.collection("logs").orderBy('time', 'desc').limit(50).onSnapshot((snapshot) => {
-        const items = []; snapshot.forEach(doc => items.push(doc.data()));
+        if (snapshot.empty && adminLogs.length > 0) return;
+        const items = []; snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
         adminLogs = items;
         if (document.getElementById('admin-logs').style.display !== 'none') renderAdminLogs();
     });
@@ -3446,10 +3494,16 @@ try {
     // Cart loaded via loadUserProfile now
 } catch (e) { console.error(e); }
 
+let cartSaveTimeout = null;
 function saveCart() {
     currentUser.cart = cart;
-    saveUserProfile();
     updateCartView();
+    
+    // Debounce profile save to improve performance
+    if (cartSaveTimeout) clearTimeout(cartSaveTimeout);
+    cartSaveTimeout = setTimeout(() => {
+        saveUserProfile();
+    }, 500);
 }
 
 function saveUserSettings() {
@@ -3466,7 +3520,8 @@ function saveUserSettings() {
             allergyNotes: allergyNotes
         };
         if (typeof marker !== 'undefined' && marker) {
-            settings.coords = marker.getLatLng();
+            const ll = marker.getLatLng();
+            settings.coords = { lat: ll.lat, lng: ll.lng };
         }
         currentUser.settings = settings;
         saveUserProfile();
@@ -5194,8 +5249,8 @@ function updateDishDetailTotal() {
 
     if (!isNaN(basePrice) && !isNaN(quantity)) {
         const total = (basePrice + addonsPrice) * quantity;
-        priceEl.textContent = total.toFixed(2);
-        addToCartBtn.textContent = `Add to cart - UGX ${total.toFixed(2)}`;
+        priceEl.textContent = `UGX ${total.toFixed(2)}`;
+        addToCartBtn.textContent = `Add to cart`;
     }
 }
 
@@ -5215,7 +5270,7 @@ function openDishDetail(itemCard) {
     document.getElementById('dishDetailTitle').textContent = title;
     document.getElementById('dishDetailDesc').textContent = desc;
     const priceEl = document.getElementById('dishDetailPrice');
-    priceEl.textContent = price;
+    priceEl.textContent = `UGX ${price}`;
     priceEl.dataset.basePrice = price;
     document.getElementById('dishDetailImage').innerHTML = image;
 
@@ -5266,7 +5321,11 @@ if (dishContent && dishImage) {
 
 const addonsContainer = document.getElementById('dishDetailAddons');
 if (addonsContainer) {
-    addonsContainer.addEventListener('change', updateDishDetailTotal);
+    addonsContainer.addEventListener('change', (e) => {
+        if (e.target.classList.contains('addon-checkbox')) {
+            updateDishDetailTotal();
+        }
+    });
 }
 
 
@@ -5410,14 +5469,14 @@ function openCart() {
                 <div class="cart-item-info" style="flex:1;">
                     <div class="cart-item-header">${item.title}</div>
                     <div class="cart-item-details">${detailsHtml}</div>
-                    <div class="cart-controls">
+                    <div class="cart-item-price" style="margin-top: 8px; font-weight: bold; color: #019E81;">UGX ${itemTotal.toFixed(2)}</div>
+                    <div class="cart-controls" style="margin-top: 10px;">
                         <div class="cart-control-btn minus" data-index="${index}">-</div>
                         <div class="cart-quantity-text">${item.quantity}</div>
                         <div class="cart-control-btn plus" data-index="${index}">+</div>
                     </div>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; gap:10px;">
-                    <div class="cart-item-price">${itemTotal.toFixed(2)}</div>
                     <div class="cart-control-btn delete" data-index="${index}">🗑️</div>
                 </div>
             `;
@@ -5483,7 +5542,7 @@ function openCart() {
         }, 2500);
     }
 
-    cartTotalAmount.textContent = grandTotal.toFixed(2);
+    cartTotalAmount.textContent = `UGX ${grandTotal.toFixed(2)}`;
     cartScreen.classList.add('active');
 }
 
@@ -5922,9 +5981,61 @@ if (cartBackBtn) {
     });
 }
 
+/* Custom Order Confirmation Popup */
+async function showCustomOrderConfirmation() {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:10001;animation:fadeIn 0.3s ease;';
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = 'background:#fff;border-radius:20px;padding:30px;max-width:400px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,0.3);animation:slideUp 0.3s ease;text-align:center;';
+        
+        modal.innerHTML = `
+            <div style="font-size:3em;margin-bottom:20px;">🛍️</div>
+            <h2 style="color:#333;margin-bottom:10px;font-size:1.3em;">Confirm Your Order</h2>
+            <p style="color:#666;margin-bottom:25px;line-height:1.5;">Are you sure you want to place this order? You can track it in real-time after confirmation.</p>
+            <div style="display:flex;gap:12px;justify-content:center;">
+                <button id="confirmOrderCancel" style="flex:1;padding:12px;border:1px solid #ddd;background:#f5f5f5;color:#333;border-radius:10px;font-weight:bold;font-size:1em;cursor:pointer;transition:all 0.2s;">Cancel</button>
+                <button id="confirmOrderPlace" style="flex:1;padding:12px;background:#019E81;color:#fff;border:none;border-radius:10px;font-weight:bold;font-size:1em;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 15px rgba(1,158,129,0.3);">Yes, Place Order</button>
+            </div>
+        `;
+        
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        `;
+        document.head.appendChild(style);
+        
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        
+        const cancelBtn = document.getElementById('confirmOrderCancel');
+        const placeBtn = document.getElementById('confirmOrderPlace');
+        
+        cancelBtn.addEventListener('click', () => {
+            overlay.style.animation = 'fadeIn 0.3s ease reverse';
+            setTimeout(() => {
+                document.body.removeChild(overlay);
+                document.head.removeChild(style);
+                resolve(false);
+            }, 300);
+        });
+        
+        placeBtn.addEventListener('click', () => {
+            overlay.style.animation = 'fadeIn 0.3s ease reverse';
+            setTimeout(() => {
+                document.body.removeChild(overlay);
+                document.head.removeChild(style);
+                resolve(true);
+            }, 300);
+        });
+    });
+}
+
 const placeOrderBtn = document.getElementById('placeOrderBtn');
 if (placeOrderBtn) {
-    placeOrderBtn.addEventListener('click', () => {
+    placeOrderBtn.addEventListener('click', async () => {
         // Verification Check
         if (currentUser.isGuest || currentUser.status !== 'active') {
             showToast("Your account must be verified to place orders.");
@@ -5959,7 +6070,7 @@ if (placeOrderBtn) {
                 return;
             }
 
-            if (confirm("Are you sure you want to place this order?")) {
+            if (await showCustomOrderConfirmation()) {
                 // Create new order with initial status
                 const orderId = 'ORD' + Date.now();
                 const itemsTotal = cart.reduce((sum, item) => sum + (item.basePrice * item.quantity), 0);
@@ -6529,10 +6640,16 @@ if(favBackBtn) {
 }
 
 /* Active Order Widget & Track Screen */
-document.getElementById('activeOrderWidget').addEventListener('click', openTrackOrder);
-document.getElementById('trackBackBtn').addEventListener('click', () => {
-    document.getElementById('trackOrderScreen').classList.remove('active');
-});
+const activeOrderWidget = document.getElementById('activeOrderWidget');
+if (activeOrderWidget) {
+    activeOrderWidget.addEventListener('click', () => openTrackOrder());
+}
+const trackBackBtn = document.getElementById('trackBackBtn');
+if (trackBackBtn) {
+    trackBackBtn.addEventListener('click', () => {
+        document.getElementById('trackOrderScreen').classList.remove('active');
+    });
+}
 
 function openTrackOrder(order = null) {
     document.getElementById('trackOrderScreen').classList.add('active');
@@ -6718,9 +6835,11 @@ function renderChatMessages() {
 
 if(trackMsgBtn) trackMsgBtn.addEventListener('click', () => openChat('user'));
 if(chatBackBtn) chatBackBtn.addEventListener('click', () => chatScreen.classList.remove('active'));
-document.getElementById('trackBackBtn').addEventListener('click', () => {
-    if(trackRouteAnimationFrame) cancelAnimationFrame(trackRouteAnimationFrame);
-});
+if (trackBackBtn) {
+    trackBackBtn.addEventListener('click', () => {
+        if(trackRouteAnimationFrame) cancelAnimationFrame(trackRouteAnimationFrame);
+    });
+}
 
 function sendMessage() {
     const text = chatInput.value.trim();
@@ -7859,6 +7978,41 @@ let riderCurrentStep = 0; // 0: Idle, 1: Pickup, 2: Dropoff
 let riderLocationMarker;
 let riderLocationWatchId;
 let riderGpsEnabled = false;
+let riderSimulationInterval = null;
+
+function simulateRiderMovements() {
+    if (!rtdb) return; // Simulate even if current user isn't a rider, for admin demo
+
+    const riderIdsToSimulate = [2, 3, 4]; // IDs from MOCK_RIDERS
+
+    riderIdsToSimulate.forEach(riderId => {
+        const riderRef = rtdb.ref('locations/riders/rider_' + riderId);
+
+        // Get current position or set initial
+        riderRef.once('value').then(snapshot => {
+            let currentPos = snapshot.val();
+            if (!currentPos) {
+                currentPos = {
+                    lat: 24.4539 + (Math.random() - 0.5) * 0.1,
+                    lng: 54.3773 + (Math.random() - 0.5) * 0.1,
+                    name: MOCK_RIDERS.find(r => r.id === riderId)?.name || `Rider ${riderId}`
+                };
+            }
+
+            // Move rider slightly
+            const newLat = currentPos.lat + (Math.random() - 0.5) * 0.001;
+            const newLng = currentPos.lng + (Math.random() - 0.5) * 0.001;
+
+            riderRef.set({
+                lat: newLat,
+                lng: newLng,
+                status: 'online',
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                name: currentPos.name
+            });
+        });
+    });
+}
 
 function initRiderMap() {
     if(!document.getElementById('riderMap')) return;
@@ -8156,6 +8310,10 @@ function toggleRiderStatus() {
         msg.style.color = '#019E81';
         msg.style.fontWeight = 'bold';
         
+        if (riderSimulationInterval) clearInterval(riderSimulationInterval);
+        riderSimulationInterval = setInterval(simulateRiderMovements, 5000); // every 5 seconds
+        simulateRiderMovements(); // Run once immediately
+
         // Simulate an incoming order
         setTimeout(() => {
             if(isRiderOnline && riderCurrentStep === 0) triggerRiderOrder();
@@ -8174,6 +8332,14 @@ function toggleRiderStatus() {
         msg.style.background = '#f0f0f0';
         msg.style.color = '#888';
         msg.style.fontWeight = 'normal';
+
+        if (riderSimulationInterval) clearInterval(riderSimulationInterval);
+        // Also remove simulated riders from RTDB when offline
+        if (rtdb) {
+            rtdb.ref('locations/riders/rider_2').remove();
+            rtdb.ref('locations/riders/rider_3').remove();
+            rtdb.ref('locations/riders/rider_4').remove();
+        }
     }
 
     // Sync with Admin Data (Simulating Real-time update)
@@ -8473,12 +8639,18 @@ function completeSwipe() {
     }, 500);
 }
 
-document.getElementById('riderStatusToggle').addEventListener('click', toggleRiderStatus);
-document.getElementById('riderBackBtn').addEventListener('click', () => {
-    document.getElementById('riderScreen').classList.remove('active');
-    clearRouteSimulation();
-    stopRiderLocationTracking();
-});
+const riderStatusToggle = document.getElementById('riderStatusToggle');
+if (riderStatusToggle) {
+    riderStatusToggle.addEventListener('click', toggleRiderStatus);
+}
+const riderBackBtn = document.getElementById('riderBackBtn');
+if (riderBackBtn) {
+    riderBackBtn.addEventListener('click', () => {
+        document.getElementById('riderScreen').classList.remove('active');
+        clearRouteSimulation();
+        stopRiderLocationTracking();
+    });
+}
 
 function updateRiderPendingBadge() {
     // Count orders that are ready for pickup (or just 'ready'/'processing' depending on workflow)
@@ -9018,79 +9190,78 @@ function renderAdminTabContent(tabName) {
 }
 
 function renderAdminDashboard() {
-    const content = document.getElementById('admin-dashboard');
-    if(!content) return;
-    
-    // Sidebar badges are now handled by the auto-updater function
-    const activeRiders = adminRiders.filter(r => r.status === 'online' || r.status === 'busy').length;
-    
-    // Filter for TODAY'S DATE
-    const todayStr = new Date().toDateString();
-    const ordersTodayList = adminOrders.filter(o => {
-        if (!o.timestamp && !o.time) return false;
-        // Check timestamp first, fallback to time string if it contains date info or assume 'Just now' implies today for new sessions
-        const dateRef = new Date(o.timestamp || new Date().toLocaleString()); 
-        return !isNaN(dateRef.getTime()) && dateRef.toDateString() === todayStr;
-    });
+    try {
+        const content = document.getElementById('admin-dashboard');
+        if(!content) return;
+        
+        // Ensure data exists or default to empty array to prevent crashes
+        const orders = (window.allOrders && window.allOrders.length > 0) ? window.allOrders : (adminOrders || []);
+        const riders = adminRiders || [];
 
-    // REAL DATA CALCULATION: Calculate revenue from loaded orders (from Firebase)
-    // This replaces mock data with actual sums from the synced 'adminOrders' array
-    const realRevenue = ordersTodayList
-        .filter(o => o.status !== 'cancelled')
-        .reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
-    
-    const ordersToday = ordersTodayList.length;
-    
-    content.innerHTML = `
-        <div class="dashboard-card">
-            <h3 style="font-size:1.2em; font-weight:800; margin-bottom:15px;">📊 Platform Stats</h3>
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:15px;">
-              <div style="padding:15px; background:#e0f2f1; border-radius:12px;">
-                <div style="font-size:0.85em; color:#666; margin-bottom:8px;">Orders Today</div>
-                <div style="font-size:1.8em; font-weight:900; color:#019E81;">${ordersToday}</div>
-              </div>
-              <div style="padding:15px; background:#fff8e1; border-radius:12px;">
-                <div style="font-size:0.85em; color:#666; margin-bottom:8px;">Active Riders</div>
-                <div style="font-size:1.8em; font-weight:900; color:#FFB800;">${activeRiders}</div>
-              </div>
-              <div style="padding:15px; background:#f0f0f0; border-radius:12px;">
-                <div style="font-size:0.85em; color:#666; margin-bottom:8px;">Revenue Today</div>
-                <div style="font-size:1.8em; font-weight:900; color:#333;">UGX ${realRevenue.toLocaleString()}</div>
-              </div>
+        // Sidebar badges are now handled by the auto-updater function    
+        const activeRiders = riders.filter(r => r.status === 'online' || r.status === 'busy').length;
+        
+        // Calculate total stats
+        const totalOrders = orders.length;
+        const totalRevenue = orders
+            .filter(o => o.status !== 'cancelled')
+            .reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
+        
+        content.innerHTML = `
+            <div class="dashboard-card">
+                <h3 style="font-size:1.2em; font-weight:800; margin-bottom:15px;">📊 Platform Stats</h3>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:15px;">
+                <div style="padding:15px; background:#e0f2f1; border-radius:12px;">
+                    <div style="font-size:0.85em; color:#666; margin-bottom:8px;">Total Orders</div>
+                    <div style="font-size:1.8em; font-weight:900; color:#019E81;">${totalOrders}</div>
+                </div>
+                <div style="padding:15px; background:#fff8e1; border-radius:12px;">
+                    <div style="font-size:0.85em; color:#666; margin-bottom:8px;">Active Riders</div>
+                    <div style="font-size:1.8em; font-weight:900; color:#FFB800;">${activeRiders}</div>
+                </div>
+                <div style="padding:15px; background:#f0f0f0; border-radius:12px;">
+                    <div style="font-size:0.85em; color:#666; margin-bottom:8px;">Total Revenue</div>
+                    <div style="font-size:1.8em; font-weight:900; color:#333;">UGX ${totalRevenue.toLocaleString()}</div>
+                </div>
+                </div>
             </div>
-        </div>
 
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:25px; margin-bottom:20px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:25px; margin-bottom:20px;">
             <div class="dashboard-card" style="margin:0;">
                 <h4 style="margin-bottom:15px; font-weight:700;">Order Status</h4>
-                <div style="height:250px; width:100%; display:flex; justify-content:center;"><canvas id="adminStatusChart"></canvas></div>
+                <div style="height:180px; width:100%; display:flex; justify-content:center;"><canvas id="adminStatusChart"></canvas></div>
             </div>
             <div class="dashboard-card" style="margin:0;">
                 <h4 style="margin-bottom:15px; font-weight:700;">Top Categories</h4>
-                <div style="height:250px; width:100%;"><canvas id="adminCategoriesChart"></canvas></div>
+                <div style="height:180px; width:100%;"><canvas id="adminCategoriesChart"></canvas></div>
             </div>
         </div>
 
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:25px;">
             <div class="dashboard-card" style="margin:0;">
                 <h4 style="margin-bottom:15px; font-weight:800; color:#333;">Revenue Trend</h4>
-                <div style="height:250px; width:100%;"><canvas id="adminRevenueChart"></canvas></div>
+                <div style="height:180px; width:100%;"><canvas id="adminRevenueChart"></canvas></div>
             </div>
             <div class="dashboard-card" style="margin:0;">
                 <h4 style="margin-bottom:15px; font-weight:700;">Sales by Location</h4>
-                <div style="height:250px; width:100%;"><canvas id="adminLocationChart"></canvas></div>
+                <div style="height:180px; width:100%;"><canvas id="adminLocationChart"></canvas></div>
             </div>
         </div>
         <div class="dashboard-card">
             <h4 style="margin-bottom:15px; font-weight:700;">Loyalty Points (Distributed vs Redeemed)</h4>
-            <div style="height:250px; width:100%;"><canvas id="adminLoyaltyChart"></canvas></div>
+            <div style="height:180px; width:100%;"><canvas id="adminLoyaltyChart"></canvas></div>
         </div>
         <div class="dashboard-card">
             <h4 style="margin-bottom:15px; font-weight:700;">Orders by Hour (Peak Times)</h4>
-            <div style="height:250px; width:100%;"><canvas id="adminHourlyChart"></canvas></div>
+            <div style="height:180px; width:100%;"><canvas id="adminHourlyChart"></canvas></div>
         </div>
     `;
-    setTimeout(initAdminCharts, 100);
+        setTimeout(() => {
+            try { initAdminCharts(); } catch(e) { console.warn("Chart Init Error:", e); }
+        }, 100);
+    } catch(e) {
+        console.error("Dashboard Render Error:", e);
+    }
 }
 
 function renderAdminOrders() {
@@ -9137,9 +9308,6 @@ function renderAdminOrders() {
     `;
 }
 
-let adminOrderSearchTerm = '';
-let adminOrderCurrentStatus = 'all';
-
 function searchAdminOrders(query) {
     adminOrderSearchTerm = query.toLowerCase();
     const tbody = document.querySelector('#adminOrdersList tbody');
@@ -9157,32 +9325,32 @@ function filterAdminOrders(status) {
 function renderAdminOrdersList(status) {
     const filteredOrders = adminOrders.filter(o => {
         const statusMatch = status === 'all' || o.status === status;
-        const searchMatch = adminOrderSearchTerm === '' || 
-            o.id.toLowerCase().includes(adminOrderSearchTerm) ||
-            o.customer.toLowerCase().includes(adminOrderSearchTerm) ||
-            o.restaurant.toLowerCase().includes(adminOrderSearchTerm);
+        const searchMatch = adminOrderSearchTerm === '' ||
+            (o.id || '').toString().toLowerCase().includes(adminOrderSearchTerm) ||
+            (o.customer || '').toLowerCase().includes(adminOrderSearchTerm) ||
+            (o.restaurant || '').toLowerCase().includes(adminOrderSearchTerm);
         return statusMatch && searchMatch;
     });
     
     return filteredOrders.map(order => {
         const statusColors = { pending: '#ff9800', confirmed: '#2196f3', preparing: '#ff5722', ready: '#4caf50', delivered: '#009688', cancelled: '#f44336', scheduled: '#9c27b0', rider_assigned: '#ff9800', rider_accepted: '#2196f3', picked: '#ff5722', rider_cancelled: '#f44336' };
         
-        let statusDisplay = order.status.toUpperCase();
+        let statusDisplay = (order.status || 'unknown').toUpperCase().replace('_', ' ');
         if(order.status === 'rider_assigned') statusDisplay = 'PENDING';
         if(order.status === 'rider_accepted') statusDisplay = 'RIDER ACCEPT';
         if(order.status === 'rider_cancelled') statusDisplay = 'RIDER CANCEL';
         if(order.status === 'picked') statusDisplay = 'PICKED';
         
         return `
-            <tr ${order.status === 'delivered' ? `onclick="viewOrderDetails('${order.id}')" style="cursor:pointer;" title="Click to view details"` : ''}>
+            <tr ${order.status === 'delivered' ? `onclick="viewOrderDetails('${order.id}')" style="cursor:pointer;" title="Click to view details"` : ''} >
                 <td><input type="checkbox" class="admin-order-checkbox" value="${order.id}"></td>
                 <td><strong>${order.id}</strong></td>
-                <td style="font-size:0.85em; color:#555;">${order.time}<br><span style="font-size:0.8em; color:#999;">${order.timestamp || ''}</span></td>
-                <td><div>${order.customer}</div><div style="font-size:0.8em; color:#666;">${order.customerPhone}</div></td>
-                <td>${order.restaurant}<br><div style="font-size:0.8em; color:#666;">${order.items.length} Items</div></td>
+                <td style="font-size:0.85em; color:#555;">${order.time || 'N/A'}<br><span style="font-size:0.8em; color:#999;">${order.timestamp || ''}</span></td>
+                <td><div>${order.customer || 'N/A'}</div><div style="font-size:0.8em; color:#666;">${order.customerPhone || ''}</div></td>
+                <td>${order.restaurant || 'N/A'}<br><div style="font-size:0.8em; color:#666;">${(order.items || []).length} Items</div></td>
                 <td style="font-size:0.9em;">${order.payment ? (order.payment === 'cod' ? '💵 COD' : (order.payment === 'card' ? '💳 Card' : '📱 Wallet')) : 'N/A'}</td>
                 <td style="font-size:0.9em;">${order.rider || '<span style="color:#999; font-style:italic;">Unassigned</span>'}</td>
-                <td style="font-weight:bold;">UGX ${order.total.toFixed(2)}</td>
+                <td style="font-weight:bold;">UGX ${(order.total || 0).toFixed(2)}</td>
                 <td><span style="background:${statusColors[order.status] || '#999'}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${statusDisplay}</span></td>
                 <td onclick="event.stopPropagation()">
                     ${order.status === 'pending' ? `<button onclick="updateOrderStatus('${order.id}', 'confirmed', 'Order Confirmed', '#2196f3')" class="action-btn-table" style="background:#2196f3; color:#fff;">Confirm</button><button onclick="updateOrderStatus('${order.id}', 'cancelled', 'Order Rejected', '#f44336')" class="action-btn-table" style="background:#f44336; color:#fff;">Reject</button>` : ''}
@@ -9265,12 +9433,6 @@ function renderAdminRestaurants() {
     `;
 }
 
-// Global filter state
-let adminFilters = {
-    restaurants: { status: 'all', search: '' },
-    riders: { status: 'all', search: '' },
-    customers: { status: 'all', search: '' }
-};
 
 function adminSearch(type, query) {
     adminFilters[type].search = query.toLowerCase();
@@ -9294,20 +9456,20 @@ function renderAdminRestaurantsList() {
     
     const filteredRestaurants = adminRestaurants.filter(r => {
         const matchesStatus = status === 'all' || r.status === status;
-        const matchesSearch = r.name.toLowerCase().includes(search) || r.category.toLowerCase().includes(search);
+        const matchesSearch = (r.name || '').toLowerCase().includes(search) || (r.category || '').toLowerCase().includes(search);
         return matchesStatus && matchesSearch;
     });
     
     return filteredRestaurants.map(restaurant => `
         <tr>
-            <td><div style="font-weight:bold;">${restaurant.name}</div><div style="font-size:0.8em; color:#666;">${restaurant.category}</div></td>
+            <td><div style="font-weight:bold;">${restaurant.name || 'N/A'}</div><div style="font-size:0.8em; color:#666;">${restaurant.category || ''}</div></td>
             <td><div style="font-weight:600;">${restaurant.phone || 'N/A'}</div><div style="font-size:0.8em; color:#666;">${restaurant.owner || 'No owner'}</div></td>
-            <td><div style="font-weight:600;">${restaurant.orders} orders</div><div style="font-size:0.8em;">UGX ${restaurant.revenue.toLocaleString()}</div></td>
-            <td><span style="background:${restaurant.status === 'active' ? '#4caf50' : '#f44336'}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${restaurant.status.toUpperCase()}</span></td>
+            <td><div style="font-weight:600;">${restaurant.orders || 0} orders</div><div style="font-size:0.8em;">UGX ${(restaurant.revenue || 0).toLocaleString()}</div></td>
+            <td><span style="background:${restaurant.status === 'active' ? '#4caf50' : '#f44336'}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${(restaurant.status || 'unknown').toUpperCase()}</span></td>
             <td>
                 <button onclick="verifyCustomerWhatsApp('${restaurant.phone}')" class="action-btn-table" style="background:#25D366; color:#fff;">Verify WA</button>
                 <button onclick="toggleRestaurantStatus(${restaurant.id})" class="action-btn-table" style="background:#2196f3; color:#fff;">${restaurant.status === 'active' ? 'Deactivate' : 'Activate'}</button>
-                <button onclick="editRestaurant(${restaurant.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
+                <button onclick="openAdminModal('restaurant', ${restaurant.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
                 <button onclick="deleteRestaurant(${restaurant.id})" class="action-btn-table" style="background:#f44336; color:#fff;">Delete</button>
             </td>
         </tr>
@@ -9322,10 +9484,6 @@ function toggleRestaurantStatus(restaurantId) {
         if(db) db.collection('restaurants').doc(restaurantId.toString()).update({ status: newStatus });
         showToast(`Updating status...`);
     }
-}
-
-function editRestaurant(restaurantId) {
-    openAdminModal('restaurant', restaurantId);
 }
 
 function deleteRestaurant(restaurantId) {
@@ -9393,7 +9551,7 @@ function renderAdminRidersList() {
     const search = adminFilters.riders.search;
     const filteredRiders = adminRiders.filter(r => {
         const matchesStatus = status === 'all' || r.status === status;
-        const matchesSearch = r.name.toLowerCase().includes(search) || r.phone.includes(search);
+        const matchesSearch = (r.name || '').toLowerCase().includes(search) || (r.phone || '').includes(search);
         return matchesStatus && matchesSearch;
     });
     
@@ -9402,11 +9560,11 @@ function renderAdminRidersList() {
         
         return `
             <tr>
-                <td><div style="font-weight:bold;">${rider.name}</div></td>
-                <td><div style="font-weight:600;">${rider.phone}</div></td>
-                <td>${rider.vehicle}<br><span style="font-size:0.8em; color:#888;">${rider.license}</span></td>
-                <td><div style="font-weight:600;">${rider.completedOrders} orders</div><div style="font-size:0.8em;">UGX ${rider.earnings.toLocaleString()}</div></td>
-                <td><span style="background:${statusColors[rider.status]}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${rider.status.toUpperCase()}</span></td>
+                <td><div style="font-weight:bold;">${rider.name || 'N/A'}</div></td>
+                <td><div style="font-weight:600;">${rider.phone || 'N/A'}</div></td>
+                <td>${rider.vehicle || 'N/A'}<br><span style="font-size:0.8em; color:#888;">${rider.license || ''}</span></td>
+                <td><div style="font-weight:600;">${rider.completedOrders || 0} orders</div><div style="font-size:0.8em;">UGX ${(rider.earnings || 0).toLocaleString()}</div></td>
+                <td><span style="background:${statusColors[rider.status] || '#ccc'}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${(rider.status || 'unknown').toUpperCase()}</span></td>
                 <td style="font-size:0.85em; color:#666;">${rider.lastSeen || 'N/A'}</td>
                 <td>
                     <button onclick="verifyCustomerWhatsApp('${rider.phone}')" class="action-btn-table" style="background:#25D366; color:#fff;">Verify WA</button>
@@ -9430,10 +9588,6 @@ function chatWithRider(id, name) {
         <div style="font-size:0.8em; color:#019E81;">Rider</div>
     `;
     openChat('admin');
-}
-
-function editRider(riderId) {
-    openAdminModal('rider', riderId);
 }
 
 function adminBroadcastToRiders() {
@@ -9517,21 +9671,21 @@ function renderAdminCustomersList() {
     const search = adminFilters.customers.search;
     const filteredCustomers = adminCustomers.filter(c => {
         const matchesStatus = status === 'all' || c.status === status;
-        const matchesSearch = c.name.toLowerCase().includes(search) || c.phone.includes(search);
+        const matchesSearch = (c.name || '').toLowerCase().includes(search) || (c.phone || '').includes(search);
         return matchesStatus && matchesSearch;
     });
     
     return filteredCustomers.map(customer => `
         <tr>
-            <td><div style="font-weight:bold;">${customer.name}</div><div style="font-size:0.8em; color:#666;">Joined: ${customer.joined}</div></td>
-            <td><div style="font-weight:600;">${customer.phone}</div><div style="font-size:0.8em; color:#666;">${customer.email || 'No email'}</div></td>
-            <td><div style="font-weight:600;">${customer.orders} orders</div><div style="font-size:0.8em;">UGX ${customer.totalSpent.toLocaleString()}</div></td>
-            <td><span style="background:${customer.status === 'active' ? '#4caf50' : (customer.status === 'pending_verification' ? '#FFBF42' : '#f44336')}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${customer.status === 'pending_verification' ? 'PENDING' : customer.status.toUpperCase()}</span></td>
+            <td><div style="font-weight:bold;">${customer.name || 'N/A'}</div><div style="font-size:0.8em; color:#666;">Joined: ${customer.joined || ''}</div></td>
+            <td><div style="font-weight:600;">${customer.phone || 'N/A'}</div><div style="font-size:0.8em; color:#666;">${customer.email || 'No email'}</div></td>
+            <td><div style="font-weight:600;">${customer.orders || 0} orders</div><div style="font-size:0.8em;">UGX ${(customer.totalSpent || 0).toLocaleString()}</div></td>
+            <td><span style="background:${customer.status === 'active' ? '#4caf50' : (customer.status === 'pending_verification' ? '#FFBF42' : '#f44336')}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${(customer.status || 'unknown') === 'pending_verification' ? 'PENDING' : (customer.status || 'unknown').toUpperCase()}</span></td>
             <td>
                 <button onclick="verifyCustomerWhatsApp('${customer.phone}')" class="action-btn-table" style="background:#25D366; color:#fff;">Verify WA</button>
                 ${customer.status === 'pending_verification' ? `<button onclick="approveCustomer(${customer.id})" class="action-btn-table" style="background:#4caf50; color:#fff;">Approve</button>` : ''}
                 <button onclick="contactCustomer('${customer.phone}')" class="action-btn-table" style="background:#2196f3; color:#fff;">Call</button>
-                <button onclick="editCustomer(${customer.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
+                <button onclick="openAdminModal('customer', ${customer.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
             </td>
         </tr>
     `).join('');
@@ -9558,10 +9712,6 @@ function approveCustomer(id) {
 
 function contactCustomer(phone) {
     window.open(`tel:${phone}`);
-}
-
-function editCustomer(customerId) {
-    openAdminModal('customer', customerId);
 }
 
 function renderAdminPromotions() {
@@ -9909,14 +10059,24 @@ function renderAdminConfig() {
 }
 
 function renderAdminAnalytics() {
-    const content = document.getElementById('admin-analytics');
-    if (!content) return;
-    
-    const totalTips = adminOrders.reduce((sum, o) => sum + (o.tip || 0), 0);
+    try {
+        const content = document.getElementById('admin-analytics');
+        if (!content) return;
 
-    content.innerHTML = `
-        <div style="overflow-y:auto; height:100%; padding-bottom:80px;">
-        <div class="dashboard-card">
+        // Ensure data exists
+        const orders = window.allOrders || adminOrders || [];
+        const riders = adminRiders || [];
+
+        // Calculate live stats from all available data
+        const totalOrders = orders.length;
+        const totalRevenue = orders.filter(o => o.status !== 'cancelled').reduce((sum, o) => sum + (o.total || 0), 0);
+        const totalCustomers = [...new Set(orders.map(o => o.customerPhone))].length;
+        const totalRiders = riders.length;
+        const totalTips = orders.reduce((sum, o) => sum + (o.tip || 0), 0);
+        
+        content.innerHTML = `
+            <div style="overflow-y:auto; height:100%; padding-bottom:80px;">
+            <div class="dashboard-card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
                 <h3 style="margin:0;">📈 Detailed Analytics</h3>
                 <div style="display:flex; gap:10px; align-items:center;">
@@ -9930,19 +10090,19 @@ function renderAdminAnalytics() {
             </div>
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:15px; margin-bottom:20px;">
                 <div style="padding:20px; background:#e0f2f1; border-radius:12px; text-align:center;">
-                    <div style="font-size:2em; font-weight:900; color:#019E81; margin-bottom:5px;">${adminAnalytics.totalOrders.toLocaleString()}</div>
+                    <div style="font-size:2em; font-weight:900; color:#019E81; margin-bottom:5px;">${totalOrders.toLocaleString()}</div>
                     <div style="font-size:0.9em; color:#666;">Total Orders</div>
                 </div>
                 <div style="padding:20px; background:#fff8e1; border-radius:12px; text-align:center;">
-                    <div style="font-size:2em; font-weight:900; color:#FFB800; margin-bottom:5px;">UGX ${adminAnalytics.totalRevenue.toLocaleString()}</div>
+                    <div style="font-size:2em; font-weight:900; color:#FFB800; margin-bottom:5px;">UGX ${totalRevenue.toLocaleString()}</div>
                     <div style="font-size:0.9em; color:#666;">Total Revenue</div>
                 </div>
                 <div style="padding:20px; background:#f0e6ff; border-radius:12px; text-align:center;">
-                    <div style="font-size:2em; font-weight:900; color:#9c27b0; margin-bottom:5px;">${adminAnalytics.totalCustomers.toLocaleString()}</div>
+                    <div style="font-size:2em; font-weight:900; color:#9c27b0; margin-bottom:5px;">${totalCustomers.toLocaleString()}</div>
                     <div style="font-size:0.9em; color:#666;">Total Customers</div>
                 </div>
                 <div style="padding:20px; background:#ffebee; border-radius:12px; text-align:center;">
-                    <div style="font-size:2em; font-weight:900; color:#f44336; margin-bottom:5px;">${adminAnalytics.totalRiders}</div>
+                    <div style="font-size:2em; font-weight:900; color:#f44336; margin-bottom:5px;">${totalRiders}</div>
                     <div style="font-size:0.9em; color:#666;">Active Riders</div>
                 </div>
                 <div style="padding:20px; background:#e3f2fd; border-radius:12px; text-align:center;">
@@ -9971,28 +10131,33 @@ function renderAdminAnalytics() {
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px; margin-bottom:25px;">
                 <div class="dashboard-card" style="margin:0;">
                     <h4 style="margin-bottom:15px; font-weight:700;">Revenue Overview</h4>
-                    <div style="height:300px; width:100%;"><canvas id="analyticsRevenueChart"></canvas></div>
+                    <div style="height:220px; width:100%;"><canvas id="analyticsRevenueChart"></canvas></div>
                 </div>
                 <div class="dashboard-card" style="margin:0;">
                     <h4 style="margin-bottom:15px; font-weight:700;">Sales by Location</h4>
-                    <div style="height:300px; width:100%;"><canvas id="analyticsLocationChart"></canvas></div>
+                    <div style="height:220px; width:100%;"><canvas id="analyticsLocationChart"></canvas></div>
                 </div>
             </div>
             
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
                 <div class="dashboard-card" style="margin:0;">
                     <h4 style="margin-bottom:15px; font-weight:700;">Peak Ordering Hours</h4>
-                    <div style="height:300px; width:100%;"><canvas id="analyticsHourlyChart"></canvas></div>
+                    <div style="height:220px; width:100%;"><canvas id="analyticsHourlyChart"></canvas></div>
                 </div>
                 <div class="dashboard-card" style="margin:0;">
                     <h4 style="margin-bottom:15px; font-weight:700;">Loyalty Program</h4>
-                    <div style="height:300px; width:100%;"><canvas id="analyticsLoyaltyChart"></canvas></div>
+                    <div style="height:220px; width:100%;"><canvas id="analyticsLoyaltyChart"></canvas></div>
                 </div>
             </div>
         </div>
         </div>
     `;
-    setTimeout(initAdminCharts, 100);
+        setTimeout(() => {
+            try { initAdminCharts(); } catch(e) { console.warn("Analytics Chart Init Error:", e); }
+        }, 100);
+    } catch(e) {
+        console.error("Analytics Render Error:", e);
+    }
 }
 
 window.exportTipReportPDF = async function() {
@@ -10115,13 +10280,6 @@ window.exportAnalyticsPDF = async function() {
     }
 };
 
-let sortState = {
-    orders: { col: null, asc: true },
-    restaurants: { col: null, asc: true },
-    riders: { col: null, asc: true },
-    customers: { col: null, asc: true }
-};
-
 function sortAdminTable(type, col) {
     if (sortState[type].col === col) {
         sortState[type].asc = !sortState[type].asc;
@@ -10180,69 +10338,71 @@ function sortAdminTable(type, col) {
     showToast(`Sorted by ${col} ${asc ? 'ascending' : 'descending'}`);
 }
 
-let adminChartUpdateInterval = null;
-
 function switchAdminTab(tabName) {
-    // Manage Auto-Update for Dashboard Charts
-    if (adminChartUpdateInterval) {
-        clearInterval(adminChartUpdateInterval);
-        adminChartUpdateInterval = null;
-    }
-    if (tabName === 'dashboard') {
-        adminChartUpdateInterval = setInterval(updateAdminChartsData, 30000);
-    }
+    try {
+        // Manage Auto-Update for Dashboard Charts
+        if (adminChartUpdateInterval) {
+            clearInterval(adminChartUpdateInterval);
+            adminChartUpdateInterval = null;
+        }
+        if (tabName === 'dashboard') {
+            adminChartUpdateInterval = setInterval(updateAdminChartsData, 30000);
+        }
 
-    // Hide all tabs
-    document.querySelectorAll('.admin-tab-content').forEach(tab => {
-        tab.style.display = 'none';
-    });
-    
-    // Remove active class from all sidebar items
-    document.querySelectorAll('.sidebar-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    
-    // Show selected tab
-    const selectedTab = document.getElementById(`admin-${tabName}`);
-    if (selectedTab) selectedTab.style.display = 'block';
-    document.getElementById('adminContent').scrollTop = 0;
-    
-    // Add active class to sidebar item corresponding to tabName
-    const activeItem = document.querySelector(`.sidebar-item[onclick*="'${tabName}'"]`) || 
-                       document.querySelector(`.sidebar-item[onclick*='"${tabName}"']`);
-    if(activeItem) activeItem.classList.add('active');
-    
-    // Update title
-    const titles = {
-        dashboard: '📊 Overview',
-        livemap: '🗺️ Live Map',
-        orders: '📦 Orders',
-        restaurants: '🏪 Restaurants',
-        riders: '🚴‍♂️ Riders',
-        customers: '👥 Customers',
-        promotions: '🎁 Promotions',
-        payments: '💳 Payments',
-        support: '🎧 Support Tickets',
-        analytics: '📈 Analytics',
-        config: '⚙️ Configuration',
-        accounts: '🔐 Admin Accounts',
-        logs: '📋 Activity Logs'
-    };
-    
-    document.getElementById('adminTabTitle').textContent = titles[tabName] || 'Admin Panel';
-    
-    // Render content for the selected tab
-    renderAdminTabContent(tabName);
-    
-    // Close sidebar on mobile after selection
-    if (window.innerWidth <= 768) {
-        closeAdminSidebar();
+        // Hide all tabs
+        document.querySelectorAll('.admin-tab-content').forEach(tab => {
+            tab.style.display = 'none';
+        });
+        
+        // Remove active class from all sidebar items
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        // Show selected tab
+        const selectedTab = document.getElementById(`admin-${tabName}`);
+        if (selectedTab) selectedTab.style.display = 'block';
+        
+        const contentContainer = document.getElementById('adminContent');
+        if(contentContainer) contentContainer.scrollTop = 0;
+        
+        // Add active class to sidebar item corresponding to tabName
+        const activeItem = document.querySelector(`.sidebar-item[onclick*="${tabName}"]`);
+        if(activeItem) activeItem.classList.add('active');
+        
+        // Update title
+        const titles = {
+            dashboard: '📊 Overview',
+            livemap: '🗺️ Live Map',
+            orders: '📦 Orders',
+            restaurants: '🏪 Restaurants',
+            riders: '🚴‍♂️ Riders',
+            customers: '👥 Customers',
+            promotions: '🎁 Promotions',
+            payments: '💳 Payments',
+            support: '🎧 Support Tickets',
+            analytics: '📈 Analytics',
+            config: '⚙️ Configuration',
+            accounts: '🔐 Admin Accounts',
+            logs: '📋 Activity Logs'
+        };
+        
+        const titleEl = document.getElementById('adminTabTitle');
+        if(titleEl) titleEl.textContent = titles[tabName] || 'Admin Panel';
+        
+        // Render content for the selected tab
+        renderAdminTabContent(tabName);
+        
+        // Close sidebar on mobile after selection
+        if (window.innerWidth <= 768) {
+            closeAdminSidebar();
+        }
+    } catch(e) {
+        console.error("Switch Admin Tab Error:", e);
+        showToast("Error switching tab. Check console.");
     }
 }
 
-let adminMap;
-let adminLayers = { riders: null, vendors: null, customers: null, zones: null, heatmap: null };
-let adminDraw = { active: false, center: null, circle: null };
 
 function initAdminLiveMap() {
     if(!document.getElementById('adminMapContainer')) return;
@@ -10586,257 +10746,270 @@ function updateAdminChartsData() {
     if(adminChartsInstances['adminStatusChart']) {
         const newData = adminChartsInstances['adminStatusChart'].data.datasets[0].data.map(v => Math.max(0, v + Math.floor((Math.random() - 0.5) * 5)));
         adminChartsInstances['adminStatusChart'].data.datasets[0].data = newData;
-        adminChartsInstances['adminStatusChart'].update();
+        try { adminChartsInstances['adminStatusChart'].update(); } catch(e){}
     }
 }
 
-let adminChartsInstances = {};
-
 function initAdminCharts() {
-    // Cleanup
-    ['adminRevenueChart', 'adminStatusChart', 'adminCategoriesChart', 'adminLocationChart', 'adminHourlyChart', 'adminLoyaltyChart', 
-     'analyticsRevenueChart', 'analyticsLocationChart', 'analyticsHourlyChart', 'analyticsLoyaltyChart'].forEach(id => {
-        if (adminChartsInstances[id]) {
-            adminChartsInstances[id].destroy();
-            delete adminChartsInstances[id];
-        }
-    });
+    // Wait a bit to ensure DOM is ready and containers are visible
+    setTimeout(() => {
+        // Cleanup
+        const chartIds = ['adminRevenueChart', 'adminStatusChart', 'adminCategoriesChart', 'adminLocationChart', 'adminHourlyChart', 'adminLoyaltyChart', 
+         'analyticsRevenueChart', 'analyticsLocationChart', 'analyticsHourlyChart', 'analyticsLoyaltyChart'].forEach(id => {
+            if (adminChartsInstances[id]) {
+                try {
+                    adminChartsInstances[id].destroy();
+                } catch(e) {}
+                delete adminChartsInstances[id];
+            }
+        });
 
-    // Revenue Chart (Line)
-    const revenueCtx = document.getElementById('adminRevenueChart')?.getContext('2d');
-    if (revenueCtx) {
-        adminChartsInstances['adminRevenueChart'] = new Chart(revenueCtx, {
-            type: 'line',
-            data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                datasets: [{
-                    label: 'Revenue (UGX)',
-                    data: [15000, 22000, 18000, 25000, 30000, 45000, 38000],
-                    borderColor: '#019E81',
-                    backgroundColor: 'rgba(1, 158, 129, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false,
-                onClick: (e, els, chart) => {
-                    if (els.length > 0) {
-                        const index = els[0].index;
-                        const label = chart.data.labels[index].toLowerCase();
-                        switchAdminTab('orders');
-                        setTimeout(() => filterAdminOrders(label), 100);
+        // Revenue Chart (Line)
+        const revenueCtx = document.getElementById('adminRevenueChart')?.getContext('2d');
+        if (revenueCtx && window.Chart) {
+            adminChartsInstances['adminRevenueChart'] = new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Revenue (UGX)',
+                        data: [15000, 22000, 18000, 25000, 30000, 45000, 38000],
+                        borderColor: '#019E81',
+                        backgroundColor: 'rgba(1, 158, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    onClick: (e, els, chart) => {
+                        if (els.length > 0) {
+                            const index = els[0].index;
+                            const label = chart.data.labels[index];
+                            // Map chart label to status value
+                            const statusMap = { 'Delivered': 'delivered', 'Pending': 'pending', 'Cancelled': 'cancelled', 'Preparing': 'preparing' };
+                            const statusToFilter = statusMap[label] || label.toLowerCase();
+                            switchAdminTab('orders');
+                            setTimeout(() => filterAdminOrders(statusToFilter), 100);
+                        }
                     }
                 }
-            }
-        });
-    }
+            });
+        }
 
-    // Order Status Chart (Doughnut)
-    const statusCtx = document.getElementById('adminStatusChart')?.getContext('2d');
-    if (statusCtx) {
-        const statuses = ['Delivered', 'Pending', 'Cancelled', 'Preparing'];
-        const counts = [
-            adminOrders.filter(o => o.status === 'delivered').length + 50, // +Mock data
-            adminOrders.filter(o => o.status === 'pending').length + 5,
-            adminOrders.filter(o => o.status === 'cancelled').length + 2,
-            adminOrders.filter(o => o.status === 'preparing').length + 8
-        ];
-        adminChartsInstances['adminStatusChart'] = new Chart(statusCtx, {
-            type: 'doughnut',
-            data: {
-                labels: statuses,
-                datasets: [{
-                    data: counts,
-                    backgroundColor: ['#4caf50', '#ff9800', '#f44336', '#2196f3']
-                }]
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false,
-                onClick: (e, els, chart) => handleAdminChartClick(e, els, chart)
-            }
-        });
-    }
+        // Order Status Chart (Doughnut)
+        const statusCtx = document.getElementById('adminStatusChart')?.getContext('2d');
+        if (statusCtx && window.Chart) {
+            const statuses = ['Delivered', 'Pending', 'Cancelled', 'Preparing'];
+            const counts = [
+                adminOrders.filter(o => o.status === 'delivered').length + 50, // +Mock data
+                adminOrders.filter(o => o.status === 'pending').length + 5,
+                adminOrders.filter(o => o.status === 'cancelled').length + 2,
+                adminOrders.filter(o => o.status === 'preparing').length + 8
+            ];
+            adminChartsInstances['adminStatusChart'] = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: statuses,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: ['#4caf50', '#ff9800', '#f44336', '#2196f3']
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    onClick: (e, els, chart) => {
+                        if (els.length > 0) {
+                            const index = els[0].index;
+                            const label = chart.data.labels[index].toLowerCase();
+                            switchAdminTab('restaurants');
+                            setTimeout(() => adminSearch('restaurants', label), 100);
+                        }
+                    }
+                }
+            });
+        }
 
-    // Categories Chart (Bar)
-    const catCtx = document.getElementById('adminCategoriesChart')?.getContext('2d');
-    if (catCtx) {
-        adminChartsInstances['adminCategoriesChart'] = new Chart(catCtx, {
-            type: 'bar',
-            data: {
-                labels: adminAnalytics.topCategories.map(c => c.name),
-                datasets: [{
-                    label: 'Orders',
-                    data: adminAnalytics.topCategories.map(c => c.orders),
-                    backgroundColor: '#FFBF42',
-                    borderRadius: 4
-                }]
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false,
-                onClick: (e, els, chart) => handleAdminChartClick(e, els, chart)
-            }
-        });
-    }
+        // Categories Chart (Bar)
+        const catCtx = document.getElementById('adminCategoriesChart')?.getContext('2d');
+        if (catCtx && window.Chart) {
+            adminChartsInstances['adminCategoriesChart'] = new Chart(catCtx, {
+                type: 'bar',
+                data: {
+                    labels: adminAnalytics.topCategories.map(c => c.name),
+                    datasets: [{
+                        label: 'Orders',
+                        data: adminAnalytics.topCategories.map(c => c.orders),
+                        backgroundColor: '#FFBF42',
+                        borderRadius: 4
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    onClick: (e, els, chart) => handleAdminChartClick(e, els, chart)
+                }
+            });
+        }
 
-    // Sales by Location Chart (Pie) - New
-    const locCtx = document.getElementById('adminLocationChart')?.getContext('2d');
-    if (locCtx) {
-        adminChartsInstances['adminLocationChart'] = new Chart(locCtx, {
-            type: 'pie',
-            data: {
-                labels: ['Downtown', 'Marina', 'Jumeirah', 'Business Bay', 'Deira'],
-                datasets: [{
-                    label: 'Sales Vol',
-                    data: [35, 25, 20, 15, 5],
-                    backgroundColor: ['#019E81', '#FFBF42', '#ff4757', '#2196f3', '#9c27b0'],
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-    }
+        // Sales by Location Chart (Pie) - New
+        const locCtx = document.getElementById('adminLocationChart')?.getContext('2d');
+        if (locCtx && window.Chart) {
+            adminChartsInstances['adminLocationChart'] = new Chart(locCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Downtown', 'Marina', 'Jumeirah', 'Business Bay', 'Deira'],
+                    datasets: [{
+                        label: 'Sales Vol',
+                        data: [35, 25, 20, 15, 5],
+                        backgroundColor: ['#019E81', '#FFBF42', '#ff4757', '#2196f3', '#9c27b0'],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
 
-    // Orders by Hour Chart (Line) - New
-    const hourlyCtx = document.getElementById('adminHourlyChart')?.getContext('2d');
-    if (hourlyCtx) {
-        adminChartsInstances['adminHourlyChart'] = new Chart(hourlyCtx, {
-            type: 'line',
-            data: {
-                labels: adminAnalytics.peakHours.map(p => p.hour),
-                datasets: [{
-                    label: 'Orders',
-                    data: adminAnalytics.peakHours.map(p => p.orders),
-                    borderColor: '#2196f3',
-                    backgroundColor: 'rgba(33, 150, 243, 0.1)',
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-    }
+        // Orders by Hour Chart (Line) - New
+        const hourlyCtx = document.getElementById('adminHourlyChart')?.getContext('2d');
+        if (hourlyCtx && window.Chart) {
+            adminChartsInstances['adminHourlyChart'] = new Chart(hourlyCtx, {
+                type: 'line',
+                data: {
+                    labels: adminAnalytics.peakHours.map(p => p.hour),
+                    datasets: [{
+                        label: 'Orders',
+                        data: adminAnalytics.peakHours.map(p => p.orders),
+                        borderColor: '#2196f3',
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
 
-    // Loyalty Chart (Bar) - New
-    const loyaltyCtx = document.getElementById('adminLoyaltyChart')?.getContext('2d');
-    if (loyaltyCtx) {
-        adminChartsInstances['adminLoyaltyChart'] = new Chart(loyaltyCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                datasets: [
-                    { label: 'Points Distributed', data: [500, 800, 600, 900, 1200, 1500, 1100], backgroundColor: '#019E81' },
-                    { label: 'Points Redeemed', data: [200, 300, 250, 400, 600, 800, 500], backgroundColor: '#ff4757' }
-                ]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-    }
+        // Loyalty Chart (Bar) - New
+        const loyaltyCtx = document.getElementById('adminLoyaltyChart')?.getContext('2d');
+        if (loyaltyCtx && window.Chart) {
+            adminChartsInstances['adminLoyaltyChart'] = new Chart(loyaltyCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [
+                        { label: 'Points Distributed', data: [500, 800, 600, 900, 1200, 1500, 1100], backgroundColor: '#019E81' },
+                        { label: 'Points Redeemed', data: [200, 300, 250, 400, 600, 800, 500], backgroundColor: '#ff4757' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
 
-    // --- ANALYTICS TAB CHARTS (Rich Data) ---
+        // --- ANALYTICS TAB CHARTS (Rich Data) ---
 
-    // 1. Revenue Trend (Comparison)
-    const anRevCtx = document.getElementById('analyticsRevenueChart')?.getContext('2d');
-    if (anRevCtx) {
-        adminChartsInstances['analyticsRevenueChart'] = new Chart(anRevCtx, {
-            type: 'line',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                datasets: [{
-                    label: '2024 Revenue',
-                    data: [45000, 52000, 48000, 55000, 60000, 75000, 68000, 80000, 85000, 92000, 105000, 115000],
-                    borderColor: '#019E81',
-                    backgroundColor: 'rgba(1, 158, 129, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    borderWidth: 2
-                }, {
-                    label: '2023 Revenue',
-                    data: [35000, 40000, 38000, 42000, 45000, 50000, 48000, 55000, 60000, 62000, 68000, 75000],
-                    borderColor: '#ccc',
-                    borderDash: [5, 5],
-                    tension: 0.4,
-                    fill: false,
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: { legend: { position: 'top' } },
-                scales: { y: { ticks: { callback: v => 'UGX ' + v/1000 + 'k', font: { size: 10 } } } }
-            }
-        });
-    }
+        // 1. Revenue Trend (Comparison)
+        const anRevCtx = document.getElementById('analyticsRevenueChart')?.getContext('2d');
+        if (anRevCtx && window.Chart) {
+            adminChartsInstances['analyticsRevenueChart'] = new Chart(anRevCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: '2024 Revenue',
+                        data: [45000, 52000, 48000, 55000, 60000, 75000, 68000, 80000, 85000, 92000, 105000, 115000],
+                        borderColor: '#019E81',
+                        backgroundColor: 'rgba(1, 158, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 2
+                    }, {
+                        label: '2023 Revenue',
+                        data: [35000, 40000, 38000, 42000, 45000, 50000, 48000, 55000, 60000, 62000, 68000, 75000],
+                        borderColor: '#ccc',
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        fill: false,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { ticks: { callback: v => 'UGX ' + v/1000 + 'k', font: { size: 10 } } } }
+                }
+            });
+        }
 
-    // 2. Sales by Location (Detailed Distribution)
-    const anLocCtx = document.getElementById('analyticsLocationChart')?.getContext('2d');
-    if (anLocCtx) {
-        adminChartsInstances['analyticsLocationChart'] = new Chart(anLocCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Downtown', 'Dubai Marina', 'Jumeirah', 'Business Bay', 'Deira', 'Al Barsha'],
-                datasets: [{
-                    data: [35, 25, 15, 12, 8, 5],
-                    backgroundColor: ['#019E81', '#FFBF42', '#ff4757', '#2196f3', '#9c27b0', '#607d8b'],
-                    borderWidth: 0,
-                    hoverOffset: 10
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { position: 'right', labels: { font: { size: 11 } } } }
-            }
-        });
-    }
+        // 2. Sales by Location (Detailed Distribution)
+        const anLocCtx = document.getElementById('analyticsLocationChart')?.getContext('2d');
+        if (anLocCtx && window.Chart) {
+            adminChartsInstances['analyticsLocationChart'] = new Chart(anLocCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Downtown', 'Dubai Marina', 'Jumeirah', 'Business Bay', 'Deira', 'Al Barsha'],
+                    datasets: [{
+                        data: [35, 25, 15, 12, 8, 5],
+                        backgroundColor: ['#019E81', '#FFBF42', '#ff4757', '#2196f3', '#9c27b0', '#607d8b'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right', labels: { font: { size: 11 } } } }
+                }
+            });
+        }
 
-    // 3. Orders by Hour (Peak Times Analysis)
-    const anHourCtx = document.getElementById('analyticsHourlyChart')?.getContext('2d');
-    if (anHourCtx) {
-        adminChartsInstances['analyticsHourlyChart'] = new Chart(anHourCtx, {
-            type: 'bar',
-            data: {
-                labels: ['8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM','6PM','7PM','8PM','9PM','10PM'],
-                datasets: [{
-                    label: 'Avg Orders',
-                    data: [15, 30, 45, 65, 120, 145, 90, 60, 50, 75, 110, 160, 130, 95, 50],
-                    backgroundColor: (ctx) => ctx.raw > 100 ? '#FFBF42' : '#019E81',
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } }
-            }
-        });
-    }
+        // 3. Orders by Hour (Peak Times Analysis)
+        const anHourCtx = document.getElementById('analyticsHourlyChart')?.getContext('2d');
+        if (anHourCtx && window.Chart) {
+            adminChartsInstances['analyticsHourlyChart'] = new Chart(anHourCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM','6PM','7PM','8PM','9PM','10PM'],
+                    datasets: [{
+                        label: 'Avg Orders',
+                        data: [15, 30, 45, 65, 120, 145, 90, 60, 50, 75, 110, 160, 130, 95, 50],
+                        backgroundColor: (ctx) => ctx.raw > 100 ? '#FFBF42' : '#019E81',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
 
-    // 4. Loyalty Points (Earned vs Redeemed)
-    const anLoyCtx = document.getElementById('analyticsLoyaltyChart')?.getContext('2d');
-    if (anLoyCtx) {
-        adminChartsInstances['analyticsLoyaltyChart'] = new Chart(anLoyCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                datasets: [
-                    { label: 'Points Earned', data: [5000, 6200, 5800, 7000, 8500, 12000, 10500], backgroundColor: '#019E81', borderRadius: 4 },
-                    { label: 'Points Redeemed', data: [2000, 3000, 2500, 3500, 6000, 8500, 7000], backgroundColor: '#ff4757', borderRadius: 4 }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { position: 'top' } },
-                scales: { y: { beginAtZero: true } }
-            }
-        });
-    }
+        // 4. Loyalty Points (Earned vs Redeemed)
+        const anLoyCtx = document.getElementById('analyticsLoyaltyChart')?.getContext('2d');
+        if (anLoyCtx && window.Chart) {
+            adminChartsInstances['analyticsLoyaltyChart'] = new Chart(anLoyCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [
+                        { label: 'Points Earned', data: [5000, 6200, 5800, 7000, 8500, 12000, 10500], backgroundColor: '#019E81', borderRadius: 4 },
+                        { label: 'Points Redeemed', data: [2000, 3000, 2500, 3500, 6000, 8500, 7000], backgroundColor: '#ff4757', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+    }, 100);
 }
 
 function handleAdminChartClick(e, activeEls, chart) {
