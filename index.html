@@ -1250,6 +1250,14 @@ input:checked + .slider:before { transform: translateX(22px); }
     font-size: 0.9em;
     margin-bottom: 10px;
 }
+.admin-form-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.85em;
+    margin-bottom: 4px;
+    margin-top: 10px;
+    color: #555;
+}
 /* Login Screen */
 #loginScreen {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -2817,7 +2825,7 @@ input:checked + .slider:before { transform: translateX(22px); }
     <div class="dashboard-card">
         <h3 style="margin-bottom: 20px; font-weight: 800;">Analytics</h3>
         <div style="margin-bottom: 30px;">
-            <h4 style="font-size: 1em; color: #555; margin-bottom: 10px;">Daily Sales (UGX)</h4>
+            <h4 style="font-size: 1em; color: #555; margin-bottom: 10px;">Weekly Sales (UGX)</h4>
             <canvas id="dailySalesChart"></canvas>
         </div>
         <div>
@@ -2827,11 +2835,11 @@ input:checked + .slider:before { transform: translateX(22px); }
             </div>
         </div>
     </div>
-    <div class="dashboard-card" id="merchantOrdersBtn" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+    <div class="dashboard-card" id="merchantOrdersBtn" onclick="openMerchantOrders()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
       <div style="font-weight:bold; font-size:1.1em;">📜 Past Orders</div>
       <span style="font-size:1.2em;">></span>
     </div>
-    <div class="dashboard-card" id="merchantManageMenuBtn" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+    <div class="dashboard-card" id="merchantManageMenuBtn" onclick="openMerchantMenu()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
       <div style="font-weight:bold; font-size:1.1em;">🍔 Manage Menu</div>
       <span style="font-size:1.2em;">></span>
     </div>
@@ -2846,7 +2854,7 @@ input:checked + .slider:before { transform: translateX(22px); }
   </div>
 </div>
 
-<div id="merchantMenuScreen" class="generic-screen">
+<div id="merchantMenuScreen" class="generic-screen" style="z-index: 6600;">
   <div class="generic-header">
     <div class="generic-back-btn" id="merchantMenuBackBtn">⬅️</div>
     <div class="generic-title">Manage Menu</div>
@@ -2858,7 +2866,7 @@ input:checked + .slider:before { transform: translateX(22px); }
   </div>
 </div>
 
-<div id="merchantEditItemScreen" class="generic-screen">
+<div id="merchantEditItemScreen" class="generic-screen" style="z-index: 6700;">
   <div class="generic-header">
     <div class="generic-back-btn" id="editItemBackBtn">⬅️</div>
     <div class="generic-title" id="editItemTitle">Edit Item</div>
@@ -2866,6 +2874,7 @@ input:checked + .slider:before { transform: translateX(22px); }
   </div>
   <div class="generic-content">
     <div class="dashboard-card">
+        <div id="editItemCategoryContainer"></div>
         <label for="editItemName">Item Name</label>
         <input type="text" id="editItemName" placeholder="e.g., Classic Burger">
         <label for="editItemPrice">Price (UGX)</label>
@@ -2878,7 +2887,7 @@ input:checked + .slider:before { transform: translateX(22px); }
   <div class="edit-footer" style="padding:20px; border-top: 1px solid #eee; background: #fff; display:flex; gap:15px;"><button id="deleteItemBtn" style="background:#ff4757;">Delete</button><button id="saveItemBtn" style="background:#019E81;">Save Changes</button></div>
 </div>
 
-<div id="merchantOrdersScreen" class="generic-screen">
+<div id="merchantOrdersScreen" class="generic-screen" style="z-index: 6600;">
   <div class="generic-header">
     <div class="generic-back-btn" id="merchantOrdersBackBtn">⬅️</div>
     <div class="generic-title">Order History</div>
@@ -2917,6 +2926,7 @@ let adminLayers = { riders: null, vendors: null, customers: null, zones: null, h
 let adminDraw = { active: false, center: null, circle: null };
 let adminOrderSearchTerm = '';
 let adminOrderCurrentStatus = 'all';
+let editingAdminId = null; // Global to track if we are editing
 let adminFilters = {
     restaurants: { status: 'all', search: '' },
     riders: { status: 'all', search: '' },
@@ -2929,6 +2939,22 @@ let sortState = {
     customers: { col: null, asc: true }
 };
 
+let merchantMenuItems = [
+    {
+        name: "Main Courses",
+        items: [
+            { id: 1, name: "Double Cheese Burger", price: 25.00, img: "🍔", active: true },
+            { id: 2, name: "Spicy Chicken Wings", price: 30.00, img: "🍗", active: true },
+        ]
+    },
+    {
+        name: "Sides & Drinks",
+        items: [
+            { id: 3, name: "Coca Cola", price: 5.00, img: "🥤", active: true },
+            { id: 4, name: "French Fries", price: 15.00, img: "🍟", active: false }
+        ]
+    }
+];
 
 // --- CONFIGURATION ---
 const OSRM_SERVER_URL = "https://router.project-osrm.org"; // REPLACE WITH YOUR PRIVATE OSRM URL
@@ -3448,7 +3474,7 @@ async function handleLogin() {
                     name: name,
                     phone: formattedPhone,
                     email: '',
-                    orders: 0,
+                    orders: [],
                     totalSpent: 0,
                     status: 'pending_verification', // Waits for Admin
                     joined: new Date().toISOString().slice(0, 10),
@@ -3516,7 +3542,7 @@ function saveUserSettings() {
             addressFull: document.getElementById('selectedAddress').textContent,
             push: document.getElementById('settingPushToggle')?.checked,
             loc: document.getElementById('settingLocToggle')?.checked,
-        biometric: document.getElementById('settingBiometricToggle')?.checked,
+            biometric: document.getElementById('settingBiometricToggle')?.checked,
             allergyNotes: allergyNotes
         };
         if (typeof marker !== 'undefined' && marker) {
@@ -3569,36 +3595,63 @@ let walletTransactions = [
 
 /* Sample Data for Admin Panel */
 const MOCK_ORDERS = [
-    { id: '#9901', customer: 'John Doe', customerPhone: '+971 50 123 4567', restaurant: 'Burger King', items: ['2x Cheese Burger', '1x Cola'], total: 30.00, status: 'pending', payment: 'cod', time: 'Just now', address: 'Dubai Marina, Building 12', rider: null, lat: 24.455, lng: 54.380 },
-    { id: '#9902', customer: 'Sarah Ahmed', customerPhone: '+971 55 987 6543', restaurant: 'Pizza Hut', items: ['1x Family Pizza', '2x Garlic Bread'], total: 85.00, status: 'confirmed', payment: 'card', time: '5 mins ago', address: 'Jumeirah Beach, Villa 45', rider: 'Ahmed Hassan', lat: 24.470, lng: 54.375 },
-    { id: '#9903', customer: 'Mike Johnson', customerPhone: '+971 52 456 7890', restaurant: 'KFC', items: ['3x Spicy Wings', '1x Fries'], total: 45.00, status: 'preparing', payment: 'wallet', time: '15 mins ago', address: 'Business Bay, Office Tower', rider: 'Fatima Al-Zahra', lat: 24.450, lng: 54.390 },
-    { id: '#9904', customer: 'Emma Wilson', customerPhone: '+971 56 789 0123', restaurant: 'Starbucks', items: ['2x Iced Latte', '1x Croissant'], total: 38.00, status: 'ready', payment: 'cod', time: '20 mins ago', address: 'Dubai Mall, Level 2', rider: 'Omar Khalid', lat: 24.460, lng: 54.370 },
-    { id: '#9905', customer: 'David Chen', customerPhone: '+971 58 321 6547', restaurant: 'McDonald\'s', items: ['1x Big Mac Meal', '1x McFlurry'], total: 25.00, status: 'delivered', payment: 'card', time: '1 hour ago', address: 'Dubai Festival City', rider: 'Layla Mahmoud', lat: 24.458, lng: 54.385 },
-    { id: '#9906', customer: 'Anna Rodriguez', customerPhone: '+971 50 654 3210', restaurant: 'Subway', items: ['1x Footlong Sub', '1x Cookie'], total: 32.00, status: 'cancelled', payment: 'cod', time: '2 hours ago', address: 'Al Barsha, Mall', rider: null, lat: 24.445, lng: 54.365 },
-    { id: '#9907', customer: 'Robert Kim', customerPhone: '+971 55 147 2589', restaurant: 'Domino\'s', items: ['2x Medium Pizza', '1x Coke'], total: 65.00, status: 'pending', payment: 'card', time: '3 mins ago', address: 'Jumeirah, Villa Complex', rider: null, lat: 24.465, lng: 54.388 },
-    { id: '#9908', customer: 'Lisa Thompson', customerPhone: '+971 52 369 8520', restaurant: 'Costa Coffee', items: ['1x Cappuccino', '2x Muffins'], total: 28.00, status: 'confirmed', payment: 'wallet', time: '8 mins ago', address: 'Dubai Marina Walk', rider: 'Youssef Al-Rashid', lat: 24.452, lng: 54.378 }
+    { id: '#9901', customer: 'John Doe', customerPhone: '+971 50 123 4567', restaurant: 'Burger King', items: ['2x Cheese Burger', '1x Cola'], total: 30.00, status: 'pending', payment: 'cod', time: 'Just now', address: 'Dubai Marina, Building 12', rider: null, lat: 24.455, lng: 54.380, tip: 5.00 },
+    { id: '#9902', customer: 'Sarah Ahmed', customerPhone: '+971 55 987 6543', restaurant: 'Pizza Hut', items: ['1x Family Pizza', '2x Garlic Bread'], total: 85.00, status: 'confirmed', payment: 'card', time: '5 mins ago', address: 'Jumeirah Beach, Villa 45', rider: 'Ahmed Hassan', lat: 24.470, lng: 54.375, tip: 10.00 },
+    { id: '#9903', customer: 'Mike Johnson', customerPhone: '+971 52 456 7890', restaurant: 'KFC', items: ['3x Spicy Wings', '1x Fries'], total: 45.00, status: 'preparing', payment: 'wallet', time: '15 mins ago', address: 'Business Bay, Office Tower', rider: 'Fatima Al-Zahra', lat: 24.450, lng: 54.390, tip: 0 },
+    { id: '#9904', customer: 'Emma Wilson', customerPhone: '+971 56 789 0123', restaurant: 'Starbucks', items: ['2x Iced Latte', '1x Croissant'], total: 38.00, status: 'ready', payment: 'cod', time: '20 mins ago', address: 'Dubai Mall, Level 2', rider: 'Omar Khalid', lat: 24.460, lng: 54.370, tip: 5.00 },
+    { id: '#9905', customer: 'David Chen', customerPhone: '+971 58 321 6547', restaurant: 'McDonald\'s', items: ['1x Big Mac Meal', '1x McFlurry'], total: 25.00, status: 'delivered', payment: 'card', time: '1 hour ago', address: 'Dubai Festival City', rider: 'Layla Mahmoud', lat: 24.458, lng: 54.385, tip: 2.50 },
+    { id: '#9906', customer: 'Anna Rodriguez', customerPhone: '+971 50 654 3210', restaurant: 'Subway', items: ['1x Footlong Sub', '1x Cookie'], total: 32.00, status: 'cancelled', payment: 'cod', time: '2 hours ago', address: 'Al Barsha, Mall', rider: null, lat: 24.445, lng: 54.365, tip: 0 },
+    { id: '#9907', customer: 'Robert Kim', customerPhone: '+971 55 147 2589', restaurant: 'Domino\'s', items: ['2x Medium Pizza', '1x Coke'], total: 65.00, status: 'pending', payment: 'card', time: '3 mins ago', address: 'Jumeirah, Villa Complex', rider: null, lat: 24.465, lng: 54.388, tip: 0 },
+    { id: '#9908', customer: 'Lisa Thompson', customerPhone: '+971 52 369 8520', restaurant: 'Costa Coffee', items: ['1x Cappuccino', '2x Muffins'], total: 28.00, status: 'confirmed', payment: 'wallet', time: '8 mins ago', address: 'Dubai Marina Walk', rider: 'Youssef Al-Rashid', lat: 24.452, lng: 54.378, tip: 3.00 }
 ];
 let adminOrders = [...MOCK_ORDERS];
 
 const MOCK_RESTAURANTS = [
-    { id: 1, name: 'Burger King', category: 'Fast Food', rating: 4.5, status: 'active', orders: 245, revenue: 12500.00, phone: '+971 4 123 4567', address: 'Dubai Mall', owner: 'BK UAE LLC', commission: 15 },
-    { id: 2, name: 'Pizza Hut', category: 'Pizza', rating: 4.7, status: 'active', orders: 189, revenue: 18900.00, phone: '+971 4 234 5678', address: 'Mall of Emirates', owner: 'PH Middle East', commission: 12 },
-    { id: 3, name: 'KFC', category: 'Chicken', rating: 4.6, status: 'active', orders: 312, revenue: 15600.00, phone: '+971 4 345 6789', address: 'Dubai Festival City', owner: 'KFC UAE', commission: 18 },
-    { id: 4, name: 'Starbucks', category: 'Coffee', rating: 4.8, status: 'active', orders: 156, revenue: 12480.00, phone: '+971 4 456 7890', address: 'Dubai Mall', owner: 'Starbucks UAE', commission: 10 },
-    { id: 5, name: 'McDonald\'s', category: 'Fast Food', rating: 4.4, status: 'active', orders: 278, revenue: 13900.00, phone: '+971 4 567 8901', address: 'Deira City Centre', owner: 'McD UAE', commission: 16 },
-    { id: 6, name: 'Subway', category: 'Sandwiches', rating: 4.3, status: 'inactive', orders: 98, revenue: 4900.00, phone: '+971 4 678 9012', address: 'Al Barsha Mall', owner: 'Subway UAE', commission: 14 },
-    { id: 7, name: 'Domino\'s Pizza', category: 'Pizza', rating: 4.5, status: 'active', orders: 203, revenue: 20300.00, phone: '+971 4 789 0123', address: 'Dubai Marina', owner: 'Domino\'s UAE', commission: 13 },
-    { id: 8, name: 'Costa Coffee', category: 'Coffee', rating: 4.6, status: 'active', orders: 134, revenue: 10720.00, phone: '+971 4 890 1234', address: 'Dubai Marina Walk', owner: 'Costa UAE', commission: 11 }
+    { id: 1, name: 'Burger King', category: 'Fast Food', rating: 4.5, status: 'active', orders: 245, revenue: 12500.00, phone: '+971 4 123 4567', address: 'Dubai Mall', owner: 'BK UAE LLC', commission: 15, menu: [
+        { id: 101, name: "Whopper", price: 22.00, img: "🍔", active: true },
+        { id: 102, name: "Chicken Royale", price: 20.00, img: "🍔", active: true },
+        { id: 103, name: "Onion Rings", price: 10.00, img: "🧅", active: true },
+    ] },
+    { id: 2, name: 'Pizza Hut', category: 'Pizza', rating: 4.7, status: 'active', orders: 189, revenue: 18900.00, phone: '+971 4 234 5678', address: 'Mall of Emirates', owner: 'PH Middle East', commission: 12, menu: [
+        { id: 201, name: "Pepperoni Pizza", price: 45.00, img: "🍕", active: true },
+        { id: 202, name: "Veggie Supreme", price: 42.00, img: "🍕", active: true },
+        { id: 203, name: "Garlic Bread", price: 15.00, img: "🥖", active: false },
+    ] },
+    { id: 3, name: 'KFC', category: 'Chicken', rating: 4.6, status: 'active', orders: 312, revenue: 15600.00, phone: '+971 4 345 6789', address: 'Dubai Festival City', owner: 'KFC UAE', commission: 18, menu: [
+        { id: 301, name: "Zinger Burger", price: 18.00, img: "🍔", active: true },
+        { id: 302, name: "9pc Bucket", price: 75.00, img: "🍗", active: true },
+        { id: 303, name: "Fries", price: 8.00, img: "🍟", active: true },
+    ] },
+    { id: 4, name: 'Starbucks', category: 'Coffee', rating: 4.8, status: 'active', orders: 156, revenue: 12480.00, phone: '+971 4 456 7890', address: 'Dubai Mall', owner: 'Starbucks UAE', commission: 10, menu: [
+        { id: 401, name: "Caramel Macchiato", price: 21.00, img: "☕", active: true },
+        { id: 402, name: "Cheese Croissant", price: 15.00, img: "🥐", active: true },
+    ] },
+    { id: 5, name: 'McDonald\'s', category: 'Fast Food', rating: 4.4, status: 'active', orders: 278, revenue: 13900.00, phone: '+971 4 567 8901', address: 'Deira City Centre', owner: 'McD UAE', commission: 16, menu: [
+        { id: 501, name: "Big Mac", price: 20.00, img: "🍔", active: true },
+        { id: 502, name: "McNuggets (9pc)", price: 22.00, img: "🍗", active: true },
+    ] },
+    { id: 6, name: 'Subway', category: 'Sandwiches', rating: 4.3, status: 'inactive', orders: 98, revenue: 4900.00, phone: '+971 4 678 9012', address: 'Al Barsha Mall', owner: 'Subway UAE', commission: 14, menu: [
+        { id: 601, name: "Chicken Teriyaki Sub", price: 25.00, img: "🥪", active: true },
+        { id: 602, name: "Cookies (3pc)", price: 10.00, img: "🍪", active: true },
+    ] },
+    { id: 7, name: 'Domino\'s Pizza', category: 'Pizza', rating: 4.5, status: 'active', orders: 203, revenue: 20300.00, phone: '+971 4 789 0123', address: 'Dubai Marina', owner: 'Domino\'s UAE', commission: 13, menu: [
+        { id: 701, name: "ExtravaganZZa Pizza", price: 55.00, img: "🍕", active: true },
+        { id: 702, name: "Cheesy Bread", price: 18.00, img: "🥖", active: true },
+    ] },
+    { id: 8, name: 'Costa Coffee', category: 'Coffee', rating: 4.6, status: 'active', orders: 134, revenue: 10720.00, phone: '+971 4 890 1234', address: 'Dubai Marina Walk', owner: 'Costa UAE', commission: 11, menu: [
+        { id: 801, name: "Flat White", price: 18.00, img: "☕", active: true },
+        { id: 802, name: "Blueberry Muffin", price: 14.00, img: "🧁", active: true },
+    ] }
 ];
 let adminRestaurants = [...MOCK_RESTAURANTS];
 
 const MOCK_RIDERS = [
-    { id: 1, name: 'Ahmed Hassan', phone: '+971 50 111 2222', email: 'ahmed.hassan@email.com', status: 'offline', rating: 4.8, completedOrders: 1247, earnings: 8750.00, vehicle: 'Motorcycle', license: 'DL123456', joined: '2023-01-15', lastSeen: '2 mins ago' },
-    { id: 2, name: 'Fatima Al-Zahra', phone: '+971 55 333 4444', email: 'fatima.zahra@email.com', status: 'offline', rating: 4.9, completedOrders: 892, earnings: 6240.00, vehicle: 'Scooter', license: 'DL234567', joined: '2023-03-22', lastSeen: '1 hour ago' },
-    { id: 3, name: 'Omar Khalid', phone: '+971 52 555 6666', email: 'omar.khalid@email.com', status: 'offline', rating: 4.7, completedOrders: 1563, earnings: 10941.00, vehicle: 'Motorcycle', license: 'DL345678', joined: '2022-11-08', lastSeen: '5 mins ago' },
-    { id: 4, name: 'Layla Mahmoud', phone: '+971 56 777 8888', email: 'layla.mahmoud@email.com', status: 'offline', rating: 4.6, completedOrders: 734, earnings: 5138.00, vehicle: 'Car', license: 'DL456789', joined: '2023-05-14', lastSeen: 'Yesterday' },
-    { id: 5, name: 'Youssef Al-Rashid', phone: '+971 58 999 0000', email: 'youssef.rashid@email.com', status: 'offline', rating: 4.8, completedOrders: 1102, earnings: 7714.00, vehicle: 'Motorcycle', license: 'DL567890', joined: '2023-02-28', lastSeen: '10 mins ago' },
-    { id: 6, name: 'Aisha Al-Mansoori', phone: '+971 50 222 3333', email: 'aisha.mansoori@email.com', status: 'offline', rating: 4.9, completedOrders: 945, earnings: 6615.00, vehicle: 'Scooter', license: 'DL678901', joined: '2023-04-10', lastSeen: 'Just now' }
+    { id: 1, name: 'Ahmed Hassan', phone: '+971 50 111 2222', email: 'ahmed.hassan@email.com', status: 'offline', rating: 4.8, completedOrders: 1247, earnings: 8750.00, vehicle: 'Motorcycle', license: 'DL123456', joined: '2023-01-15', lastSeen: '2 mins ago', accountStatus: 'active' },
+    { id: 2, name: 'Fatima Al-Zahra', phone: '+971 55 333 4444', email: 'fatima.zahra@email.com', status: 'offline', rating: 4.9, completedOrders: 892, earnings: 6240.00, vehicle: 'Scooter', license: 'DL234567', joined: '2023-03-22', lastSeen: '1 hour ago', accountStatus: 'active' },
+    { id: 3, name: 'Omar Khalid', phone: '+971 52 555 6666', email: 'omar.khalid@email.com', status: 'offline', rating: 4.7, completedOrders: 1563, earnings: 10941.00, vehicle: 'Motorcycle', license: 'DL345678', joined: '2022-11-08', lastSeen: '5 mins ago', accountStatus: 'suspended' },
+    { id: 4, name: 'Layla Mahmoud', phone: '+971 56 777 8888', email: 'layla.mahmoud@email.com', status: 'offline', rating: 4.6, completedOrders: 734, earnings: 5138.00, vehicle: 'Car', license: 'DL456789', joined: '2023-05-14', lastSeen: 'Yesterday', accountStatus: 'active' },
+    { id: 5, name: 'Youssef Al-Rashid', phone: '+971 58 999 0000', email: 'youssef.rashid@email.com', status: 'offline', rating: 4.8, completedOrders: 1102, earnings: 7714.00, vehicle: 'Motorcycle', license: 'DL567890', joined: '2023-02-28', lastSeen: '10 mins ago', accountStatus: 'active' },
+    { id: 6, name: 'Aisha Al-Mansoori', phone: '+971 50 222 3333', email: 'aisha.mansoori@email.com', status: 'offline', rating: 4.9, completedOrders: 945, earnings: 6615.00, vehicle: 'Scooter', license: 'DL678901', joined: '2023-04-10', lastSeen: 'Just now', accountStatus: 'active' }
 ];
 let adminRiders = [...MOCK_RIDERS];
 // Load persisted restaurants to enable saving
@@ -3641,8 +3694,8 @@ const MOCK_SUPPORT_TICKETS = [
 let adminSupportTickets = [...MOCK_SUPPORT_TICKETS];
 
 const MOCK_ACCOUNTS = [
-    { id: 1, name: 'Sadik', email: 'sadik@kirya.app', phone: '+971 56 288 9428', role: 'Super Admin', lastLogin: 'Today' },
-    { id: 2, name: 'Admin User', email: 'admin@kirya.app', phone: '+971 50 000 0000', role: 'Manager', lastLogin: 'Yesterday' }
+    { id: 1, name: 'Sadik', email: 'sadik@kirya.app', phone: '+971 56 288 9428', role: 'Super Admin', lastLogin: 'Today', status: 'active' },
+    { id: 2, name: 'Admin User', email: 'admin@kirya.app', phone: '+971 50 000 0000', role: 'Manager', lastLogin: 'Yesterday', status: 'active' }
 ];
 let adminAccounts = [...MOCK_ACCOUNTS];
 
@@ -3794,6 +3847,300 @@ function confirmLogout() {
     window.location.reload();
 }
 
+/* Merchant Menu Logic */
+const merchantManageMenuBtn = document.getElementById('merchantManageMenuBtn');
+const merchantMenuScreen = document.getElementById('merchantMenuScreen');
+const merchantMenuBackBtn = document.getElementById('merchantMenuBackBtn');
+const merchantAddMenuBtn = document.getElementById('merchantAddMenuBtn');
+const merchantEditItemScreen = document.getElementById('merchantEditItemScreen');
+
+function toggleMenuItemActive(itemId, categoryName) {
+    const resId = document.getElementById('merchantMenuScreen').dataset.restaurantId;
+    let menuSource;
+    if (resId === 'current_vendor') {
+        menuSource = merchantMenuItems;
+    } else {
+        const restaurant = adminRestaurants.find(r => r.id == resId);
+        menuSource = restaurant ? restaurant.menu : null;
+    }
+
+    if (menuSource) {
+        const category = menuSource.find(c => c.name === categoryName);
+        if (category && category.items) {
+            const item = category.items.find(i => i.id === itemId);
+            if (item) {
+                item.active = !item.active;
+                showToast(`${item.name} is now ${item.active ? 'In Stock' : 'Out of Stock'}`);
+                renderMerchantMenuItems(menuSource);
+                if (resId !== 'current_vendor') {
+                    localStorage.setItem('kirya_restaurants', JSON.stringify(adminRestaurants));
+                }
+            }
+        }
+    }
+}
+
+function renderMerchantMenuItems(menuData) {
+    const list = document.getElementById('merchantMenuList');
+    if(!list) return;
+    list.innerHTML = '';
+    
+    if (!menuData || menuData.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">No menu categories found. Add one using the ➕ button.</div>';
+        return;
+    }
+
+    menuData.forEach(category => {
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'dashboard-card';
+        categoryDiv.style.marginBottom = '20px';
+
+        let itemsHtml = (category.items || []).map(item => `
+            <div class="menu-mgmt-item" style="cursor:pointer;" onclick="openEditItemScreen(${item.id}, '${category.name}')">
+                <div class="menu-mgmt-info">
+                    <div class="menu-mgmt-img">${item.img || '🍽️'}</div>
+                    <div class="menu-mgmt-text">
+                        <div class="menu-mgmt-name">${item.name}</div>
+                        <div class="menu-mgmt-price">UGX ${item.price.toFixed(2)}</div>
+                    </div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center;" onclick="event.stopPropagation();">
+                    <div class="menu-mgmt-toggle ${item.active ? 'active' : ''}" onclick="toggleMenuItemActive(${item.id}, '${category.name}')"></div>
+                    <div style="font-size:0.7em; margin-top:4px; font-weight:bold; color:${item.active ? '#019E81' : '#aaa'};">${item.active ? 'In Stock' : 'Out of Stock'}</div>
+                </div>
+            </div>
+        `).join('');
+
+        if (!itemsHtml) {
+            itemsHtml = '<div style="font-size:0.9em; color:#888; padding:10px;">No items in this category.</div>';
+        }
+
+        categoryDiv.innerHTML = `
+            <h4 style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                <span>${category.name}</span>
+                <button onclick="openEditItemScreen(null, '${category.name}')" style="background:none; border:none; font-size:1.2em; cursor:pointer; color:#019E81;">➕</button>
+            </h4>
+            ${itemsHtml}
+        `;
+        list.appendChild(categoryDiv);
+    });
+}
+
+function openEditItemScreen(itemId, categoryName) {
+    const resId = document.getElementById('merchantMenuScreen').dataset.restaurantId;
+    let menuSource;
+    let restaurant;
+
+    if (resId === 'current_vendor') {
+        menuSource = merchantMenuItems;
+    } else {
+        restaurant = adminRestaurants.find(r => r.id == resId);
+        menuSource = restaurant ? (restaurant.menu || []) : [];
+    }
+
+    const categoryContainer = document.getElementById('editItemCategoryContainer');
+    categoryContainer.innerHTML = `
+        <label for="editItemCategory" class="admin-form-label">Category</label>
+        <select id="editItemCategory" class="admin-form-input">
+            ${(menuSource || []).map(cat => `<option value="${cat.name}" ${cat.name === categoryName ? 'selected' : ''}>${cat.name}</option>`).join('')}
+        </select>
+    `;
+
+    const titleEl = document.getElementById('editItemTitle');
+    const nameInput = document.getElementById('editItemName');
+    const priceInput = document.getElementById('editItemPrice');
+    const imgInput = document.getElementById('editItemImg');
+    const idInput = document.getElementById('editItemId');
+    const deleteBtn = document.getElementById('deleteItemBtn');
+
+    if (itemId === null) { // Add mode
+        titleEl.textContent = 'Add New Item';
+        nameInput.value = '';
+        priceInput.value = '';
+        imgInput.value = '';
+        idInput.value = '';
+        deleteBtn.style.display = 'none';
+        if (categoryName) {
+            document.getElementById('editItemCategory').value = categoryName;
+        }
+    } else { // Edit mode
+        let item = null;
+        const category = menuSource.find(c => c.name === categoryName);
+        if (category && category.items) {
+            item = category.items.find(i => i.id === itemId);
+        }
+        if (!item) return;
+        titleEl.textContent = 'Edit Item';
+        nameInput.value = item.name;
+        priceInput.value = item.price;
+        imgInput.value = item.img;
+        idInput.value = item.id;
+        deleteBtn.style.display = 'block';
+        document.getElementById('editItemCategory').value = categoryName;
+    }
+    merchantEditItemScreen.classList.add('active');
+}
+
+// New Global Functions for Robust Navigation
+function openMerchantMenu() {
+    const screen = document.getElementById('merchantMenuScreen');
+    if(screen) {
+        screen.dataset.restaurantId = 'current_vendor';
+        screen.classList.add('active');
+        renderMerchantMenuItems(merchantMenuItems);
+    }
+}
+
+function openMerchantOrders() {
+    const screen = document.getElementById('merchantOrdersScreen');
+    if(screen) {
+        renderMerchantOrders();
+        screen.classList.add('active');
+    }
+}
+
+// Listeners for the Edit Item Screen
+document.getElementById('saveItemBtn').addEventListener('click', () => {
+    const resId = document.getElementById('merchantMenuScreen').dataset.restaurantId;
+    let targetMenuArray;
+
+    if (resId === 'current_vendor') {
+        targetMenuArray = merchantMenuItems;
+    } else {
+        const restaurant = adminRestaurants.find(r => r.id == resId);
+        if (restaurant) {
+            if (!restaurant.menu) restaurant.menu = [];
+            targetMenuArray = restaurant.menu;
+        } else {
+            showToast('Error: Could not find restaurant to save menu item.');
+            return;
+        }
+    }
+    const id = document.getElementById('editItemId').value;
+    const name = document.getElementById('editItemName').value;
+    const price = parseFloat(document.getElementById('editItemPrice').value);
+    const img = document.getElementById('editItemImg').value;
+    const categoryName = document.getElementById('editItemCategory').value;
+
+    if (!name || isNaN(price) || !categoryName) { showToast('Please fill all fields.'); return; }
+    
+    if (id) { // Edit
+        let item, oldCategoryName;
+        // Find item and its original category
+        for (const cat of targetMenuArray) {
+            const foundItem = cat.items?.find(i => i.id == id);
+            if (foundItem) {
+                item = foundItem;
+                oldCategoryName = cat.name;
+                break;
+            }
+        }
+
+        if (item) {
+            Object.assign(item, { name, price, img });
+            if (oldCategoryName !== categoryName) {
+                // remove from old category
+                const oldCat = targetMenuArray.find(c => c.name === oldCategoryName);
+                if(oldCat && oldCat.items) oldCat.items = oldCat.items.filter(i => i.id != id);
+                // add to new category
+                const newCat = targetMenuArray.find(c => c.name === categoryName);
+                if (newCat) {
+                    if (!newCat.items) newCat.items = [];
+                    newCat.items.push(item);
+                }
+            }
+        }
+    } else { // Add new
+        const newId = Date.now();
+        const category = targetMenuArray.find(c => c.name === categoryName);
+        if (category) {
+            if (!category.items) category.items = [];
+            category.items.push({ id: newId, name, price, img, active: true });
+        } else {
+            // If category somehow doesn't exist, create it
+            targetMenuArray.push({ name: categoryName, items: [{ id: newId, name, price, img, active: true }] });
+        }
+    }
+    
+    if (resId !== 'current_vendor') {
+        localStorage.setItem('kirya_restaurants', JSON.stringify(adminRestaurants));
+    }
+
+    renderMerchantMenuItems(targetMenuArray);
+    merchantEditItemScreen.classList.remove('active');
+    showToast('Menu item saved.');
+});
+
+document.getElementById('deleteItemBtn').addEventListener('click', () => {
+    const resId = document.getElementById('merchantMenuScreen').dataset.restaurantId;
+    let targetMenuArray;
+    if (resId === 'current_vendor') {
+        targetMenuArray = merchantMenuItems;
+    } else {
+        const restaurant = adminRestaurants.find(r => r.id == resId);
+        targetMenuArray = restaurant ? restaurant.menu : null;
+    }
+    if (!targetMenuArray) return;
+
+    const id = document.getElementById('editItemId').value;
+    if (id && confirm('Are you sure you want to delete this item?')) {
+        let found = false;
+        for (const cat of targetMenuArray) {
+            const index = cat.items?.findIndex(i => i.id == id);
+            if (index > -1) {
+                cat.items.splice(index, 1);
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            if (resId !== 'current_vendor') {
+                localStorage.setItem('kirya_restaurants', JSON.stringify(adminRestaurants));
+            }
+            renderMerchantMenuItems(targetMenuArray);
+            merchantEditItemScreen.classList.remove('active');
+            showToast('Item deleted.');
+        }
+    }
+});
+
+/* Merchant Past Orders Logic */
+const merchantOrdersBtn = document.getElementById('merchantOrdersBtn');
+const merchantOrdersScreen = document.getElementById('merchantOrdersScreen');
+const merchantOrdersBackBtn = document.getElementById('merchantOrdersBackBtn');
+const merchantOrdersList = document.getElementById('merchantOrdersList');
+
+const dummyPastOrders = [
+    { id: '#8820', date: 'Today, 10:30 AM', items: '2x Cheese Burger, 1x Cola', total: 'UGX 55.00', status: 'Delivered', statusColor: '#019E81' },
+    { id: '#8819', date: 'Yesterday, 8:15 PM', items: '1x Family Pizza Feast', total: 'UGX 85.00', status: 'Delivered', statusColor: '#019E81' },
+    { id: '#8818', date: 'Yesterday, 7:00 PM', items: '3x Spicy Wings (6pcs)', total: 'UGX 90.00', status: 'Cancelled', statusColor: '#ff4757' },
+    { id: '#8817', date: '22 Oct, 1:00 PM', items: '1x Zinger Wrap', total: 'UGX 22.00', status: 'Delivered', statusColor: '#019E81' },
+    { id: '#8816', date: '21 Oct, 9:45 PM', items: '2x Milkshakes', total: 'UGX 36.00', status: 'Delivered', statusColor: '#019E81' }
+];
+
+function renderMerchantOrders() {
+    merchantOrdersList.innerHTML = '';
+    dummyPastOrders.forEach(order => {
+        const card = document.createElement('div');
+        card.className = 'dashboard-card';
+        card.style.display = 'flex';
+        card.style.flexDirection = 'column';
+        card.style.gap = '8px';
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:800; color:#333;">${order.id}</span>
+                <span style="font-size:0.85em; color:#666;">${order.date}</span>
+            </div>
+            <div style="font-size:0.95em; color:#555; line-height:1.4;">${order.items}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
+                <span style="font-weight:bold; color:#333;">${order.total}</span>
+                <span style="background:${order.statusColor}20; color:${order.statusColor}; padding:4px 8px; border-radius:6px; font-size:0.85em; font-weight:700;">${order.status}</span>
+            </div>
+        `;
+        merchantOrdersList.appendChild(card);
+    });
+}
+
 // Initialize app after DOM is loaded
 function startApp() {
   // Restore Last Screen
@@ -3806,7 +4153,8 @@ function startApp() {
       }
 
       const lastScreenId = localStorage.getItem('kirya_last_screen');
-      if (lastScreenId && lastScreenId !== 'home' && lastScreenId !== 'splash' && lastScreenId !== 'notificationsScreen') {
+      const noRestoreScreens = ['merchantMenuScreen', 'merchantEditItemScreen', 'merchantOrdersScreen'];
+      if (lastScreenId && !noRestoreScreens.includes(lastScreenId) && lastScreenId !== 'home' && lastScreenId !== 'splash' && lastScreenId !== 'notificationsScreen') {
           const screen = document.getElementById(lastScreenId);
           if (screen) {
               // Hide home first
@@ -4068,6 +4416,38 @@ function startApp() {
   document.querySelectorAll('.generic-screen, #home, #mapScreen, #newHomeScreen').forEach(el => {
       screenObserver.observe(el, { attributes: true });
   });
+
+  // Listeners for the Edit Item Screen
+  const editItemBackBtn = document.getElementById('editItemBackBtn');
+  if(editItemBackBtn) {
+    editItemBackBtn.addEventListener('click', () => {
+        const screen = document.getElementById('merchantEditItemScreen');
+        if(screen) screen.classList.remove('active');
+    });
+  }
+
+  // Add listeners for merchant menu screen
+  const merchantMenuBackBtn = document.getElementById('merchantMenuBackBtn');
+  if (merchantMenuBackBtn) {
+    merchantMenuBackBtn.addEventListener('click', () => {
+        document.getElementById('merchantMenuScreen').classList.remove('active');
+    });
+  }
+  const merchantAddMenuBtn = document.getElementById('merchantAddMenuBtn');
+  if (merchantAddMenuBtn) {
+    merchantAddMenuBtn.addEventListener('click', () => {
+        // When adding from header, the first category will be selected by default.
+        openEditItemScreen(null, null);
+    });
+  }
+
+  // Add listener for merchant orders back button
+  const merchantOrdersBackBtn = document.getElementById('merchantOrdersBackBtn');
+  if (merchantOrdersBackBtn) {
+      merchantOrdersBackBtn.addEventListener('click', () => {
+          document.getElementById('merchantOrdersScreen').classList.remove('active');
+      });
+  }
   } catch (e) {
     console.error("Critical error in startApp:", e);
     const splash = document.getElementById('splash');
@@ -6107,7 +6487,7 @@ if (placeOrderBtn) {
                 window.allOrders.push(newOrder);
                 
                 // Add to User Profile Orders
-                if (!currentUser.orders) currentUser.orders = [];
+                if (!Array.isArray(currentUser.orders)) currentUser.orders = [];
                 currentUser.orders.unshift(newOrder);
                 saveUserProfile();
 
@@ -8751,206 +9131,6 @@ function initMerchantCharts() {
     });
 }
 
-/* Merchant Menu Logic */
-const merchantManageMenuBtn = document.getElementById('merchantManageMenuBtn');
-const merchantMenuScreen = document.getElementById('merchantMenuScreen');
-const merchantMenuBackBtn = document.getElementById('merchantMenuBackBtn');
-const merchantAddMenuBtn = document.getElementById('merchantAddMenuBtn');
-const merchantEditItemScreen = document.getElementById('merchantEditItemScreen');
-
-let merchantMenuItems = [
-    { id: 1, name: "Double Cheese Burger", price: 25.00, img: "🍔", active: true },
-    { id: 2, name: "Spicy Chicken Wings", price: 30.00, img: "🍗", active: true },
-    { id: 3, name: "Coca Cola", price: 5.00, img: "🥤", active: true },
-    { id: 4, name: "French Fries", price: 15.00, img: "🍟", active: false }
-];
-
-function renderMerchantMenuItems() {
-    const list = document.getElementById('merchantMenuList');
-    if(!list) return;
-    list.innerHTML = '';
-    
-    merchantMenuItems.forEach(item => {
-        const div = document.createElement('div');
-        div.style.cursor = 'pointer';
-        div.className = 'menu-mgmt-item';
-        div.innerHTML = `
-            <div class="menu-mgmt-info">
-                <div class="menu-mgmt-img">${item.img}</div>
-                <div class="menu-mgmt-text">
-                    <div class="menu-mgmt-name">${item.name}</div>
-                    <div class="menu-mgmt-price">UGX ${item.price.toFixed(2)}</div>
-                </div>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:center;">
-                <div class="menu-mgmt-toggle ${item.active ? 'active' : ''}"></div>
-                <div style="font-size:0.7em; margin-top:4px; font-weight:bold; color:${item.active ? '#019E81' : '#aaa'};">${item.active ? 'In Stock' : 'Out of Stock'}</div>
-            </div>
-        `;
-        
-        // Event listener for the toggle switch
-        div.querySelector('.menu-mgmt-toggle').addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent the main item click event
-            const toggle = e.currentTarget;
-            toggle.classList.toggle('active');
-            const isActive = toggle.classList.contains('active');
-            
-            // Update the data model
-            const dataItem = merchantMenuItems.find(i => i.id === item.id);
-            if (dataItem) dataItem.active = isActive;
-            
-            showToast(`${item.name} is now ${isActive ? 'In Stock' : 'Out of Stock'}`);
-            renderMerchantMenuItems(); // Re-render to update text color
-        });
-        
-        // Event listener for the whole item to open the edit screen
-        div.addEventListener('click', () => {
-            openEditItemScreen(item.id);
-        });
-
-        list.appendChild(div);
-    });
-}
-
-function openEditItemScreen(itemId) {
-    const titleEl = document.getElementById('editItemTitle');
-    const nameInput = document.getElementById('editItemName');
-    const priceInput = document.getElementById('editItemPrice');
-    const imgInput = document.getElementById('editItemImg');
-    const idInput = document.getElementById('editItemId');
-    const deleteBtn = document.getElementById('deleteItemBtn');
-
-    if (itemId === null) { // Add mode
-        titleEl.textContent = 'Add New Item';
-        nameInput.value = '';
-        priceInput.value = '';
-        imgInput.value = '';
-        idInput.value = '';
-        deleteBtn.style.display = 'none';
-    } else { // Edit mode
-        const item = merchantMenuItems.find(i => i.id === itemId);
-        if (!item) return;
-        titleEl.textContent = 'Edit Item';
-        nameInput.value = item.name;
-        priceInput.value = item.price;
-        imgInput.value = item.img;
-        idInput.value = item.id;
-        deleteBtn.style.display = 'block';
-    }
-    merchantEditItemScreen.classList.add('active');
-}
-
-if(merchantManageMenuBtn) merchantManageMenuBtn.addEventListener('click', () => {
-    merchantMenuScreen.classList.add('active');
-    renderMerchantMenuItems();
-});
-if(merchantMenuBackBtn) merchantMenuBackBtn.addEventListener('click', () => merchantMenuScreen.classList.remove('active'));
-if(merchantAddMenuBtn) merchantAddMenuBtn.addEventListener('click', () => openEditItemScreen(null));
-
-// Listeners for the Edit Item Screen
-document.getElementById('editItemBackBtn').addEventListener('click', () => merchantEditItemScreen.classList.remove('active'));
-
-document.getElementById('saveItemBtn').addEventListener('click', () => {
-    const id = document.getElementById('editItemId').value;
-    const name = document.getElementById('editItemName').value;
-    const price = parseFloat(document.getElementById('editItemPrice').value);
-    const img = document.getElementById('editItemImg').value;
-
-    if (!name || isNaN(price)) { showToast('Please enter a valid name and price.'); return; }
-    
-    // FIREBASE SYNC: Menu
-    // Using a 'menus' collection for demo, linked to current vendor
-    if(db) {
-        const itemData = { name, price, img, active: true };
-        if (id) {
-            db.collection('menu_items').doc(id).update(itemData)
-              .then(() => showToast("Item Updated in DB"));
-        } else {
-            db.collection('menu_items').add(itemData)
-              .then(() => showToast("Item Added to DB"));
-        }
-        // For local simulation without full menu listener setup in this block:
-        setTimeout(() => {
-             if (id) {
-                const item = merchantMenuItems.find(i => i.id == id);
-                if (item) Object.assign(item, itemData);
-            } else {
-                merchantMenuItems.push({ id: Date.now(), ...itemData });
-            }
-            renderMerchantMenuItems();
-            merchantEditItemScreen.classList.remove('active');
-        }, 500);
-    } else {
-        // Offline Fallback
-        if (id) { 
-            const item = merchantMenuItems.find(i => i.id == id);
-            if (item) { Object.assign(item, { name, price, img }); }
-        } else { 
-            const newId = Math.max(0, ...merchantMenuItems.map(i => i.id)) + 1;
-            merchantMenuItems.push({ id: newId, name, price, img, active: true });
-        }
-        renderMerchantMenuItems();
-        merchantEditItemScreen.classList.remove('active');
-        showToast('Menu saved locally');
-    }
-});
-
-document.getElementById('deleteItemBtn').addEventListener('click', () => {
-    const id = document.getElementById('editItemId').value;
-    if (id && confirm('Are you sure you want to delete this item?')) {
-        merchantMenuItems = merchantMenuItems.filter(i => i.id != id);
-        renderMerchantMenuItems();
-        merchantEditItemScreen.classList.remove('active');
-        showToast('Item deleted.');
-    }
-});
-
-/* Merchant Past Orders Logic */
-const merchantOrdersBtn = document.getElementById('merchantOrdersBtn');
-const merchantOrdersScreen = document.getElementById('merchantOrdersScreen');
-const merchantOrdersBackBtn = document.getElementById('merchantOrdersBackBtn');
-const merchantOrdersList = document.getElementById('merchantOrdersList');
-
-const dummyPastOrders = [
-    { id: '#8820', date: 'Today, 10:30 AM', items: '2x Cheese Burger, 1x Cola', total: 'UGX 55.00', status: 'Delivered', statusColor: '#019E81' },
-    { id: '#8819', date: 'Yesterday, 8:15 PM', items: '1x Family Pizza Feast', total: 'UGX 85.00', status: 'Delivered', statusColor: '#019E81' },
-    { id: '#8818', date: 'Yesterday, 7:00 PM', items: '3x Spicy Wings (6pcs)', total: 'UGX 90.00', status: 'Cancelled', statusColor: '#ff4757' },
-    { id: '#8817', date: '22 Oct, 1:00 PM', items: '1x Zinger Wrap', total: 'UGX 22.00', status: 'Delivered', statusColor: '#019E81' },
-    { id: '#8816', date: '21 Oct, 9:45 PM', items: '2x Milkshakes', total: 'UGX 36.00', status: 'Delivered', statusColor: '#019E81' }
-];
-
-function renderMerchantOrders() {
-    merchantOrdersList.innerHTML = '';
-    dummyPastOrders.forEach(order => {
-        const card = document.createElement('div');
-        card.className = 'dashboard-card';
-        card.style.display = 'flex';
-        card.style.flexDirection = 'column';
-        card.style.gap = '8px';
-        card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-weight:800; color:#333;">${order.id}</span>
-                <span style="font-size:0.85em; color:#666;">${order.date}</span>
-            </div>
-            <div style="font-size:0.95em; color:#555; line-height:1.4;">${order.items}</div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
-                <span style="font-weight:bold; color:#333;">${order.total}</span>
-                <span style="background:${order.statusColor}20; color:${order.statusColor}; padding:4px 8px; border-radius:6px; font-size:0.85em; font-weight:700;">${order.status}</span>
-            </div>
-        `;
-        merchantOrdersList.appendChild(card);
-    });
-}
-
-if(merchantOrdersBtn) {
-    merchantOrdersBtn.addEventListener('click', () => {
-        renderMerchantOrders();
-        merchantOrdersScreen.classList.add('active');
-    });
-}
-if(merchantOrdersBackBtn) {
-    merchantOrdersBackBtn.addEventListener('click', () => merchantOrdersScreen.classList.remove('active'));
-}
 
 /* Profile Picture Upload Logic */
 const profilePic = document.getElementById('profilePic');
@@ -9467,10 +9647,10 @@ function renderAdminRestaurantsList() {
             <td><div style="font-weight:600;">${restaurant.orders || 0} orders</div><div style="font-size:0.8em;">UGX ${(restaurant.revenue || 0).toLocaleString()}</div></td>
             <td><span style="background:${restaurant.status === 'active' ? '#4caf50' : '#f44336'}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${(restaurant.status || 'unknown').toUpperCase()}</span></td>
             <td>
-                <button onclick="verifyCustomerWhatsApp('${restaurant.phone}')" class="action-btn-table" style="background:#25D366; color:#fff;">Verify WA</button>
-                <button onclick="toggleRestaurantStatus(${restaurant.id})" class="action-btn-table" style="background:#2196f3; color:#fff;">${restaurant.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                <button onclick="toggleAdminItemStatus('restaurant', ${restaurant.id})" class="action-btn-table" style="background:#2196f3; color:#fff;">${restaurant.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                <button onclick="openAdminMenuManager(${restaurant.id})" class="action-btn-table" style="background:#9c27b0; color:#fff;">Menu</button>
                 <button onclick="openAdminModal('restaurant', ${restaurant.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
-                <button onclick="deleteRestaurant(${restaurant.id})" class="action-btn-table" style="background:#f44336; color:#fff;">Delete</button>
+                <button onclick="deleteAdminItem('restaurant', ${restaurant.id})" class="action-btn-table" style="background:#f44336; color:#fff;">Delete</button>
             </td>
         </tr>
     `).join('');
@@ -9479,19 +9659,42 @@ function renderAdminRestaurantsList() {
 function toggleRestaurantStatus(restaurantId) {
     const restaurant = adminRestaurants.find(r => r.id === restaurantId);
     if (restaurant) {
-        const newStatus = restaurant.status === 'active' ? 'inactive' : 'active';
-        // Firebase Update
-        if(db) db.collection('restaurants').doc(restaurantId.toString()).update({ status: newStatus });
-        showToast(`Updating status...`);
+        toggleAdminItemStatus('restaurant', restaurantId);
     }
 }
 
 function deleteRestaurant(restaurantId) {
     if(confirm('Are you sure you want to delete this restaurant? This cannot be undone.')) {
-        if(db) {
-            db.collection('restaurants').doc(restaurantId.toString()).delete()
-                .then(() => showToast('Restaurant deleted from Database'))
-                .catch(e => showToast('Error deleting: ' + e.message));
+        deleteAdminItem('restaurant', restaurantId);
+    }
+}
+
+function deleteAdminItem(type, id) {
+    const typeMap = {
+        restaurant: { data: adminRestaurants, name: 'Restaurant', render: renderAdminRestaurants, storageKey: 'kirya_restaurants' },
+        rider: { data: adminRiders, name: 'Rider', render: renderAdminRiders, storageKey: 'kirya_riders' },
+        customer: { data: adminCustomers, name: 'Customer', render: renderAdminCustomers },
+        account: { data: adminAccounts, name: 'Admin Account', render: renderAdminAccounts }
+    };
+    const itemConfig = typeMap[type];
+    if (!itemConfig) return;
+
+    if (confirm(`Are you sure you want to delete this ${itemConfig.name}?`)) {
+        let dataArray = itemConfig.data;
+        const initialLength = dataArray.length;
+        dataArray = dataArray.filter(item => item.id != id);
+
+        if (dataArray.length < initialLength) {
+            if (type === 'restaurant') adminRestaurants = dataArray;
+            if (type === 'rider') adminRiders = dataArray;
+            if (type === 'customer') adminCustomers = dataArray;
+            if (type === 'account') adminAccounts = dataArray;
+
+            if (itemConfig.storageKey) {
+                localStorage.setItem(itemConfig.storageKey, JSON.stringify(dataArray));
+            }
+            showToast(`${itemConfig.name} deleted.`);
+            itemConfig.render();
         }
     }
 }
@@ -9547,16 +9750,18 @@ function filterAdminRiders(status) {
 }
 
 function renderAdminRidersList() {
-    const status = adminFilters.riders.status;
+    const filterStatus = adminFilters.riders.status;
     const search = adminFilters.riders.search;
     const filteredRiders = adminRiders.filter(r => {
-        const matchesStatus = status === 'all' || r.status === status;
+        const matchesStatus = filterStatus === 'all' || r.status === filterStatus;
         const matchesSearch = (r.name || '').toLowerCase().includes(search) || (r.phone || '').includes(search);
         return matchesStatus && matchesSearch;
     });
     
     return filteredRiders.map(rider => {
         const statusColors = { online: '#4caf50', busy: '#ff9800', offline: '#f44336' };
+        const accountStatus = rider.accountStatus || 'active';
+        const accountStatusColor = accountStatus === 'active' ? '#4caf50' : '#f44336';
         
         return `
             <tr>
@@ -9570,7 +9775,9 @@ function renderAdminRidersList() {
                     <button onclick="verifyCustomerWhatsApp('${rider.phone}')" class="action-btn-table" style="background:#25D366; color:#fff;">Verify WA</button>
                     <button onclick="contactRider('${rider.phone}')" class="action-btn-table" style="background:#2196f3; color:#fff;">Call</button>
                     <button onclick="chatWithRider('${rider.id}', '${rider.name}')" class="action-btn-table" style="background:#019E81; color:#fff;">Chat</button>
+                    <button onclick="toggleRiderAccountStatus(${rider.id})" class="action-btn-table" style="background:${accountStatusColor}; color:#fff;">${accountStatus === 'active' ? 'Suspend' : 'Activate'}</button>
                     <button onclick="editRider(${rider.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
+                    <button onclick="deleteAdminItem('rider', ${rider.id})" class="action-btn-table" style="background:#f44336; color:#fff;">Delete</button>
                 </td>
             </tr>
         `;
@@ -9683,9 +9890,11 @@ function renderAdminCustomersList() {
             <td><span style="background:${customer.status === 'active' ? '#4caf50' : (customer.status === 'pending_verification' ? '#FFBF42' : '#f44336')}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${(customer.status || 'unknown') === 'pending_verification' ? 'PENDING' : (customer.status || 'unknown').toUpperCase()}</span></td>
             <td>
                 <button onclick="verifyCustomerWhatsApp('${customer.phone}')" class="action-btn-table" style="background:#25D366; color:#fff;">Verify WA</button>
-                ${customer.status === 'pending_verification' ? `<button onclick="approveCustomer(${customer.id})" class="action-btn-table" style="background:#4caf50; color:#fff;">Approve</button>` : ''}
+                ${customer.status === 'pending_verification' ? `<button onclick="approveCustomer('${customer.id}')" class="action-btn-table" style="background:#4caf50; color:#fff;">Approve</button>` : ''}
                 <button onclick="contactCustomer('${customer.phone}')" class="action-btn-table" style="background:#2196f3; color:#fff;">Call</button>
+                <button onclick="toggleAdminItemStatus('customer', ${customer.id}, 'active', 'inactive')" class="action-btn-table" style="background:#9c27b0; color:#fff;">${customer.status === 'active' ? 'Deactivate' : 'Activate'}</button>
                 <button onclick="openAdminModal('customer', ${customer.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
+                <button onclick="deleteAdminItem('customer', ${customer.id})" class="action-btn-table" style="background:#f44336; color:#fff;">Delete</button>
             </td>
         </tr>
     `).join('');
@@ -9697,16 +9906,14 @@ function verifyCustomerWhatsApp(phone) {
 }
 
 function approveCustomer(id) {
-    const customer = adminCustomers.find(c => c.id === id);
+    const customer = adminCustomers.find(c => c.id == id);
     if (customer) {
         customer.status = 'active';
         showToast(`${customer.name} marked as Active`);
-        // Refresh list
         if(db) {
             db.collection('customers').doc(customer.id.toString()).update({ status: 'active' });
         }
-        const listContainer = document.getElementById('adminCustomersList');
-        if (listContainer) listContainer.innerHTML = renderAdminCustomersList();
+        renderAdminCustomers();
     }
 }
 
@@ -9769,13 +9976,34 @@ function togglePromotionStatus(promoId) {
 }
 
 function addNewPromotion() {
-    showToast('Add new promotion - Coming soon!');
+    openAdminModal('promotion');
 }
 
 function editPromotion(promoId) {
     const promo = adminPromotions.find(p => p.id === promoId);
     if (promo) {
         showToast(`Edit promotion ${promo.title} - Coming soon!`);
+    }
+}
+
+function toggleAdminItemStatus(type, id, activeStatus = 'active', inactiveStatus = 'inactive') {
+    const typeMap = {
+        restaurant: { data: adminRestaurants, render: renderAdminRestaurants, storageKey: 'kirya_restaurants' },
+        customer: { data: adminCustomers, render: renderAdminCustomers },
+        account: { data: adminAccounts, render: renderAdminAccounts }
+    };
+    const itemConfig = typeMap[type];
+    if (!itemConfig) return;
+
+    const item = itemConfig.data.find(i => i.id == id);
+    if (item) {
+        const newStatus = item.status === activeStatus ? inactiveStatus : activeStatus;
+        item.status = newStatus;
+        if (itemConfig.storageKey) {
+            localStorage.setItem(itemConfig.storageKey, JSON.stringify(itemConfig.data));
+        }
+        showToast(`Status changed to ${newStatus}.`);
+        itemConfig.render();
     }
 }
 
@@ -9999,22 +10227,28 @@ function renderAdminAccounts() {
             <td><div style="font-weight:bold;">${acc.name}</div><div style="font-size:0.8em; color:#666;">${acc.role}</div></td>
             <td><div style="font-weight:bold;">${acc.phone}</div><div style="font-size:0.8em; color:#666;">${acc.email}</div></td>
             <td>${acc.lastLogin}</td>
+            <td><span style="background:${acc.status === 'active' ? '#4caf50' : '#f44336'}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${(acc.status || 'unknown').toUpperCase()}</span></td>
             <td>
-                <button onclick="verifyCustomerWhatsApp('${acc.phone}')" class="action-btn-table" style="background:#25D366; color:#fff;">Verify WA</button>
-                <button class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
+                <button onclick="toggleAdminItemStatus('account', ${acc.id})" class="action-btn-table" style="background:#2196f3; color:#fff;">${acc.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                <button onclick="openAdminModal('account', ${acc.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
+                <button onclick="deleteAdminItem('account', ${acc.id})" class="action-btn-table" style="background:#f44336; color:#fff;">Delete</button>
             </td>
         </tr>
     `).join('');
 
     content.innerHTML = `
         <div class="dashboard-card">
-            <h3 style="margin-bottom:15px;">🔐 Admin Accounts</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0;">🔐 Admin Accounts</h3>
+                <button onclick="openAdminModal('account')" style="padding:8px 12px; background:#019E81; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:0.9em;">+ Add Admin</button>
+            </div>
             <table class="admin-table">
                 <thead>
                     <tr>
                         <th>Name & Role</th>
                         <th>Contact</th>
                         <th>Last Login</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -10024,6 +10258,24 @@ function renderAdminAccounts() {
             </table>
         </div>
     `;
+}
+
+function editRider(id) {
+    openAdminModal('rider', id);
+}
+
+function editPromotion(id) {
+    openAdminModal('promotion', id);
+}
+
+function toggleRiderAccountStatus(riderId) {
+    const rider = adminRiders.find(r => r.id === riderId);
+    if (rider) {
+        const newStatus = rider.accountStatus === 'active' ? 'suspended' : 'active';
+        rider.accountStatus = newStatus;
+        showToast(`Rider ${rider.name} is now ${newStatus}.`);
+        renderAdminRiders();
+    }
 }
 
 function renderAdminConfig() {
@@ -10160,7 +10412,7 @@ function renderAdminAnalytics() {
     }
 }
 
-window.exportTipReportPDF = async function() {
+async function exportTipReportPDF() {
     // Ensure jspdf is loaded
     if (!window.jspdf) { showToast("PDF Library loading..."); return; }
     
@@ -11081,8 +11333,6 @@ function exportAdminData(type) {
     link.click();
 }
 
-let editingAdminId = null; // Global to track if we are editing
-
 function openAdminModal(type, id = null) {
     const modal = document.getElementById('adminAddModal');
     const title = document.getElementById('adminAddModalTitle');
@@ -11094,37 +11344,102 @@ function openAdminModal(type, id = null) {
     if (type === 'restaurant') {
         const r = id ? adminRestaurants.find(i => i.id === id) : {};
         title.textContent = id ? 'Edit Restaurant' : 'Add New Restaurant';
+        const restaurantCategories = ['Fast Food', 'Pizza', 'Chicken', 'Coffee', 'Sandwiches', 'Groceries', 'Shops', 'Pharmacies', 'Packages', 'Drinks', 'Local', 'Desserts', 'Halal'];
+        const categoryOptions = restaurantCategories.map(cat => `<option value="${cat}" ${r.category === cat ? 'selected' : ''}>${cat}</option>`).join('');
+
         formHtml = `
+            <label for="addRestaurantName" class="admin-form-label">Name</label>
             <input type="text" id="addRestaurantName" placeholder="Name" class="admin-form-input" value="${r.name || ''}">
-            <input type="text" id="addRestaurantCategory" placeholder="Category" class="admin-form-input" value="${r.category || ''}">
+            <label for="addRestaurantCategory" class="admin-form-label">Category</label>
+            <select id="addRestaurantCategory" class="admin-form-input">${categoryOptions}</select>
+            <label for="addRestaurantRating" class="admin-form-label">Rating</label>
             <input type="number" id="addRestaurantRating" placeholder="Rating (e.g., 4.5)" step="0.1" class="admin-form-input" value="${r.rating || ''}">
+            <label for="addRestaurantPhone" class="admin-form-label">Phone</label>
             <input type="text" id="addRestaurantPhone" placeholder="Phone" class="admin-form-input" value="${r.phone || ''}">
+            <label for="addRestaurantAddress" class="admin-form-label">Address</label>
             <input type="text" id="addRestaurantAddress" placeholder="Address" class="admin-form-input" value="${r.address || ''}">
+            <label for="addRestaurantOwner" class="admin-form-label">Owner</label>
             <input type="text" id="addRestaurantOwner" placeholder="Owner" class="admin-form-input" value="${r.owner || ''}">
+            <label for="addRestaurantCommission" class="admin-form-label">Commission %</label>
             <input type="number" id="addRestaurantCommission" placeholder="Commission %" class="admin-form-input" value="${r.commission || ''}">
+            <label for="addRestaurantProfilePhoto" class="admin-form-label">Profile Photo</label>
+            <input type="file" id="addRestaurantProfilePhoto" class="admin-form-input" accept="image/*">
+            <label for="addRestaurantCoverPhoto" class="admin-form-label">Cover Photo</label>
+            <input type="file" id="addRestaurantCoverPhoto" class="admin-form-input" accept="image/*">
         `;
         saveBtn.onclick = () => saveAdminData('restaurant');
     } else if (type === 'rider') {
         const r = id ? adminRiders.find(i => i.id === id) : {};
         title.textContent = id ? 'Edit Rider' : 'Add New Rider';
         formHtml = `
+            <label for="addRiderName" class="admin-form-label">Name</label>
             <input type="text" id="addRiderName" placeholder="Name" class="admin-form-input" value="${r.name || ''}">
+            <label for="addRiderPhone" class="admin-form-label">Phone</label>
             <input type="tel" id="addRiderPhone" placeholder="Phone" class="admin-form-input" value="${r.phone || ''}">
+            <label for="addRiderEmail" class="admin-form-label">Email</label>
             <input type="email" id="addRiderEmail" placeholder="Email" class="admin-form-input" value="${r.email || ''}">
+            <label for="addRiderVehicle" class="admin-form-label">Vehicle</label>
             <input type="text" id="addRiderVehicle" placeholder="Vehicle (e.g., Motorcycle)" class="admin-form-input" value="${r.vehicle || ''}">
+            <label for="addRiderLicense" class="admin-form-label">License Plate</label>
             <input type="text" id="addRiderLicense" placeholder="License Plate" class="admin-form-input" value="${r.license || ''}">
+            <label for="addRiderProfilePhoto" class="admin-form-label">Profile Photo</label>
+            <input type="file" id="addRiderProfilePhoto" class="admin-form-input" accept="image/*">
         `;
         saveBtn.onclick = () => saveAdminData('rider');
     } else if (type === 'customer') {
         const c = id ? adminCustomers.find(i => i.id === id) : {};
         title.textContent = id ? 'Edit Customer' : 'Add New Customer';
         formHtml = `
+            <label for="addCustomerName" class="admin-form-label">Name</label>
             <input type="text" id="addCustomerName" placeholder="Name" class="admin-form-input" value="${c.name || ''}">
+            <label for="addCustomerPhone" class="admin-form-label">Phone</label>
             <input type="tel" id="addCustomerPhone" placeholder="Phone" class="admin-form-input" value="${c.phone || ''}">
+            <label for="addCustomerEmail" class="admin-form-label">Email</label>
             <input type="email" id="addCustomerEmail" placeholder="Email" class="admin-form-input" value="${c.email || ''}">
+            <label for="addCustomerAddress" class="admin-form-label">Address</label>
             <input type="text" id="addCustomerAddress" placeholder="Address" class="admin-form-input" value="${c.address || ''}">
         `;
         saveBtn.onclick = () => saveAdminData('customer');
+    } else if (type === 'promotion') {
+        const p = id ? adminPromotions.find(i => i.id == id) : {};
+        title.textContent = id ? 'Edit Promotion' : 'Add New Promotion';
+        formHtml = `
+            <label for="addPromoTitle" class="admin-form-label">Title</label>
+            <input type="text" id="addPromoTitle" placeholder="Title" class="admin-form-input" value="${p.title || ''}">
+            <label for="addPromoDesc" class="admin-form-label">Description</label>
+            <textarea id="addPromoDesc" placeholder="Description" class="admin-form-input">${p.description || ''}</textarea>
+            <label for="addPromoDiscount" class="admin-form-label">Discount Value</label>
+            <input type="number" id="addPromoDiscount" placeholder="Discount Value" class="admin-form-input" value="${p.discount || ''}">
+            <label for="addPromoType" class="admin-form-label">Type</label>
+            <select id="addPromoType" class="admin-form-input">
+                <option value="percentage" ${p.type === 'percentage' ? 'selected' : ''}>Percentage (%)</option>
+                <option value="free_delivery" ${p.type === 'free_delivery' ? 'selected' : ''}>Free Delivery</option>
+            </select>
+            <label for="addPromoValidFrom" class="admin-form-label">Valid From</label>
+            <input type="date" id="addPromoValidFrom" placeholder="Valid From" class="admin-form-input" value="${p.validFrom || ''}">
+            <label for="addPromoValidTo" class="admin-form-label">Valid To</label>
+            <input type="date" id="addPromoValidTo" placeholder="Valid To" class="admin-form-input" value="${p.validTo || ''}">
+        `;
+        saveBtn.onclick = () => saveAdminData('promotion');
+    } else if (type === 'account') {
+        const acc = id ? adminAccounts.find(i => i.id == id) : {};
+        title.textContent = id ? 'Edit Admin Account' : 'Add New Admin';
+        formHtml = `
+            <label for="addAccountName" class="admin-form-label">Name</label>
+            <input type="text" id="addAccountName" placeholder="Name" class="admin-form-input" value="${acc.name || ''}">
+            <label for="addAccountEmail" class="admin-form-label">Email</label>
+            <input type="email" id="addAccountEmail" placeholder="Email" class="admin-form-input" value="${acc.email || ''}">
+            <label for="addAccountPhone" class="admin-form-label">Phone</label>
+            <input type="tel" id="addAccountPhone" placeholder="Phone" class="admin-form-input" value="${acc.phone || ''}">
+            <label for="addAccountRole" class="admin-form-label">Role</label>
+            <select id="addAccountRole" class="admin-form-input">
+                <option value="Manager" ${acc.role === 'Manager' ? 'selected' : ''}>Manager</option>
+                <option value="Super Admin" ${acc.role === 'Super Admin' ? 'selected' : ''}>Super Admin</option>
+            </select>
+            <label for="addAccountProfilePhoto" class="admin-form-label">Profile Photo</label>
+            <input type="file" id="addAccountProfilePhoto" class="admin-form-input" accept="image/*">
+        `;
+        saveBtn.onclick = () => saveAdminData('account');
     }
 
     form.innerHTML = formHtml;
@@ -11149,22 +11464,24 @@ function saveAdminData(type) {
             owner: document.getElementById('addRestaurantOwner').value,
             commission: parseInt(document.getElementById('addRestaurantCommission').value) || 0
         };
+        const profilePhotoFile = document.getElementById('addRestaurantProfilePhoto').files[0];
+        if (profilePhotoFile) data.profilePhoto = profilePhotoFile.name; // Storing filename for demo
+        const coverPhotoFile = document.getElementById('addRestaurantCoverPhoto').files[0];
+        if (coverPhotoFile) data.coverPhoto = coverPhotoFile.name;
+
         if (!data.name) { showToast('Restaurant name is required.'); return; }
         
-        if(db) {
-            if(editingAdminId) {
-                db.collection('restaurants').doc(editingAdminId.toString()).update(data);
-            } else {
-                db.collection('restaurants').add(data); // Auto ID
-            }
+        if (editingAdminId) {
+            const index = adminRestaurants.findIndex(r => r.id == editingAdminId);
+            if (index > -1) adminRestaurants[index] = { ...adminRestaurants[index], ...data };
         } else {
-            // Fallback offline
-            adminRestaurants.push({...data, id: Date.now()});
-            renderAdminRestaurants();
+            adminRestaurants.push({ ...data, id: Date.now() });
         }
+        renderAdminRestaurants();
+        localStorage.setItem('kirya_restaurants', JSON.stringify(adminRestaurants));
+
     } else if (type === 'rider') {
         const data = {
-            id: editingAdminId || (Math.max(0, ...adminRiders.map(r => r.id)) + 1),
             name: document.getElementById('addRiderName').value,
             phone: document.getElementById('addRiderPhone').value,
             email: document.getElementById('addRiderEmail').value,
@@ -11176,14 +11493,19 @@ function saveAdminData(type) {
             license: document.getElementById('addRiderLicense').value,
             joined: new Date().toISOString().slice(0, 10)
         };
+        const riderProfilePhoto = document.getElementById('addRiderProfilePhoto').files[0];
+        if (riderProfilePhoto) data.profilePhoto = riderProfilePhoto.name;
+
         if (!data.name) { showToast('Rider name is required.'); return; }
-        
-        if(editingAdminId) {
-            if(db) db.collection('riders').doc(editingAdminId.toString()).update(data);
+
+        if (editingAdminId) {
+            const index = adminRiders.findIndex(r => r.id == editingAdminId);
+            if (index > -1) adminRiders[index] = { ...adminRiders[index], ...data };
         } else {
-            if(db) db.collection('riders').doc(data.id.toString()).set(data);
+            adminRiders.push({ ...data, id: Date.now() });
         }
-        if(!db) { adminRiders.push(data); renderAdminRiders(); } // Offline
+        renderAdminRiders();
+        syncRiders();
     } else if (type === 'customer') {
         const data = {
             name: document.getElementById('addCustomerName').value,
@@ -11198,16 +11520,79 @@ function saveAdminData(type) {
         };
         if (!data.name) { showToast('Customer name is required.'); return; }
         
-        if(editingAdminId) {
-            if(db) db.collection('customers').doc(editingAdminId.toString()).update(data);
+        if (editingAdminId) {
+            const index = adminCustomers.findIndex(c => c.id == editingAdminId);
+            if (index > -1) adminCustomers[index] = { ...adminCustomers[index], ...data };
         } else {
-            if(db) db.collection('customers').add(data);
+            adminCustomers.push({ ...data, id: Date.now() });
         }
-        if(!db) { adminCustomers.push(data); renderAdminCustomers(); } // Offline
+        renderAdminCustomers();
+    } else if (type === 'promotion') {
+        const data = {
+            title: document.getElementById('addPromoTitle').value,
+            description: document.getElementById('addPromoDesc').value,
+            discount: parseFloat(document.getElementById('addPromoDiscount').value) || 0,
+            type: document.getElementById('addPromoType').value,
+            validFrom: document.getElementById('addPromoValidFrom').value,
+            validTo: document.getElementById('addPromoValidTo').value,
+            status: 'active',
+            usage: 0
+        };
+        if (!data.title) { showToast('Title is required.'); return; }
+        
+        if (editingAdminId) {
+            const index = adminPromotions.findIndex(p => p.id == editingAdminId);
+            if (index > -1) adminPromotions[index] = { ...adminPromotions[index], ...data, id: editingAdminId };
+        } else {
+            adminPromotions.push({ ...data, id: Date.now() });
+        }
+        renderAdminPromotions();
+    } else if (type === 'account') {
+        const data = {
+            name: document.getElementById('addAccountName').value,
+            email: document.getElementById('addAccountEmail').value,
+            phone: document.getElementById('addAccountPhone').value,
+            role: document.getElementById('addAccountRole').value,
+            status: 'active',
+            lastLogin: 'Just now'
+        };
+        const adminProfilePhoto = document.getElementById('addAccountProfilePhoto').files[0];
+        if (adminProfilePhoto) data.profilePhoto = adminProfilePhoto.name;
+
+        if (!data.name || !data.email) { showToast('Name and Email are required.'); return; }
+
+        if (editingAdminId) {
+            const index = adminAccounts.findIndex(a => a.id == editingAdminId);
+            if (index > -1) {
+                adminAccounts[index] = { ...adminAccounts[index], ...data };
+            }
+        } else {
+            adminAccounts.push({ ...data, id: Date.now() });
+        }
+        renderAdminAccounts();
     }
 
     showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} saved successfully!`);
     closeAdminAddModal();
+}
+
+function openAdminMenuManager(resId) {
+    // Open the existing merchant menu screen but conceptually for the selected restaurant
+    const restaurant = adminRestaurants.find(r => r.id == resId);
+    if (!restaurant) {
+        showToast('Restaurant not found!');
+        return;
+    }
+    
+    const menuItems = restaurant.menu || [];
+
+    const screen = document.getElementById('merchantMenuScreen');
+    if(screen) {
+        screen.dataset.restaurantId = resId;
+        screen.classList.add('active');
+        renderMerchantMenuItems(menuItems);
+        showToast(`Managing menu for ${restaurant.name}`);
+    }
 }
 
 function renderAdminLiveMap() { setTimeout(initAdminLiveMap, 100); }
