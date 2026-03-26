@@ -21,7 +21,7 @@
 html,body{ width:100%; height:100%; }
 
 /* Splash */
-#splash{ position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:flex; justify-content:center; align-items:center; background:orange; color:#019E81; font-size:3em; font-weight:900; transition:opacity .5s; }
+#splash{ position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:flex; justify-content:center; align-items:center; background:orange; color:#019E81; font-size:3em; font-weight:900; }
 #splash .letter{ display:inline-block; animation:bounce 0.6s ease infinite; }
 #splash .letter:nth-child(1){ animation-delay:0s; }
 #splash .letter:nth-child(2){ animation-delay:0.1s; }
@@ -67,7 +67,7 @@ nav {
 #currentLocationBtn{ position:absolute; top:80px; right:15px; z-index:700; background:#fff; border-radius:50%; padding:10px; box-shadow:0 2px 6px rgba(0,0,0,.3); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.5em; transition:background-color .2s, transform .2s; }
 #currentLocationBtn:hover{ background-color:#f0f0f0; transform:scale(1.1); }
 #currentLocationBtn:active{ transform:scale(1); background-color:#e0e0e0; }
-#bottomCard{ position:absolute; bottom:0; left:0; width:100%; height:33%; background:#fff; border-top-left-radius:20px; border-top-right-radius:20px; box-shadow:0 -4px 12px rgba(0,0,0,0.2); padding:20px; transform:translateY(100%); transition:transform .4s ease; display:flex; flex-direction:column; justify-content:space-between; gap:10px; z-index:500; overflow:hidden; }
+#bottomCard{ position:absolute; bottom:0; left:0; width:100%; height:33%; background:#fff; border-top-left-radius:20px; border-top-right-radius:20px; box-shadow:0 -4px 12px rgba(0,0,0,0.2); padding:20px; transform:translateY(100%); display:flex; flex-direction:column; justify-content:space-between; gap:10px; z-index:500; overflow:hidden; }
 #bottomCard::before{ content:""; position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,1); border-top-left-radius:20px; border-top-right-radius:20px; z-index:-1; }
 #bottomCard.show{ transform:translateY(0); }
 #bottomCard h2{ margin-bottom:10px; }
@@ -107,7 +107,7 @@ nav {
 .leaflet-control-attribution { position: relative; z-index: 1; }
 
 /* Search card */
-#searchCard{ position:absolute; bottom:-100%; left:0; width:100%; background:#f0f0f0; border-top-left-radius:20px; border-top-right-radius:20px; box-shadow:0 -4px 12px rgba(0,0,0,.2); padding:12px 20px; display:flex; flex-direction:column; justify-content:flex-start; gap:10px; transition:all 0.4s ease; z-index:600; max-height:50%; pointer-events:auto;}
+#searchCard{ position:absolute; bottom:-100%; left:0; width:100%; background:#f0f0f0; border-top-left-radius:20px; border-top-right-radius:20px; box-shadow:0 -4px 12px rgba(0,0,0,0.2); padding:12px 20px; display:flex; flex-direction:column; justify-content:flex-start; gap:10px; z-index:600; max-height:50%; pointer-events:auto;}
 #searchCard.show{ bottom:0; }
 #searchCard.expanded{ top:0; bottom:0; height:100%; max-height:none; border-radius:0; overflow-y: auto; }
 #searchCard .search-title{ text-align:center; font-weight:normal; font-size:1em; color:#333; line-height:1.3em; transition: opacity 0.3s; }
@@ -159,7 +159,7 @@ nav {
 #searchErrorContent.active #errorBackBtn { animation-delay: 0.3s; }
 
 /* New Home Screen for Add Location */
-#newHomeScreen{ position:fixed; bottom:-100%; left:0; width:100%; height:100%; z-index:1000; display:flex; flex-direction:column; transition:bottom 0.5s ease; pointer-events:none; }
+#newHomeScreen{ position:fixed; bottom:-100%; left:0; width:100%; height:100%; z-index:1000; display:flex; flex-direction:column; pointer-events:none; }
 #newHomeScreen.active{ pointer-events:auto; bottom:0; }
 #newHomeScreen .header{ 
   min-height: 48%; height: auto; background:orange; display:flex; justify-content:flex-start; align-items:center; flex-direction:column; color:#fff; padding-top: 70px; padding-bottom: 30px; 
@@ -319,7 +319,6 @@ nav {
   flex-direction:column;
   opacity:0;
   pointer-events:none;
-  transition: opacity 0.3s ease;
 }
 #categoryScreen.active{
   display:flex;
@@ -543,7 +542,6 @@ nav {
   z-index: 4000;
   display: flex;
   flex-direction: column;
-  transition: bottom 0.4s ease-in-out;
 }
 #dishDetailScreen.active {
   bottom: 0;
@@ -626,7 +624,7 @@ nav {
 #cartScreen {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: #fff; z-index: 5000; display: flex; flex-direction: column;
-  transform: translateX(100%); transition: transform 0.3s ease-in-out;
+  transform: translateX(100%);
 }
 #cartScreen.active { transform: translateX(0); }
 #cartScreen .cart-header { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; height: 60px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
@@ -693,7 +691,7 @@ nav {
 #checkoutActionScreen {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: #fff; z-index: 5500; display: flex; flex-direction: column;
-  transform: translateX(100%); transition: transform 0.3s ease-in-out;
+  transform: translateX(100%);
 }
 #checkoutActionScreen.active { transform: translateX(0); }
 #checkoutActionScreen .checkout-header { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; height: 60px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -714,7 +712,7 @@ nav {
 #allergyScreen {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: #fff; z-index: 6000; display: flex; flex-direction: column;
-  transform: translateX(100%); transition: transform 0.3s ease-in-out;
+  transform: translateX(100%);
 }
 #allergyScreen.active { transform: translateX(0); }
 #allergyScreen .allergy-header { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; height: 60px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -763,7 +761,6 @@ input:checked + .slider:before { transform: translateX(22px); }
 #recipientScreen {
   position: fixed; bottom: -100%; left: 0; width: 100%; height: 100%;
   background: #fff; z-index: 6500; display: flex; flex-direction: column;
-  transition: bottom 0.4s ease-in-out;
 }
 #recipientScreen.active { bottom: 0; }
 #recipientScreen .recipient-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.05); height: 60px; }
@@ -838,7 +835,7 @@ input:checked + .slider:before { transform: translateX(22px); }
 #profileScreen {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: #f9f9f9; z-index: 6000; display: flex; flex-direction: column;
-  transform: translateX(100%); transition: transform 0.3s ease-in-out;
+  transform: translateX(100%);
 }
 #profileScreen.active { transform: translateX(0); }
 #profileScreen .profile-header { padding: 15px; background: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; height: 60px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -975,7 +972,7 @@ input:checked + .slider:before { transform: translateX(22px); }
 #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
 
 /* Rider, Admin, Shop Portal Screens */
-.generic-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f9f9f9; z-index: 6500; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s ease-in-out; }
+.generic-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f9f9f9; z-index: 6500; display: flex; flex-direction: column; transform: translateX(100%); }
 .generic-screen.active { transform: translateX(0); }
 .generic-header { padding: 15px; background: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; height: 60px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 .generic-back-btn { font-size: 1.5em; cursor: pointer; padding: 5px; }
@@ -987,7 +984,7 @@ input:checked + .slider:before { transform: translateX(22px); }
 #adminScreen.active { transform: translateX(0); }
 
 .admin-layout { display: flex; width: 100%; height: 100%; }
-.admin-sidebar { width: 150px; background: #fff; border-right: 1px solid #eee; display: flex; flex-direction: column; padding: 10px 0; box-shadow: 2px 0 8px rgba(0,0,0,0.06); overflow-y: auto; transition: transform 0.3s ease-in-out; }
+.admin-sidebar { width: 150px; background: #fff; border-right: 1px solid #eee; display: flex; flex-direction: column; padding: 10px 0; box-shadow: 2px 0 8px rgba(0,0,0,0.06); overflow-y: auto; }
 
 .admin-toggle-btn { position: absolute; top: 15px; left: 15px; z-index: 2000; background: #fff; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 1.2em; display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 .admin-toggle-btn:active { transform: scale(0.95); }
@@ -1158,7 +1155,7 @@ input:checked + .slider:before { transform: translateX(22px); }
 #activeOrderWidget.visible { display: flex; }
 
 /* Track Order Screen */
-#trackOrderScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 7000; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.3s ease-in-out; }
+#trackOrderScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 7000; display: flex; flex-direction: column; transform: translateY(100%); }
 #trackOrderScreen.active { transform: translateY(0); }
 #trackMap { flex: 1; width: 100%; background: #eee; }
 .track-overlay-header { position: absolute; top: 0; left: 0; width: 100%; padding: 15px; display: flex; justify-content: space-between; z-index: 1000; pointer-events: none; }
@@ -1192,7 +1189,7 @@ input:checked + .slider:before { transform: translateX(22px); }
 #chatScreen {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: #f5f5f5; z-index: 8000; display: flex; flex-direction: column;
-  transform: translateX(100%); transition: transform 0.3s ease-in-out;
+  transform: translateX(100%);
 }
 #chatScreen.active { transform: translateX(0); }
 .chat-header { padding: 15px; background: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; height: 60px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -2441,6 +2438,7 @@ input:checked + .slider:before { transform: translateX(22px); }
             <span class="status-text">GO ONLINE</span>
             <div id="riderPendingBadge" style="display:none; position:absolute; top:-8px; right:-8px; background:#ff4757; color:white; border:2px solid #fff; border-radius:50%; width:24px; height:24px; font-size:0.8em; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,0.2);">0</div>
         </div>
+        <button onclick="handleLogout()" style="background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.1); border:none; border-radius:8px; padding:8px 12px; font-weight:bold; cursor:pointer; font-size:0.8em; color:#ff4757; display:flex; align-items:center; gap:5px; margin-left: auto;">🚪 Back to Login</button>
     </div>
 
     <!-- Bottom Panel -->
@@ -2816,9 +2814,17 @@ input:checked + .slider:before { transform: translateX(22px); }
   <div class="generic-header">
     <div class="header-bell-btn" onclick="openNotifications()">🔔<span class="header-bell-dot"></span></div>
     <button title="Close Store" style="margin-left: auto; padding: 8px 12px; background:#ff4757; color:white; border:none; border-radius:8px; font-weight:bold; cursor: pointer; font-size: 0.8em;">Close Store</button>
-    <button title="Log Out" onclick="handleLogout()" style="padding: 8px 12px; background:#333; color:white; border:none; border-radius:8px; font-weight:bold; cursor: pointer; font-size: 0.8em;">🚪 Log Out</button>
+    <button title="Back to Login" onclick="handleLogout()" style="padding: 8px 12px; background:#333; color:white; border:none; border-radius:8px; font-weight:bold; cursor: pointer; font-size: 0.8em;">🚪 Back to Login</button>
   </div>
   <div class="generic-content">
+    <div class="dashboard-card" style="padding:0; overflow:hidden; position:relative; height:180px; margin-bottom:20px;">
+        <div id="vendorCoverPhoto" onclick="triggerAdminPhotoUpload('restaurants', 'current', 'coverPhoto')" style="width:100%; height:100%; background:#eee; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+            <span style="color:#999;">Click to update Cover Photo</span>
+        </div>
+        <div id="vendorProfilePhoto" onclick="triggerAdminPhotoUpload('restaurants', 'current', 'profilePhoto')" style="position:absolute; bottom:15px; left:15px; width:80px; height:80px; background:#fff; border-radius:12px; border:3px solid #fff; box-shadow:0 4px 10px rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; z-index:10;">
+            <span style="font-size:2em;">🏪</span>
+        </div>
+    </div>
     <div class="dashboard-card">
       <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 10px;">Store Status: 🟢 Open</div>
     </div>
@@ -2881,6 +2887,8 @@ input:checked + .slider:before { transform: translateX(22px); }
         <input type="number" id="editItemPrice" placeholder="e.g., 25.00">
         <label for="editItemImg">Image (Emoji)</label>
         <input type="text" id="editItemImg" placeholder="e.g., 🍔">
+        <label for="editItemPhoto">Or Upload Photo</label>
+        <input type="file" id="editItemPhoto" class="admin-form-input" accept="image/*">
         <input type="hidden" id="editItemId">
     </div>
   </div>
@@ -2936,7 +2944,7 @@ let sortState = {
     orders: { col: null, asc: true },
     restaurants: { col: null, asc: true },
     riders: { col: null, asc: true },
-    customers: { col: null, asc: true }
+    customers: { col: null, asc: true, missingPhoto: false }
 };
 
 let merchantMenuItems = [
@@ -2964,6 +2972,7 @@ let currentUser = {
     name: '',
     phone: '',
     points: 500, // Welcome bonus
+    status: 'active',
     walletBalance: 0,
     favorites: [], // Stores restaurant names,
     rememberMe: true,
@@ -3292,6 +3301,14 @@ function setupUserProfileListener(userId) {
             // Sync other fields
             currentUser.points = data.points || 0;
             currentUser.walletBalance = data.walletBalance || 0;
+            
+            // Sync Notifications
+            if(data.notifications) {
+                notifications = data.notifications;
+                updateBellDots();
+                if(document.getElementById('notificationsScreen').classList.contains('active')) renderNotifications();
+            }
+
             // Update UI
             updateCartView();
         }
@@ -3398,7 +3415,7 @@ function saveUserProfile(syncToDb = true) {
 }
 
 function proceedToHome() {
-    saveUserProfile(false); // Save locally
+    saveUserProfile(true); // Save locally and sync
     
     // Init global vars
     recipientDetails = { name: currentUser.name, phone: currentUser.phone };
@@ -3406,6 +3423,9 @@ function proceedToHome() {
     
     // Transition
     document.getElementById('loginScreen').classList.remove('active');
+    document.getElementById('adminScreen').classList.remove('active');
+    document.getElementById('riderScreen').classList.remove('active');
+    document.getElementById('shopPortalScreen').classList.remove('active');
     
     // Move to Home if app is ready
     if(appReady) {
@@ -3425,6 +3445,8 @@ async function handleLogin() {
     const name = document.getElementById('loginName').value.trim();
     const phone = document.getElementById('loginPhone').value.trim();
     const role = selectedLoginRole;
+    const rememberMeEl = document.getElementById('loginRememberMe');
+    const rememberMe = rememberMeEl ? rememberMeEl.checked : true;
     
     if(name.length < 2 || phone.length < 5) {
         showToast("Please enter a valid name and phone number");
@@ -3433,46 +3455,111 @@ async function handleLogin() {
     
     const formattedPhone = phone.startsWith('+') ? phone : "+971 " + phone;
     
-    // Role-based Direct Access (Bypassing User DB for Demo roles)
-    if (role !== 'user') {
-        document.getElementById('loginScreen').classList.remove('active');
-        if (role === 'admin') openAdmin();
-        else if (role === 'rider') openRider();
-        else if (role === 'vendor') openShopPortal();
-        return;
-    }
-
     showToast("Verifying credentials...");
 
-    // 4. CHECK DATABASE FOR USER OR REGISTER NEW
     if (db) {
         try {
-            const snapshot = await db.collection('customers').where('phone', '==', formattedPhone).limit(1).get();
+            let collection = role === 'admin' ? 'admin_accounts' : (role === 'rider' ? 'riders' : (role === 'vendor' ? 'restaurants' : 'customers'));
+            
+            // Query for both Name and Phone matching
+            const snapshot = await db.collection(collection)
+                .where('name', '==', name)
+                .where('phone', '==', formattedPhone)
+                .limit(1).get();
             
             if (!snapshot.empty) {
-                // Login existing
                 const doc = snapshot.docs[0];
                 const data = doc.data();
                 
-                // Check status
-                if(data.status === 'pending_verification') {
+                if(data.status === 'pending_verification' || data.status === 'suspended') {
                     showToast("⏳ Account pending verification. Please wait for Admin...");
                     currentUser = { ...currentUser, ...data, id: doc.id, isGuest: false };
-                    currentUser.rememberMe = true;
+                    currentUser.rememberMe = rememberMe;
                     setupUserProfileListener(doc.id);
-                    return; // STOP: Do not enter app
+                    return;
                 }
                 
-                currentUser = { ...currentUser, ...data, id: doc.id, isGuest: false };
-                currentUser.rememberMe = true;
+                currentUser = { ...currentUser, ...data, role: role, id: doc.id, isGuest: false };
+                currentUser.rememberMe = rememberMe;
                 showToast(`Welcome back, ${data.name}!`);
-                setupUserProfileListener(doc.id);
-                proceedToHome();
+                
+                if (role === 'user') {
+                    setupUserProfileListener(doc.id);
+                    proceedToHome();
+                } else {
+                    document.getElementById('loginScreen').classList.remove('active');
+                    saveUserProfile(false);
+                    if (role === 'admin') openAdmin();
+                    else if (role === 'rider') openRider();
+                    else if (role === 'vendor') openShopPortal();
+                }
             } else {
-                // Register new (Submit Credentials)
+                // CHECK LOCAL MOCK DATA AS FALLBACK (already implemented in previous turn)
+                let mockMatch = null;
+                if (role === 'admin') {
+                    mockMatch = adminAccounts.find(a => (a.name === name || a.name + " Admin" === name) && a.phone === formattedPhone);
+                }
+                else if (role === 'rider') mockMatch = adminRiders.find(r => r.name === name && r.phone === formattedPhone);
+                else if (role === 'vendor') mockMatch = adminRestaurants.find(res => res.name === name && res.phone === formattedPhone);
+                else if (role === 'user') mockMatch = adminCustomers.find(c => c.name === name && c.phone === formattedPhone);
+
+                if (mockMatch) {
+                    currentUser = { ...currentUser, ...mockMatch, role: role, id: mockMatch.id, isGuest: false };
+                    currentUser.rememberMe = rememberMe;
+                    showToast(`Welcome back, ${mockMatch.name}!`);
+                    if (role === 'user') proceedToHome();
+                    else if (role === 'admin') openAdmin();
+                    else if (role === 'rider') openRider();
+                    else if (role === 'vendor') openShopPortal();
+                    return;
+                }
+                // Credentials don't match, use custom confirmation modal
+                if (await showRegistrationConfirmation(
+                    "The credentials you entered do not match any existing account. Would you like to register as a new user?"
+                )) {
+                    registerNewUser(name, formattedPhone, role, rememberMe);
+                }
+            }
+        } catch (e) {
+            console.error("Login Error", e);
+            showToast("Login failed: " + e.message);
+        }
+    } else {
+        showToast("Offline mode: Demo access only.");
+        currentUser.name = name;
+        currentUser.phone = formattedPhone;
+        currentUser.isGuest = false;
+        currentUser.rememberMe = rememberMe;
+        proceedToHome();
+    }
+}
+
+async function registerNewUser(name, phone, role, rememberMe) {
+    if (db) {
+        try {
+            // Check if phone already exists under a different name
+            let collection = role === 'admin' ? 'admin_accounts' : (role === 'rider' ? 'riders' : 'customers');
+            const check = await db.collection(collection).where('phone', '==', phone).limit(1).get();
+            
+            if (!check.empty) {
+                showToast("This phone number is already registered with a different name. Please use correct credentials.");
+                return;
+            }
+
+            if (role === 'admin') {
+                const newAdmin = {
+                    name: name,
+                    phone: phone,
+                    email: '',
+                    role: 'Manager',
+                    status: 'pending_verification',
+                    lastLogin: 'Never'
+                };
+                await db.collection('admin_accounts').add(newAdmin);
+            } else if (role === 'user') {
                 const newCustomer = {
                     name: name,
-                    phone: formattedPhone,
+                    phone: phone,
                     email: '',
                     orders: [],
                     totalSpent: 0,
@@ -3485,36 +3572,56 @@ async function handleLogin() {
                 };
                 const docRef = await db.collection('customers').add(newCustomer);
                 currentUser = { ...currentUser, ...newCustomer, id: docRef.id, isGuest: false };
-                currentUser.rememberMe = true;
-                
-                showToast("✅ Credentials Submitted! Waiting for Verification...");
-                
-                // Disable login button to indicate waiting
-                const btn = document.querySelector('.login-btn');
-                if(btn) {
-                    btn.textContent = "Waiting for Verification...";
-                    btn.disabled = true;
-                    btn.style.background = "#ccc";
-                }
-
+                currentUser.rememberMe = rememberMe;
                 setupUserProfileListener(docRef.id);
-                // STOP: Do not enter app
+            } else {
+                showToast("Registration for Riders/Vendors via Admin only.");
+                return; // Exit if not user or admin
             }
-        } catch (e) {
-            console.error("Login Error", e);
-            showToast("Login failed: " + e.message);
-            return;
+
+            alert("Wait for verification, admin will send you message in WhatsApp.");
+            const btn = document.querySelector('.login-btn');
+            if(btn) { btn.textContent = "Waiting for Verification..."; btn.disabled = true; btn.style.background = "#ccc"; }
+            
+        } catch(e) {
+            showToast("Registration failed: " + e.message);
         }
-    } else {
-        // Offline Fallback
-        currentUser.name = name;
-        currentUser.phone = formattedPhone;
-        currentUser.isGuest = false;
-        currentUser.rememberMe = true;
-        proceedToHome();
     }
 }
 // --- USER PROFILE INTEGRATION END ---
+
+// Custom Registration Confirmation Modal
+async function showRegistrationConfirmation(message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('registrationConfirmModal');
+        const msgParagraph = modal.querySelector('p');
+        msgParagraph.textContent = message;
+
+        modal.style.display = 'flex';
+
+        const confirmBtn = document.getElementById('regConfirmRegisterBtn');
+        const cancelBtn = document.getElementById('regConfirmCancelBtn');
+
+        // Clear previous listeners to prevent multiple calls
+        const newConfirmHandler = () => {
+            modal.style.display = 'none';
+            confirmBtn.removeEventListener('click', newConfirmHandler);
+            cancelBtn.removeEventListener('click', newCancelHandler);
+            resolve(true);
+        };
+
+        const newCancelHandler = () => {
+            modal.style.display = 'none';
+            confirmBtn.removeEventListener('click', newConfirmHandler);
+            cancelBtn.removeEventListener('click', newCancelHandler);
+            resolve(false);
+        };
+
+        confirmBtn.addEventListener('click', newConfirmHandler);
+        cancelBtn.addEventListener('click', newCancelHandler);
+    });
+}
+
 
 try {
     // Cart loaded via loadUserProfile now
@@ -3538,8 +3645,8 @@ function saveUserSettings() {
         const settings = {
             ...currentUser.settings,
             recipientDetails,
-            address: document.getElementById('selectedAddressText').textContent,
-            addressFull: document.getElementById('selectedAddress').textContent,
+            address: document.getElementById('selectedAddressText')?.textContent,
+            addressFull: document.getElementById('selectedAddress')?.textContent,
             push: document.getElementById('settingPushToggle')?.checked,
             loc: document.getElementById('settingLocToggle')?.checked,
             biometric: document.getElementById('settingBiometricToggle')?.checked,
@@ -3890,7 +3997,13 @@ function renderMerchantMenuItems(menuData) {
         return;
     }
 
-    menuData.forEach(category => {
+    // Normalize data: If it's a flat array of items, wrap it in a category
+    let normalizedData = menuData;
+    if (menuData.length > 0 && !menuData[0].items) {
+        normalizedData = [{ name: "General Menu", items: menuData }];
+    }
+
+    normalizedData.forEach(category => {
         const categoryDiv = document.createElement('div');
         categoryDiv.className = 'dashboard-card';
         categoryDiv.style.marginBottom = '20px';
@@ -4020,11 +4133,13 @@ document.getElementById('saveItemBtn').addEventListener('click', () => {
     const name = document.getElementById('editItemName').value;
     const price = parseFloat(document.getElementById('editItemPrice').value);
     const img = document.getElementById('editItemImg').value;
+    const photoFile = document.getElementById('editItemPhoto').files[0];
     const categoryName = document.getElementById('editItemCategory').value;
 
     if (!name || isNaN(price) || !categoryName) { showToast('Please fill all fields.'); return; }
     
-    if (id) { // Edit
+    const saveProcess = (imageSource = null) => {
+        if (id) { // Edit
         let item, oldCategoryName;
         // Find item and its original category
         for (const cat of targetMenuArray) {
@@ -4037,7 +4152,8 @@ document.getElementById('saveItemBtn').addEventListener('click', () => {
         }
 
         if (item) {
-            Object.assign(item, { name, price, img });
+            Object.assign(item, { name, price, img: imageSource || img });
+            if(imageSource) item.isCustomImage = true;
             if (oldCategoryName !== categoryName) {
                 // remove from old category
                 const oldCat = targetMenuArray.find(c => c.name === oldCategoryName);
@@ -4053,12 +4169,15 @@ document.getElementById('saveItemBtn').addEventListener('click', () => {
     } else { // Add new
         const newId = Date.now();
         const category = targetMenuArray.find(c => c.name === categoryName);
+        const newItem = { id: newId, name, price, img: imageSource || img, active: true };
+        if(imageSource) newItem.isCustomImage = true;
+
         if (category) {
             if (!category.items) category.items = [];
-            category.items.push({ id: newId, name, price, img, active: true });
+            category.items.push(newItem);
         } else {
             // If category somehow doesn't exist, create it
-            targetMenuArray.push({ name: categoryName, items: [{ id: newId, name, price, img, active: true }] });
+            targetMenuArray.push({ name: categoryName, items: [newItem] });
         }
     }
     
@@ -4069,6 +4188,16 @@ document.getElementById('saveItemBtn').addEventListener('click', () => {
     renderMerchantMenuItems(targetMenuArray);
     merchantEditItemScreen.classList.remove('active');
     showToast('Menu item saved.');
+    };
+
+    if (photoFile) {
+        const reader = new FileReader();
+        reader.onload = (e) => saveProcess(e.target.result);
+        reader.readAsDataURL(photoFile);
+    } else {
+        saveProcess();
+    }
+
 });
 
 document.getElementById('deleteItemBtn').addEventListener('click', () => {
@@ -7297,7 +7426,14 @@ function openProfile() {
 }
 
 function openRider() {
+    // Clear other portal screens to prevent overlap
+    document.getElementById('adminScreen').classList.remove('active');
+    document.getElementById('shopPortalScreen').classList.remove('active');
+    document.getElementById('home').style.display = 'none';
     document.getElementById('riderScreen').classList.add('active');
+    updateRiderNearbyOrders();
+    renderRiderHistory();
+    updateRiderPendingBadge();
     initRiderMap();
     
     // Show GPS enable button if not already enabled
@@ -7314,18 +7450,28 @@ function openRider() {
 }
 
 function openAdmin() {
+    // Clear other portal screens to prevent overlap
+    document.getElementById('riderScreen').classList.remove('active');
+    document.getElementById('shopPortalScreen').classList.remove('active');
+    document.getElementById('home').style.display = 'none';
     document.getElementById('adminScreen').classList.add('active');
     // Initialize admin dashboard
     closeAdminSidebar();
+    renderAdminTabContent(getCurrentAdminTab());
     setTimeout(() => {
         switchAdminTab('dashboard');
     }, 100);
 }
 
 function openShopPortal() {
+    // Clear other portal screens to prevent overlap
+    document.getElementById('riderScreen').classList.remove('active');
+    document.getElementById('adminScreen').classList.remove('active');
+    document.getElementById('home').style.display = 'none';
     document.getElementById('shopPortalScreen').classList.add('active');
     renderVendorOrders('new');
     updateVendorTabsCounts();
+    initMerchantCharts();
     setTimeout(initMerchantCharts, 300);
 }
 
@@ -9599,6 +9745,7 @@ function renderAdminRestaurants() {
                 <table class="admin-table">
                     <thead>
                         <tr>
+                            <th>Photos</th>
                             <th onclick="sortAdminTable('restaurants', 'name')">Restaurant</th>
                             <th>Contact</th>
                             <th>Stats</th>
@@ -9642,6 +9789,16 @@ function renderAdminRestaurantsList() {
     
     return filteredRestaurants.map(restaurant => `
         <tr>
+            <td>
+                <div style="display:flex; gap:5px;">
+                    <div onclick="triggerAdminPhotoUpload('restaurants', '${restaurant.id}', 'profilePhoto')" style="width:35px; height:35px; background:#f0f0f0; border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid #eee; cursor:pointer;" title="Click to upload Profile Photo">
+                        ${restaurant.profilePhoto ? `<img src="${restaurant.profilePhoto}" style="width:100%; height:100%; object-fit:cover;">` : '🏪'}
+                    </div>
+                    <div onclick="triggerAdminPhotoUpload('restaurants', '${restaurant.id}', 'coverPhoto')" style="width:60px; height:35px; background:#f0f0f0; border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid #eee; cursor:pointer;" title="Click to upload Cover Photo">
+                        ${restaurant.coverPhoto ? `<img src="${restaurant.coverPhoto}" style="width:100%; height:100%; object-fit:cover;">` : '🖼️'}
+                    </div>
+                </div>
+            </td>
             <td><div style="font-weight:bold;">${restaurant.name || 'N/A'}</div><div style="font-size:0.8em; color:#666;">${restaurant.category || ''}</div></td>
             <td><div style="font-weight:600;">${restaurant.phone || 'N/A'}</div><div style="font-size:0.8em; color:#666;">${restaurant.owner || 'No owner'}</div></td>
             <td><div style="font-weight:600;">${restaurant.orders || 0} orders</div><div style="font-size:0.8em;">UGX ${(restaurant.revenue || 0).toLocaleString()}</div></td>
@@ -9725,6 +9882,7 @@ function renderAdminRiders() {
                 <table class="admin-table">
                     <thead>
                         <tr>
+                            <th>Photo</th>
                             <th onclick="sortAdminTable('riders', 'name')">Name ↕</th>
                             <th onclick="sortAdminTable('riders', 'phone')">Contact ↕</th>
                             <th onclick="sortAdminTable('riders', 'vehicle')">Vehicle ↕</th>
@@ -9765,6 +9923,11 @@ function renderAdminRidersList() {
         
         return `
             <tr>
+                <td>
+                    <div onclick="triggerAdminPhotoUpload('riders', '${rider.id}', 'profilePhoto')" style="width:35px; height:35px; background:#f0f0f0; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid #eee; cursor:pointer;" title="Upload Photo">
+                        ${rider.profilePhoto ? `<img src="${rider.profilePhoto}" style="width:100%; height:100%; object-fit:cover;">` : '🚴'}
+                    </div>
+                </td>
                 <td><div style="font-weight:bold;">${rider.name || 'N/A'}</div></td>
                 <td><div style="font-weight:600;">${rider.phone || 'N/A'}</div></td>
                 <td>${rider.vehicle || 'N/A'}<br><span style="font-size:0.8em; color:#888;">${rider.license || ''}</span></td>
@@ -9844,6 +10007,9 @@ function renderAdminCustomers() {
             <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
                 <button onclick="filterAdminCustomers('all')" style="padding:8px 16px; border:1px solid #ddd; background:#fff; border-radius:6px; cursor:pointer;">All (${adminCustomers.length})</button>
                 <button onclick="filterAdminCustomers('active')" style="padding:8px 16px; border:1px solid #ddd; background:#fff; border-radius:6px; cursor:pointer;">Active (${adminCustomers.filter(c => c.status === 'active').length})</button>
+                <label style="display:flex; align-items:center; gap:8px; background:#fff; padding:8px 16px; border:1px solid #ddd; border-radius:6px; cursor:pointer; font-size:0.9em;">
+                    <input type="checkbox" ${sortState.customers.missingPhoto ? 'checked' : ''} onchange="toggleMissingPhotoFilter(this.checked)"> Missing Photos
+                </label>
                 <button onclick="filterAdminCustomers('pending_verification')" style="padding:8px 16px; border:1px solid #ddd; background:#fff; border-radius:6px; cursor:pointer;">Pending (${adminCustomers.filter(c => c.status === 'pending_verification').length})</button>
                 <button onclick="filterAdminCustomers('inactive')" style="padding:8px 16px; border:1px solid #ddd; background:#fff; border-radius:6px; cursor:pointer;">Inactive (${adminCustomers.filter(c => c.status === 'inactive').length})</button>
             </div>
@@ -9851,6 +10017,7 @@ function renderAdminCustomers() {
                 <table class="admin-table">
                     <thead>
                         <tr>
+                            <th>Photo</th>
                             <th onclick="sortAdminTable('customers', 'name')">Customer</th>
                             <th>Contact</th>
                             <th>Stats</th>
@@ -9879,11 +10046,17 @@ function renderAdminCustomersList() {
     const filteredCustomers = adminCustomers.filter(c => {
         const matchesStatus = status === 'all' || c.status === status;
         const matchesSearch = (c.name || '').toLowerCase().includes(search) || (c.phone || '').includes(search);
-        return matchesStatus && matchesSearch;
+        const matchesPhoto = !sortState.customers.missingPhoto || !c.profilePhoto;
+        return matchesStatus && matchesSearch && matchesPhoto;
     });
     
     return filteredCustomers.map(customer => `
         <tr>
+            <td>
+                <div onclick="triggerAdminPhotoUpload('customers', '${customer.id}', 'profilePhoto')" style="width:35px; height:35px; background:#f0f0f0; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid #eee; cursor:pointer;" title="Upload Photo">
+                    ${customer.profilePhoto ? `<img src="${customer.profilePhoto}" style="width:100%; height:100%; object-fit:cover;">` : '👤'}
+                </div>
+            </td>
             <td><div style="font-weight:bold;">${customer.name || 'N/A'}</div><div style="font-size:0.8em; color:#666;">Joined: ${customer.joined || ''}</div></td>
             <td><div style="font-weight:600;">${customer.phone || 'N/A'}</div><div style="font-size:0.8em; color:#666;">${customer.email || 'No email'}</div></td>
             <td><div style="font-weight:600;">${customer.orders || 0} orders</div><div style="font-size:0.8em;">UGX ${(customer.totalSpent || 0).toLocaleString()}</div></td>
@@ -9891,6 +10064,7 @@ function renderAdminCustomersList() {
             <td>
                 <button onclick="verifyCustomerWhatsApp('${customer.phone}')" class="action-btn-table" style="background:#25D366; color:#fff;">Verify WA</button>
                 ${customer.status === 'pending_verification' ? `<button onclick="approveCustomer('${customer.id}')" class="action-btn-table" style="background:#4caf50; color:#fff;">Approve</button>` : ''}
+                <button onclick="openAdminNotificationModal('${customer.id}', '${customer.name.replace(/'/g, "\\'")}')" class="action-btn-table" style="background:#607d8b; color:#fff;">Notify</button>
                 <button onclick="contactCustomer('${customer.phone}')" class="action-btn-table" style="background:#2196f3; color:#fff;">Call</button>
                 <button onclick="toggleAdminItemStatus('customer', ${customer.id}, 'active', 'inactive')" class="action-btn-table" style="background:#9c27b0; color:#fff;">${customer.status === 'active' ? 'Deactivate' : 'Activate'}</button>
                 <button onclick="openAdminModal('customer', ${customer.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
@@ -10224,6 +10398,11 @@ function renderAdminAccounts() {
     
     const listHtml = adminAccounts.map(acc => `
         <tr>
+            <td>
+                <div onclick="triggerAdminPhotoUpload('admin_accounts', '${acc.id}', 'profilePhoto')" style="width:35px; height:35px; background:#f0f0f0; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid #eee; cursor:pointer;" title="Upload Photo">
+                    ${acc.profilePhoto ? `<img src="${acc.profilePhoto}" style="width:100%; height:100%; object-fit:cover;">` : '🔐'}
+                </div>
+            </td>
             <td><div style="font-weight:bold;">${acc.name}</div><div style="font-size:0.8em; color:#666;">${acc.role}</div></td>
             <td><div style="font-weight:bold;">${acc.phone}</div><div style="font-size:0.8em; color:#666;">${acc.email}</div></td>
             <td>${acc.lastLogin}</td>
@@ -10242,22 +10421,110 @@ function renderAdminAccounts() {
                 <h3 style="margin:0;">🔐 Admin Accounts</h3>
                 <button onclick="openAdminModal('account')" style="padding:8px 12px; background:#019E81; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:0.9em;">+ Add Admin</button>
             </div>
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Name & Role</th>
-                        <th>Contact</th>
-                        <th>Last Login</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${listHtml}
-                </tbody>
-            </table>
+            <div style="overflow-x:auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Photo</th>
+                            <th>Name & Role</th>
+                            <th>Contact</th>
+                            <th>Last Login</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>${listHtml}</tbody>
+                </table>
+            </div>
         </div>
     `;
+}
+
+function toggleMissingPhotoFilter(checked) {
+    sortState.customers.missingPhoto = checked;
+    renderAdminCustomers();
+}
+
+function triggerAdminPhotoUpload(collection, id, field) {
+    const input = document.getElementById('adminUniversalPhotoInput');
+    input.onchange = (e) => handleAdminUniversalPhotoUpload(e, collection, id, field);
+    input.click();
+}
+
+async function handleAdminUniversalPhotoUpload(event, collection, id, field) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    showToast("Uploading photo...");
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const base64Data = e.target.result;
+        if (db) {
+            try {
+                await db.collection(collection).doc(id.toString()).update({ [field]: base64Data });
+                showToast("Photo updated successfully!");
+                // Refresh current tab
+                renderAdminTabContent(getCurrentAdminTab());
+            } catch (err) {
+                console.error("Upload error", err);
+                showToast("Failed to sync photo to database.");
+            }
+        } else {
+            showToast("Photo updated locally (Firebase not connected)");
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+function getCurrentAdminTab() {
+    const activeItem = document.querySelector('.sidebar-item.active');
+    if (!activeItem) return 'dashboard';
+    const onclick = activeItem.getAttribute('onclick');
+    return onclick.match(/'([^']+)'/)[1];
+}
+
+let targetCustomerForNotif = null;
+function openAdminNotificationModal(id, name) {
+    targetCustomerForNotif = id;
+    document.getElementById('adminNotifModalTitle').textContent = `Notify ${name}`;
+    document.getElementById('adminNotifSubject').value = '';
+    document.getElementById('adminNotifMessage').value = '';
+    document.getElementById('adminNotificationModal').style.display = 'flex';
+}
+
+function closeAdminNotificationModal() {
+    document.getElementById('adminNotificationModal').style.display = 'none';
+}
+
+async function sendAdminNotificationToUser() {
+    const subject = document.getElementById('adminNotifSubject').value.trim();
+    const msg = document.getElementById('adminNotifMessage').value.trim();
+    if(!subject || !msg) { showToast('Please fill all fields'); return; }
+
+    const newNotif = {
+        type: 'info',
+        title: subject,
+        body: msg,
+        time: new Date().toLocaleString(),
+        unread: true,
+        role: 'user'
+    };
+
+    if(db) {
+        try {
+            const docRef = db.collection('customers').doc(targetCustomerForNotif.toString());
+            const doc = await docRef.get();
+            if(doc.exists) {
+                const data = doc.data();
+                const userNotifs = data.notifications || [];
+                userNotifs.unshift(newNotif);
+                await docRef.update({ notifications: userNotifs });
+                showToast('Notification sent to user!');
+            }
+        } catch(e) { console.error(e); showToast('Database sync failed'); }
+    } else {
+        showToast('Notification sent (local mock)');
+}
 }
 
 function editRider(id) {
@@ -11353,7 +11620,7 @@ function openAdminModal(type, id = null) {
             <label for="addRestaurantCategory" class="admin-form-label">Category</label>
             <select id="addRestaurantCategory" class="admin-form-input">${categoryOptions}</select>
             <label for="addRestaurantRating" class="admin-form-label">Rating</label>
-            <input type="number" id="addRestaurantRating" placeholder="Rating (e.g., 4.5)" step="0.1" class="admin-form-input" value="${r.rating || ''}">
+            <input type="number" id="addRestaurantRating" placeholder="Rating (e.g., 4.5)" step="0.1" class="admin-form-input" value="${r.rating ?? ''}">
             <label for="addRestaurantPhone" class="admin-form-label">Phone</label>
             <input type="text" id="addRestaurantPhone" placeholder="Phone" class="admin-form-input" value="${r.phone || ''}">
             <label for="addRestaurantAddress" class="admin-form-label">Address</label>
@@ -11361,7 +11628,7 @@ function openAdminModal(type, id = null) {
             <label for="addRestaurantOwner" class="admin-form-label">Owner</label>
             <input type="text" id="addRestaurantOwner" placeholder="Owner" class="admin-form-input" value="${r.owner || ''}">
             <label for="addRestaurantCommission" class="admin-form-label">Commission %</label>
-            <input type="number" id="addRestaurantCommission" placeholder="Commission %" class="admin-form-input" value="${r.commission || ''}">
+            <input type="number" id="addRestaurantCommission" placeholder="Commission %" class="admin-form-input" value="${r.commission ?? ''}">
             <label for="addRestaurantProfilePhoto" class="admin-form-label">Profile Photo</label>
             <input type="file" id="addRestaurantProfilePhoto" class="admin-form-input" accept="image/*">
             <label for="addRestaurantCoverPhoto" class="admin-form-label">Cover Photo</label>
@@ -11409,16 +11676,16 @@ function openAdminModal(type, id = null) {
             <label for="addPromoDesc" class="admin-form-label">Description</label>
             <textarea id="addPromoDesc" placeholder="Description" class="admin-form-input">${p.description || ''}</textarea>
             <label for="addPromoDiscount" class="admin-form-label">Discount Value</label>
-            <input type="number" id="addPromoDiscount" placeholder="Discount Value" class="admin-form-input" value="${p.discount || ''}">
+            <input type="number" id="addPromoDiscount" placeholder="Discount Value" class="admin-form-input" value="${p.discount ?? ''}">
             <label for="addPromoType" class="admin-form-label">Type</label>
             <select id="addPromoType" class="admin-form-input">
                 <option value="percentage" ${p.type === 'percentage' ? 'selected' : ''}>Percentage (%)</option>
                 <option value="free_delivery" ${p.type === 'free_delivery' ? 'selected' : ''}>Free Delivery</option>
             </select>
             <label for="addPromoValidFrom" class="admin-form-label">Valid From</label>
-            <input type="date" id="addPromoValidFrom" placeholder="Valid From" class="admin-form-input" value="${p.validFrom || ''}">
+            <input type="date" id="addPromoValidFrom" placeholder="Valid From" class="admin-form-input" value="${(p.validFrom || '').split(' ')[0]}">
             <label for="addPromoValidTo" class="admin-form-label">Valid To</label>
-            <input type="date" id="addPromoValidTo" placeholder="Valid To" class="admin-form-input" value="${p.validTo || ''}">
+            <input type="date" id="addPromoValidTo" placeholder="Valid To" class="admin-form-input" value="${(p.validTo || '').split(' ')[0]}">
         `;
         saveBtn.onclick = () => saveAdminData('promotion');
     } else if (type === 'account') {
@@ -11816,7 +12083,7 @@ function openAssignRiderModal(orderId) {
     const modal = document.getElementById('adminAssignRiderModal');
     const list = document.getElementById('assignRiderList');
     list.innerHTML = adminRiders.map(r => `
-        <div onclick="confirmAssignRider('${r.name}')" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; display:flex; justify-content:space-between; hover:background:#f5f5f5;">
+        <div onclick="confirmAssignRider('${r.name}')" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; display:flex; justify-content:space-between;">
             <div><strong>${r.name}</strong><br><small>${r.status.toUpperCase()} • ${r.completedOrders} orders</small></div>
             <div style="background:#019E81; color:#fff; padding:5px 10px; border-radius:4px; height:fit-content; font-size:0.8em;">Select</div>
         </div>
@@ -11912,7 +12179,7 @@ function fillDemo(role) {
         nameInput.value = "Burger King";
         phoneInput.value = "4 123 4567";
     } else if(role === 'admin') {
-        nameInput.value = "Sadik Admin";
+        nameInput.value = "Sadik";
         phoneInput.value = "56 288 9428";
     }
 }
@@ -11944,6 +12211,11 @@ function fillDemo(role) {
         <input type="text" value="+971" class="login-input" style="width: 80px; text-align: center;" readonly>
         <input type="tel" id="loginPhone" class="login-input" style="flex: 1;" placeholder="50 123 4567">
       </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; margin-top: -10px;">
+      <input type="checkbox" id="loginRememberMe" checked style="width: 18px; height: 18px; accent-color: #019E81;">
+      <label for="loginRememberMe" style="font-size: 0.9em; color: #666; font-weight: 600;">Remember Me</label>
     </div>
 
     <button class="login-btn" onclick="handleLogin()">Start Ordering</button>
@@ -11991,6 +12263,30 @@ function fillDemo(role) {
     </div>
 </div>
 
+<div id="adminNotificationModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:11000; align-items:center; justify-content:center;">
+    <div style="background:#fff; padding:25px; border-radius:12px; width:90%; max-width:400px; position:relative; box-shadow:0 4px 20px rgba(0,0,0,0.2);">
+        <div style="position:absolute; top:10px; right:15px; cursor:pointer; font-weight:bold; font-size:1.2em; color:#999;" onclick="closeAdminNotificationModal()">✕</div>
+        <h3 id="adminNotifModalTitle" style="margin-bottom:15px; color:#333;">Send Notification</h3>
+        <input type="text" id="adminNotifSubject" placeholder="Title / Subject" class="admin-form-input">
+        <textarea id="adminNotifMessage" style="width:100%; height:100px; padding:10px; border:1px solid #ddd; border-radius:8px; font-family:inherit; resize:vertical; font-size:1em; margin-bottom:15px;" placeholder="Type your message here..."></textarea>
+        <button onclick="sendAdminNotificationToUser()" style="width:100%; padding:12px; background:#019E81; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Send Notification</button>
+    </div>
+</div>
+
 <input type="file" id="importCsvInput" accept=".csv" style="display:none" onchange="handleRestaurantImport(event)">
+
+<!-- Custom Registration Confirmation Modal -->
+<div id="registrationConfirmModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:12000; align-items:center; justify-content:center;">
+    <div style="background:#fff; padding:25px; border-radius:16px; width:85%; max-width:320px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.3); animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <div style="font-size:3em; margin-bottom:15px;">❓</div>
+        <h3 style="margin-bottom:10px; color:#333;">Register New User?</h3>
+        <p style="color:#666; margin-bottom:25px;">The credentials you entered do not match any existing account. Would you like to register as a new user?</p>
+        <div style="display:flex; gap:10px;">
+            <button id="regConfirmCancelBtn" style="flex:1; padding:12px; border:1px solid #ddd; background:#fff; border-radius:10px; font-weight:bold; color:#666; cursor:pointer;">Cancel</button>
+            <button id="regConfirmRegisterBtn" style="flex:1; padding:12px; background:#019E81; color:#fff; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">Register</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
