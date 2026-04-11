@@ -1,111 +1,18 @@
-rules_version = '2';
+rules_version='2'
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    //
-    // Collection: admin_accounts
-    // - Document ID: Auth UID
-    // - role: string ('Super Admin', 'Manager', 'admin')
-    //
-    // Collection: users, riders, restaurants
-    // - Document ID: Auth UID
-    //
-    // Collection: orders
-    // - customerId: string (Auth UID)
-    // - riderId: string (Auth UID, optional)
-    //
-    // Collection: chats
-    // - participants: list of strings (Auth UIDs)
-    //
-    // ===============================================================
-
-    // --- HELPER FUNCTIONS ---
-
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // Checks for specific 'Super Admin' role string
-    function isSuperAdmin() {
-      return isAuthenticated() && 
-             get(/databases/$(database)/documents/admin_accounts/$(request.auth.uid)).data.role == 'Super Admin';
-    }
-
-    // Checks if the user is any type of administrator
-    function isAdmin() {
-      return isAuthenticated() && 
-             exists(/databases/$(database)/documents/admin_accounts/$(request.auth.uid));
-    }
-
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // --- CORE AUTHORITY RULES ---
-
-    // CRITICAL: Grant the Super Admin full access to EVERY collection
     match /{document=**} {
-      allow read, write: if isSuperAdmin();
-    }
-
-    // 1. USER PROFILES
-    match /users/{userId} {
-      // Sensitive PII (email/phone) should only be visible to owner or admin
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-
-    // 2. RIDER PROFILES
-    match /riders/{riderId} {
-      allow read: if isAuthenticated(); // Allow customers to see assigned rider info
-      allow write: if isOwner(riderId) || isAdmin();
-    }
-
-    // 3. VENDOR / RESTAURANT PROFILES
-    match /restaurants/{resId} {
-      allow read: if true; // Publicly browse menus and info
-      allow write: if isOwner(resId) || isAdmin();
-    }
-
-    // 4. ORDERS
-    match /orders/{orderId} {
-      allow create: if isAuthenticated();
-      allow read, update: if isAuthenticated() && (
-        request.auth.uid == resource.data.customerId || 
-        request.auth.uid == resource.data.riderId || 
-        isAdmin()
-      );
-    }
-
-    // 5. CHATS & MESSAGES
-    match /chats/{chatId} {
-      allow read, write: if isAuthenticated() && (
-        request.auth.uid in resource.data.participants || isAdmin()
-      );
-      match /messages/{msgId} {
-        allow read, write: if isAuthenticated();
-      }
-    }
-
-    // 6. ADMINISTRATIVE & SYSTEM DATA
-    match /admin_accounts/{adminId} {
-      allow read: if isAdmin(); // Admins can manage the admin team
-      allow write: if isAdmin(); 
-    }
-
-    match /logs/{logId} { 
-      allow read, write: if isAdmin(); 
-    }
-
-    match /analytics/{docId} { 
-      allow read, write: if isAdmin(); 
-    }
-
-    match /promotions/{promoId} { 
-      allow read: if true; 
-      allow write: if isAdmin(); 
+      // This rule allows anyone with your database reference to view, edit,
+      // and delete all data in your database. It is useful for getting
+      // started, but it is configured to expire after 30 days because it
+      // leaves your app open to attackers. At that time, all client
+      // requests to your database will be denied.
+      //
+      // Make sure to write security rules for your app before that time, or
+      // else all client requests to your database will be denied until you
+      // update your rules.
+      allow read, write: if request.time < timestamp.date(2026, 5, 11);
     }
   }
 }

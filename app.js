@@ -44,17 +44,63 @@ window.confirmLogout = async function() {
     const logoutModal = document.getElementById('logoutModal');
     if (logoutModal) logoutModal.style.display = 'none';
 
-    // Use the centralized logout function from firebase.js
-    // This handles signOut, clearing session, and hard reload.
-    if (typeof window.logoutUser === 'function') {
-        await window.logoutUser();
-    } else {
-        // Emergency fallback if firebase.js failed to load
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = window.location.pathname;
-    }
+    // Clear all screens and show login screen
+    closeAllScreens();
+    document.getElementById('loginScreen').classList.add('active');
+
+    // Clear user session data
+    window.currentUser = { name: '', phone: '', points: 500, isApproved: false, walletBalance: 0, isGuest: true };
+    localStorage.clear();
+    sessionStorage.clear();
+
+    if (window.hideLoading) window.hideLoading();
+    if (window.showToast) window.showToast("Logged out successfully");
 };
+
+/**
+ * Close all app screens and prepare for login
+ */
+function closeAllScreens() {
+    // Hide main screens
+    const screensToHide = [
+        'home', 'adminScreen', 'riderScreen', 'shopPortalScreen', 
+        'profileScreen', 'mapScreen', 'restaurantScreen', 'cartScreen',
+        'ordersHistoryScreen', 'newHomeScreen', 'waitingApprovalScreen',
+        'verificationLoadingScreen', 'contentSearchScreen', 'categoryScreen',
+        'dishDetailScreen', 'checkoutActionScreen', 'allergyScreen',
+        'recipientScreen', 'userPhoneScreen', 'favoritesScreen', 'rewardsScreen',
+        'helpSupportScreen', 'referralScreen', 'notificationsScreen',
+        'settingsScreen', 'walletScreen', 'paymentMethodsScreen', 'termsScreen'
+    ];
+    
+    screensToHide.forEach(screenId => {
+        const screen = document.getElementById(screenId);
+        if (screen) {
+            screen.style.display = ''; // Reset inline display to allow CSS class control (.active)
+            screen.classList.remove('active');
+        }
+    });
+
+    // Hide any active generic screens
+    document.querySelectorAll('.generic-screen').forEach(screen => {
+        screen.classList.remove('active');
+    });
+
+    // Hide bottom card if visible
+    const bottomCard = document.getElementById('bottomCard');
+    if (bottomCard) {
+        bottomCard.classList.remove('show');
+    }
+
+    // Clear any active modals
+    document.querySelectorAll('.modal, [id*="Modal"]').forEach(modal => {
+        modal.style.display = 'none';
+    });
+
+    // Reset login screen display just in case it was hidden inline
+    const loginScreen = document.getElementById('loginScreen');
+    if (loginScreen) loginScreen.style.display = '';
+}
 
 // Initialize critical global state if not already present
 if (!window.currentUser) {
@@ -319,7 +365,8 @@ window.onload = () => {
   window.showLoginScreen = () => {
       renderRecentLogins();
       window.toggleAuthMode('login');
-      document.getElementById('loginScreen')?.classList.add('active');
+      const ls = document.getElementById('loginScreen');
+      if(ls) { ls.classList.add('active'); ls.style.display = 'flex'; }
   };
   window.loginAsGuest = loginAsGuest;
   
@@ -339,32 +386,23 @@ window.onload = () => {
   };
 
   window.fillDemo = function(role) {
-    const nameInput = document.getElementById('loginName');
-    const phoneInput = document.getElementById('loginPhone');
+    const identifierInput = document.getElementById('loginIdentifier');
+    const passwordInput = document.getElementById('loginPassword');
+    if (!identifierInput) return;
 
-    // Update the active role button and global selected role
-    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector(`.role-btn[data-role="${role}"]`).classList.add('active');
     selectedLoginRole = role; // Update the global selected role
-
-    // Clear all fields first to ensure only relevant ones are filled
-    nameInput.value = "";
-    if (phoneInput) phoneInput.value = "";
 
     // Fill common fields based on role
     if(role === 'user') {
-        nameInput.value = "John Doe";
-        if (phoneInput) phoneInput.value = "+971 50 123 4567";
+        identifierInput.value = "John Doe";
     } else if(role === 'rider') {
-        nameInput.value = "Ahmed Hassan";
-        if (phoneInput) phoneInput.value = "+971 50 111 2222";
+        identifierInput.value = "Ahmed Hassan";
     } else if(role === 'vendor') {
-        nameInput.value = "Burger King";
-        if (phoneInput) phoneInput.value = "+971 4 123 4567";
+        identifierInput.value = "Burger King";
     } else if(role === 'admin') {
-        nameInput.value = "Sadik";
-        if (phoneInput) phoneInput.value = "+971 56 288 9428";
+        identifierInput.value = "sadik@kirya.app";
     }
+    if (passwordInput) passwordInput.value = "password123";
   };
 
   function updateRecentLogins(user) {
@@ -609,7 +647,7 @@ function saveUserProfile(syncToDb = true) {
     }
     
     // 3. PUSH LOCAL CHANGES TO DATABASE
-    const isMockId = currentUser.id && (currentUser.id.toString().startsWith('mock_') || !isNaN(currentUser.id));
+    const isMockId = currentUser.id && (currentUser.id.toString().startsWith('mock_') || currentUser.id.toString().startsWith('demo_') || !isNaN(currentUser.id));
 
     if (syncToDb && db && currentUser.id && !currentUser.isGuest && !isMockId) {
         const col = currentUser._collection || 'users';
@@ -626,6 +664,7 @@ function proceedToHome(skipSave = false) {
     const home = document.getElementById('home');
     const waitScreen = document.getElementById('waitingApprovalScreen');
     const statusMsg = document.getElementById('authStatusMsg');
+    if (window.hideLoading) window.hideLoading();
 
     const loginFields = document.getElementById('loginFields');
     const signupFields = document.getElementById('signupFields');
@@ -760,16 +799,19 @@ function proceedToHome(skipSave = false) {
 
     // --- WHITE SCREEN SAFETY ---
     // If after routing no screen is visible, force back to home/login
-    setTimeout(() => {
-        const anyActive = document.querySelector('.generic-screen.active, #newHomeScreen.active, #mapScreen[style*="block"], #home[style*="block"]');
+    const safetyTimer = setTimeout(() => {
+        const anyActive = document.querySelector('.generic-screen.active, #newHomeScreen.active, #mapScreen[style*="block"], #home[style*="block"], #loginScreen.active');
         if (!anyActive) {
-            if (home) home.style.display = 'block';
-            else loginScreen?.classList.add('active');
+            if (window.currentUser && !window.currentUser.isGuest) {
+                if (home) home.style.display = 'block';
+            } else {
+                if (loginScreen) loginScreen.classList.add('active');
+            }
         }
-    }, 200);
+    }, 500); // Increased delay to ensure animations and async logic finish
 
     // Request push notifications if approved and NOT a mock user (requires valid Firebase Auth context)
-    const isMockId = currentUser.id && (currentUser.id.toString().startsWith('mock_') || !isNaN(currentUser.id));
+    const isMockId = currentUser.id && (currentUser.id.toString().startsWith('mock_') || currentUser.id.toString().startsWith('demo_') || !isNaN(currentUser.id));
     const isAuthenticated = window.auth && window.auth.currentUser;
     if (currentUser.isApproved && !currentUser.isGuest && isAuthenticated && !isMockId) {
         setTimeout(() => window.requestNotificationPermission(), 2000);
@@ -872,8 +914,8 @@ window.handleLogin = async function() {
             if (window.showLoading) window.showLoading("Verifying Password...");
             
             // Set Firebase Auth Persistence based on Remember Me checkbox
-            const persistence = rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
-            await window.auth.setPersistence(persistence);
+            // Note: In modular SDK, persistence is handled automatically
+            // The auth state persistence is managed by the browser's default behavior
 
             await window.auth.signInWithEmailAndPassword(emailToSignIn, password);
             
@@ -1019,6 +1061,95 @@ function loginAsGuest() {
     window.currentUser = { ...window.currentUser, isGuest: true, isApproved: true, role: 'user', name: 'Guest User' };
     proceedToHome();
 }
+
+window.loginAsDemoUser = function(role) {
+    showToast(`Entering as Demo ${role.charAt(0).toUpperCase() + role.slice(1)}...`);
+    
+    // Demo user data based on role
+    const demoUsers = {
+        user: {
+            name: 'Demo User',
+            role: 'user',
+            isApproved: true,
+            points: 500,
+            walletBalance: 25.00,
+            id: 'demo_user_' + Date.now()
+        },
+        rider: {
+            name: 'Demo Rider',
+            role: 'rider',
+            isApproved: true,
+            accountStatus: 'active',
+            id: 'demo_rider_' + Date.now()
+        },
+        vendor: {
+            name: 'Demo Vendor',
+            role: 'vendor',
+            isApproved: true,
+            status: 'active',
+            id: 'demo_vendor_' + Date.now()
+        },
+        admin: {
+            name: 'Demo Admin',
+            role: 'Super Admin',
+            isApproved: true,
+            status: 'active',
+            id: 'demo_admin_' + Date.now()
+        }
+    };
+    
+    window.currentUser = { ...window.currentUser, ...demoUsers[role], isGuest: false };
+    
+    // Hide login screen
+    document.getElementById('loginScreen')?.classList.remove('active');
+    
+    // Use switchToRole to navigate and ensure consistency across UI pathways
+    window.switchToRole(role);
+};
+
+window.switchToRole = function(role) {
+    if (!window.currentUser) {
+        showToast("Please log in first");
+        return;
+    }
+    
+    showToast(`Switching to ${role} role...`);
+    
+    // Update current user role
+    window.currentUser.role = role;
+    if (role === 'admin') window.currentUser.role = 'Super Admin';
+    
+    // Update role-specific properties
+    if (role === 'rider') {
+        window.currentUser.accountStatus = 'active';
+    } else if (role === 'vendor') {
+        window.currentUser.status = 'active';
+    } else if (role === 'admin') {
+        window.currentUser.status = 'active';
+    }
+    
+    // Clear all screens first
+    document.getElementById('home').style.display = 'none';
+    document.querySelectorAll('#adminScreen, #riderScreen, #shopPortalScreen, #profileScreen, #loginScreen').forEach(s => {
+        s.classList.remove('active');
+        s.style.display = ''; // Clear display none
+    });
+    
+    // Save profile and refresh UI
+    saveUserProfile();
+    
+    // Navigate to appropriate screen based on role
+    if (role === 'rider') {
+        openRider();
+    } else if (role === 'vendor') {
+        openShopPortal();
+    } else if (role === 'admin') {
+        openAdmin();
+    } else {
+        // User role - go to home
+        document.getElementById('home').style.display = 'flex';
+    }
+};
 
 async function registerNewUser(username, phone, role, rememberMe) {
     if (db) {
@@ -1859,9 +1990,10 @@ function startApp() {
   });
 
   try {
-  if (typeof initFirebase === 'function') {
-    initFirebase(); // Try to connect to Firebase on startup
-  }
+  // COMMENTED OUT FOR NEW FIREBASE SETUP
+  // if (typeof initFirebase === 'function') {
+  //   initFirebase(); // Try to connect to Firebase on startup
+  // }
   // Ensure admin screen is hidden on start
   const adminScreen = document.getElementById('adminScreen');
   if(adminScreen) adminScreen.classList.remove('active');
@@ -1923,6 +2055,8 @@ function startApp() {
               const isFirebaseAuthenticating = window.auth && window.auth.currentUser;
               if (!isRouted && isFirebaseAuthenticating) {
                   window.showVerificationScreen("Verifying Profile...");
+                  // Safety trigger: If still not routed after 3 seconds, force proceed
+                  setTimeout(() => { if(!isRouted) proceedToHome(true); }, 3000);
                   return;
               }
               if (!isRouted) {
@@ -5043,6 +5177,7 @@ function openRider() {
     document.getElementById('shopPortalScreen').classList.remove('active');
     document.getElementById('home').style.display = 'none';
     document.getElementById('riderScreen').classList.add('active');
+    document.getElementById('riderScreen').style.display = 'flex'; // Ensure flex layout works
     updateRiderNearbyOrders();
     renderRiderHistory();
     updateRiderPendingBadge();
@@ -5067,6 +5202,7 @@ function openAdmin() {
     document.getElementById('shopPortalScreen').classList.remove('active');
     document.getElementById('home').style.display = 'none';
     document.getElementById('adminScreen').classList.add('active');
+    document.getElementById('adminScreen').style.display = 'flex';
     // Initialize admin dashboard
     closeAdminSidebar();
     renderAdminTabContent(getCurrentAdminTab());
@@ -5081,6 +5217,7 @@ function openShopPortal() {
     document.getElementById('adminScreen').classList.remove('active');
     document.getElementById('home').style.display = 'none';
     document.getElementById('shopPortalScreen').classList.add('active');
+    document.getElementById('shopPortalScreen').style.display = 'flex';
     renderVendorOrders('new');
     updateVendorTabsCounts();
     initMerchantCharts();
@@ -5923,7 +6060,7 @@ if(notifBackBtn) notifBackBtn.addEventListener('click', () => notifScreen.classL
 const settingsScreen = document.getElementById('settingsScreen');
 const settingsBackBtn = document.getElementById('settingsBackBtn');
 const profileSettingsBtn = document.getElementById('profileSettingsBtn');
-if(document.getElementById('profileLogoutBtn')) document.getElementById('profileLogoutBtn').addEventListener('click', handleLogout);
+if(document.getElementById('profileLogoutBtn')) document.getElementById('profileLogoutBtn').addEventListener('click', confirmLogout);
 
 if(profileSettingsBtn) profileSettingsBtn.addEventListener('click', () => settingsScreen.classList.add('active'));
 if(settingsBackBtn) settingsBackBtn.addEventListener('click', () => settingsScreen.classList.remove('active'));
@@ -8510,11 +8647,11 @@ function renderAdminConfig() {
                     <div style="font-weight:bold; color:#333;">${isConnected ? 'Connected' : 'Not Connected'}</div>
                 </div>
                 <div style="font-family:monospace; background:#333; color:#fff; padding:10px; border-radius:6px; font-size:0.8em; margin-bottom:10px;">
-                    Project ID: ${firebaseConfig.projectId || 'Unknown'}<br>
-                    Auth Domain: ${firebaseConfig.authDomain || 'Unknown'}
+                    Project ID: ${window.firebaseConfig ? window.firebaseConfig.projectId : 'Unknown'}<br>
+                    Auth Domain: ${window.firebaseConfig ? window.firebaseConfig.authDomain : 'Unknown'}
                 </div>
                 <div style="display:flex; gap:10px;">
-                    <button onclick="initFirebase()" style="padding:10px 15px; background:#019E81; color:#fff; border:none; border-radius:6px; cursor:pointer;">${isConnected ? 'Reconnect' : 'Connect'}</button>
+                    <button onclick="window.initFirebase()" style="padding:10px 15px; background:#019E81; color:#fff; border:none; border-radius:6px; cursor:pointer;">${isConnected ? 'Reconnect' : 'Connect'}</button>
                 </div>
             </div>
             <div class="dashboard-card">
@@ -8840,7 +8977,7 @@ async function switchAdminTab(tabName) {
         
         // PERFORMANCE: Load data only when needed (Avoid global snapshots)
         // Skip remote fetch for mock users or if not authenticated to prevent Permission Denied errors
-        const isMockUser = currentUser.id && (currentUser.id.toString().startsWith('mock_') || !isNaN(currentUser.id));
+        const isMockUser = currentUser.id && (currentUser.id.toString().startsWith('mock_') || currentUser.id.toString().startsWith('demo_') || !isNaN(currentUser.id));
         const isAuthenticated = window.auth && window.auth.currentUser;
 
         if (!isMockUser && isAuthenticated && ['restaurants', 'vendors', 'customers', 'promotions', 'payments', 'support', 'accounts', 'logs'].includes(tabName)) {

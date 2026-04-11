@@ -1,0 +1,60 @@
+query ListAllProducts @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public.") {
+  products {
+    id
+    name
+    price
+    category
+    imageUrl
+    store {
+      name
+      address
+    }
+  }
+}
+
+query GetMyOrders @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users.") {
+  orders(where: {customer: {id_expr: "auth.uid"}}, orderBy: [{orderDate: DESC}]) {
+    id
+    orderDate
+    status
+    totalAmount
+    store {
+      name
+    }
+    orderItems {
+      product {
+        name
+      }
+      quantity
+      priceAtTimeOfOrder
+    }
+  }
+}
+
+mutation CreateNewOrder($storeId: UUID!, $deliveryAddress: String!, $notes: String, $orderItems: [OrderItem_Data!]!) @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users.") {
+  order_insert(data: {
+    customer: {id_expr: "auth.uid"},
+    storeId: $storeId,
+    orderDate_expr: "request.time",
+    status: "Pending",
+    totalAmount: 0.0, # This would ideally be calculated server-side, but is required by schema
+    deliveryAddress: $deliveryAddress,
+    notes: $notes,
+    orderItems_on_order: {
+      insert: $orderItems
+    }
+  }) {
+    id
+  }
+}
+
+mutation UpdateDeliveryStatus($deliveryId: UUID!, $newStatus: String!) @auth(expr: "auth.token.role == 'driver'", insecureReason: "This operation is restricted to users with the 'driver' role.") {
+  delivery_update(
+    id: $deliveryId,
+    data: {
+      status: $newStatus
+    }
+  ) {
+    id
+  }
+}

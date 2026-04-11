@@ -1,21 +1,60 @@
+// Firebase v12.12.0 Modular SDK Implementation
+import "https://www.gstatic.com/firebasejs/12.12.0/firebase-app-compat.js";
+import "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth-compat.js";
+import "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore-compat.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged, sendPasswordResetEmail, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+import { getFirestore, enableIndexedDbPersistence, collection, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+import { getDatabase } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js";
+import { getMessaging, isSupported } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-analytics.js";
+
+// Your web app's Firebase configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyBBU2fUlkRf7VqVJmT-Vh7TfNpPgmQrqWU",
-    authDomain: "kirya-e2248.firebaseapp.com",
-    projectId: "kirya-e2248",
-    storageBucket: "kirya-e2248.firebasestorage.app",
-    messagingSenderId: "308339449512",
-    appId: "1:308339449512:web:d2b1fb44c4ba36a505ac9d",
-    measurementId: "G-YZ3NFWDS89",
-    databaseURL: "https://kirya-e2248-default-rtdb.firebaseio.com"
+    apiKey: "AIzaSyBZ_7aveKKu7UsIi03wSzjptuZ38XqfJvc",
+    authDomain: "delivery-app-6a47f.firebaseapp.com",
+    projectId: "delivery-app-6a47f",
+    storageBucket: "delivery-app-6a47f.firebasestorage.app",
+    messagingSenderId: "525706344286",
+    appId: "1:525706344286:web:1ce4079529b7f0d09d81cf",
+    measurementId: "G-N9HGCESZTS"
 };
 
-window.db = null;
-window.auth = null;
-window.rtdb = null;
-window.storage = null;
-window.messaging = null;
-// Store unsubscribe functions to prevent duplicate listeners
+// Initialize Firebase
+if (!window.firebase) {
+    throw new Error('Firebase compat SDK failed to load.');
+}
+const compatApp = window.firebase.initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
+// Compatibility objects for legacy app.js code
+window.firebase = window.firebase;
+window.auth = window.firebase.auth();
+window.db = window.firebase.firestore();
+window.firebaseConfig = firebaseConfig;
+window.initFirebase = initFirebase;
+
+// Modular objects for new realtime listeners and other internal operations
+window.authMod = getAuth(app);
+// If using a named database, specify it here: getFirestore(app, "your-db-id")
+window.dbMod = getFirestore(app); 
+window.rtdb = getDatabase(app);
+window.storage = getStorage(app);
+
+// Initialize messaging only if supported
+isSupported().then(supported => {
+    if (supported) {
+        window.messaging = getMessaging(app);
+        // Explicitly register the service worker to ensure it's active for push subscriptions
+        navigator.serviceWorker.register('/firebase-messaging-sw.js')
+            .then((reg) => console.log("Firebase: SW registered", reg.scope))
+            .catch((err) => console.warn("Firebase: SW registration failed", err));
+    }
+});
+
+// Store unsubscribe functions to prevent duplicate listeners
 let lastVisibleDocs = {
     orders: null,
     restaurants: null,
@@ -24,65 +63,54 @@ let lastVisibleDocs = {
 };
 const PAGE_SIZE = 15;
 let authListenerRegistered = false;
+let firebaseAuthState = { initialized: false, signedIn: false, uid: null };
 
 let firebaseUnsubs = { orders: null, riders: null, customers: null, restaurants: null, promotions: null, payments: null, support: null, accounts: null, logs: null, analytics: null, chat: null, profile: null };
 
 function initFirebase() {
-    if (typeof firebase === 'undefined') {
-        if (window.showToast) window.showToast("⚠️ Firebase SDK not loaded. Check internet.");
-        return;
-    }
-
     try {
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-            console.log("Firebase Initialized");
-        }
-        
-        // Ensure references exist
-        if (!window.db) window.db = firebase.firestore();
-        if (!window.auth) {
-            window.auth = firebase.auth();
-        }
-        if (!window.rtdb) window.rtdb = firebase.database();
-        
-        window.auth.onAuthStateChanged(user => {
+        console.log("Firebase Initialized with Modular SDK");
+
+        // Set up auth state listener
+        onAuthStateChanged(window.authMod, (user) => {
+            const signedIn = !!user;
+            const uid = user ? user.uid : null;
+            const authChanged = !firebaseAuthState.initialized
+                || firebaseAuthState.signedIn !== signedIn
+                || (signedIn && firebaseAuthState.uid !== uid);
+
+            if (!authChanged) {
+                console.log("Firebase: Auth state unchanged, skipping session reset.");
+                return;
+            }
+
+            firebaseAuthState.initialized = true;
+            firebaseAuthState.signedIn = signedIn;
+            firebaseAuthState.uid = uid;
+
             if (user) {
                 console.log("Firebase: Auth state changed ->", user.uid);
-                
                 if (!window.currentUser) window.currentUser = { id: user.uid };
                 else window.currentUser.id = user.uid;
-                
+
                 window.setupUserProfileListener(user.uid);
+                if (window.setupFirebaseListeners) window.setupFirebaseListeners();
             } else {
                 window.clearUserSession();
                 // Handle potential errors returning from a redirect login flow
-                if (window.auth) {
-                    window.auth.getRedirectResult().catch(error => {
-                        console.error("Auth Redirect Error:", error);
-                        if (window.showToast) window.showToast("🚫 Login Error: " + error.message);
-                    });
+                if (window.authMod) {
+                    // Note: getRedirectResult is not available in modular SDK v9+
+                    // Error handling for redirect flows should be done in the signInWithRedirect call
                 }
                 if (window.showLoginScreen) window.showLoginScreen();
             }
         });
 
-        if (!window.storage) window.storage = firebase.storage();
-        if (!window.messaging && firebase.messaging.isSupported()) {
-            window.messaging = firebase.messaging();
-            // Explicitly register the service worker to ensure it's active for push subscriptions
-            navigator.serviceWorker.register('/firebase-messaging-sw.js')
-                .then((reg) => console.log("Firebase: SW registered", reg.scope))
-                .catch((err) => console.warn("Firebase: SW registration failed", err));
-        }
-
         // 1. ENABLE OFFLINE PERSISTENCE (Local Sync) - MUST BE BEFORE ANY OTHER DB CALL
-        if (window.db) {
-            try {
-                window.db.enablePersistence({ synchronizeTabs: true });
-            } catch (e) {
-                console.log('Firestore settings already configured or error:', e);
-            }
+        try {
+            enableIndexedDbPersistence(window.dbMod, { synchronizeTabs: true });
+        } catch (e) {
+            console.log('Firestore settings already configured or error:', e);
         }
 
         // Helpers for Auth Providers
@@ -90,13 +118,13 @@ function initFirebase() {
             try {
                 const rememberMeEl = document.getElementById('loginRememberMe');
                 const rememberMe = rememberMeEl ? rememberMeEl.checked : true;
-                
-                const persistence = rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
-                await window.auth.setPersistence(persistence);
 
-                const provider = new firebase.auth.GoogleAuthProvider();
+                // Note: Persistence settings are handled differently in modular SDK
+                // For now, we'll use default persistence
+
+                const provider = new GoogleAuthProvider();
                 // Switching to Redirect to bypass Cross-Origin-Opener-Policy (COOP) restrictions
-                await window.auth.signInWithRedirect(provider);
+                await signInWithRedirect(window.authMod, provider);
             } catch (error) {
                 if (error.code === 'auth/unauthorized-domain') {
                     if (window.showToast) window.showToast("🚫 Domain unauthorized. Please add " + window.location.hostname + " to your Firebase Console settings.");
@@ -108,11 +136,11 @@ function initFirebase() {
         };
 
         window.sendPasswordResetEmail = async function(email) {
-            if (!window.auth) throw new Error("Firebase Auth not initialized.");
+            if (!window.authMod) throw new Error("Firebase Auth not initialized.");
             if (!email) throw new Error("Email is required for password reset.");
 
             try {
-                await window.auth.sendPasswordResetEmail(email);
+                await sendPasswordResetEmail(window.authMod, email);
                 if (window.showToast) window.showToast("✅ Password reset email sent! Check your inbox.");
                 return true;
             } catch (error) {
@@ -141,10 +169,10 @@ function initFirebase() {
                 oldContainer.parentNode.replaceChild(newContainer, oldContainer);
             }
 
-            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+            window.recaptchaVerifier = new RecaptchaVerifier(window.authMod, 'recaptcha-container', {
                 'size': 'invisible'
             });
-            return window.auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier);
+            return signInWithPhoneNumber(window.authMod, phoneNumber, window.recaptchaVerifier);
         };
 
         // Start listeners only when Auth state is confirmed to prevent "Insufficient Permissions"
@@ -154,7 +182,7 @@ function initFirebase() {
             // setupFirebaseListeners() will now be triggered by onAuthStateChanged
             authListenerRegistered = true;
         }
-        
+
         if (window.showToast) window.showToast("✅ Firebase Connected");
         updateNetworkStatusUI();
     } catch (e) {
@@ -164,22 +192,21 @@ function initFirebase() {
 
 /**
  * Global Logout Function
- * Signs out of Firebase Auth. The onAuthStateChanged listener 
+ * Signs out of Firebase Auth. The onAuthStateChanged listener
  * handles the subsequent UI reset and session clearing.
  */
 window.logoutUser = async function() {
     try {
         if (window.showLoading) window.showLoading("Logging out...");
-        // Proactively clear session data before waiting for Firebase
-        window.clearUserSession();
-        if (!window.auth) return;
-        await window.auth.signOut();
+        if (!window.authMod) return;
+        await signOut(window.authMod);
     } catch (error) {
         console.error("Logout Error:", error);
         if (window.showToast) showToast("❌ Error signing out.");
     } finally {
         if (window.hideLoading) window.hideLoading();
-        window.location.href = window.location.pathname; // Hard reload to clear all JS state
+        // Removed hard reload - let confirmLogout handle screen transitions
+        // window.location.href = window.location.pathname;
     }
 };
 
@@ -237,6 +264,8 @@ window.hideLoading = function() {
  */
 window.clearUserSession = function() {
     console.log("Firebase: Clearing user session...");
+    clearFirebaseListeners();
+
     window.currentUser = { role: 'user', points: 0, walletBalance: 0 };
 
     // Clear User Data from local storage
@@ -251,19 +280,14 @@ window.clearUserSession = function() {
     if (window.favorites) window.favorites.clear();
     if (window.cart) window.cart = [];
     if (window.notifications) window.notifications = [];
-    
+
     if (document.getElementById('verificationLoadingScreen')) {
         document.getElementById('verificationLoadingScreen').style.display = 'none';
-    }
-
-    if (firebaseUnsubs.profile) {
-        firebaseUnsubs.profile();
-        firebaseUnsubs.profile = null;
     }
 };
 
 /**
- * Returns the current user's role. 
+ * Returns the current user's role.
  * Defaults to 'user' if not logged in or role is undefined.
  */
 window.getCurrentRole = function() {
@@ -280,832 +304,152 @@ function updateNetworkStatusUI() {
     });
 }
 
+function clearFirebaseListeners() {
+    const unsubscribeKeys = Object.keys(firebaseUnsubs);
+    const hasActiveListeners = unsubscribeKeys.some(key => firebaseUnsubs[key]);
+    if (!hasActiveListeners) return;
+
+    unsubscribeKeys.forEach(key => {
+        if (firebaseUnsubs[key]) {
+            try {
+                firebaseUnsubs[key]();
+            } catch (err) {
+                console.warn(`Firebase listener cleanup failed for ${key}:`, err);
+            }
+            firebaseUnsubs[key] = null;
+        }
+    });
+}
+
 function setupFirebaseListeners() {
-    if(!db) return;
-    
-    // Get current auth state
-    const user = window.auth ? window.auth.currentUser : null;
+    if (!window.dbMod) return;
+
+    const user = window.authMod ? window.authMod.currentUser : null;
     const role = window.getCurrentRole ? window.getCurrentRole() : 'user';
 
-    // We cannot listen to orders without a user identity because security rules 
-    // require request.auth.uid to perform permission checks.
     if (!user) {
-        console.log("Firebase: Postponing orders listener until user is logged in.");
+        console.log("Firebase: Postponing Firestore listeners until user is logged in.");
         return;
     }
 
-    // Unsubscribe previous listeners if they exist (prevents duplicates on retry)
-    if (firebaseUnsubs.orders) firebaseUnsubs.orders();
-    if (firebaseUnsubs.riders) firebaseUnsubs.riders();
-    if (firebaseUnsubs.analytics) firebaseUnsubs.analytics();
-    if (firebaseUnsubs.chatsList) firebaseUnsubs.chatsList();
-
-    let query = db.collection("orders");
-
-    // SECURITY SYNC: Regular users MUST filter by their own ID in the query.
-    // Without this filter, Firestore rejects the query as it could return other people's data.
-    const isAdmin = (role === 'admin' || role === 'Super Admin' || role === 'Manager');
-    if (!isAdmin && role !== 'rider') {
-        query = query.where("customerId", "==", user.uid);
+    if (firebaseUnsubs.orders) {
+        firebaseUnsubs.orders();
+        firebaseUnsubs.orders = null;
+    }
+    if (firebaseUnsubs.riders) {
+        firebaseUnsubs.riders();
+        firebaseUnsubs.riders = null;
+    }
+    if (firebaseUnsubs.customers) {
+        firebaseUnsubs.customers();
+        firebaseUnsubs.customers = null;
     }
 
-    firebaseUnsubs.orders = query.orderBy('timestamp', 'desc')
-        .limit(role === 'admin' ? 50 : 5) 
-        .onSnapshot((snapshot) => {
-        if (snapshot.empty && adminOrders.length > 0) {
-            console.log("Firebase 'orders' is empty. Retaining local mock data.");
-            if (window.renderAdminDashboard) {
-                window.renderAdminDashboard();
-                window.renderAdminOrders();
-            }
-            return;
-        }
+    const isAdmin = ['admin', 'Super Admin', 'Manager'].includes(role);
+    let ordersQuery;
+
+    if (role === 'rider') {
+        ordersQuery = query(
+            collection(window.dbMod, 'orders'),
+            where('riderId', '==', user.uid),
+            orderBy('timestamp', 'desc'),
+            limit(50)
+        );
+    } else if (!isAdmin) {
+        ordersQuery = query(
+            collection(window.dbMod, 'orders'),
+            where('customerId', '==', user.uid),
+            orderBy('timestamp', 'desc'),
+            limit(25)
+        );
+    } else {
+        ordersQuery = query(
+            collection(window.dbMod, 'orders'),
+            orderBy('timestamp', 'desc'),
+            limit(50)
+        );
+    }
+
+    firebaseUnsubs.orders = onSnapshot(ordersQuery, (snapshot) => {
         const orders = [];
         snapshot.forEach((doc) => {
             orders.push({ id: doc.id, ...doc.data() });
         });
-        // Update global state
+
         window.allOrders = orders;
-        adminOrders = orders;
         window.adminOrders = orders;
-        
-        // Refresh UI if needed
-        if (window.renderAdminOrders && document.getElementById('admin-orders').style.display !== 'none') {
+
+        if (window.renderAdminOrders && document.getElementById('admin-orders') && document.getElementById('admin-orders').style.display !== 'none') {
             window.renderAdminOrders();
         }
-        if (window.renderAdminDashboard && document.getElementById('admin-dashboard').style.display !== 'none') {
+        if (window.renderAdminDashboard && document.getElementById('admin-dashboard') && document.getElementById('admin-dashboard').style.display !== 'none') {
             window.renderAdminDashboard();
         }
-        if (document.getElementById('riderScreen').classList.contains('active')) {
-            updateRiderNearbyOrders();
+        if (document.getElementById('riderScreen') && document.getElementById('riderScreen').classList.contains('active') && window.updateRiderNearbyOrders) {
+            window.updateRiderNearbyOrders();
         }
     }, (error) => {
-        console.error("Order listener error:", error);
-        if(error.code === 'permission-denied') {
-            console.warn("Falling back to local data due to permissions.");
-            if (window.showToast) showToast("⚠️ DB Permission Denied. Check Firestore Rules.");
-        }
+        console.error('Firebase order listener error:', error);
     });
 
-    // Listen for Riders
-    if (!isAdmin) return; // Gate sensitive data
-
-    firebaseUnsubs.riders = db.collection("riders").onSnapshot((snapshot) => {
-        if (snapshot.empty && adminRiders.length > 0) {
-            console.log("Firebase 'riders' is empty. Retaining local mock data.");
-            if (document.getElementById('admin-riders').style.display !== 'none') renderAdminRiders();
-            return;
-        }
-        const riders = [];
-        snapshot.forEach((doc) => {
-            riders.push({ id: doc.id, ...doc.data() });
-        });
-        adminRiders = riders;
-        window.adminRiders = riders;
-
-        // REALTIME TABLE UPDATE: Refresh rider list table immediately
-        if (window.renderAdminRiders && document.getElementById('admin-riders').style.display !== 'none') {
-            window.renderAdminRiders();
-        }
-        if (window.renderAdminDashboard && document.getElementById('admin-dashboard').style.display !== 'none') {
-            window.renderAdminDashboard();
-        }
-        // REALTIME MAP UPDATE: Refresh markers if map is active
-        if (window.updateAdminMapMarkers) {
-            window.updateAdminMapMarkers();
-        }
-    }, (error) => {
-        console.error("Rider listener error:", error);
-        if(error.code === 'permission-denied') showToast("⚠️ DB Permission Denied (Riders)");
-    });
-
-    // --- Chats List Listener ---
-    // Ensure users only see conversations they are participating in
-    let chatsQuery = db.collection("chats");
-    
-    if (!isAdmin) {
-        // This assumes your chat documents have a 'participants' array containing UIDs
-        // or a specific 'customerId' field.
-        chatsQuery = chatsQuery.where("participants", "array-contains", user.uid);
-    }
-
-    firebaseUnsubs.chatsList = chatsQuery.onSnapshot((snapshot) => {
-        const chats = [];
-        snapshot.forEach(doc => {
-            chats.push({ id: doc.id, ...doc.data() });
-        });
-        window.allUserChats = chats;
-        
-        // Trigger UI update for the chat list if the function exists
-        if (window.renderChatList) window.renderChatList(chats);
-    }, (error) => {
-        console.error("Chats list listener error:", error);
-        if(error.code === 'permission-denied') console.warn("Access to chats denied.");
-    });
-    
-    
-    // Listen for Analytics Summary
-    firebaseUnsubs.analytics = db.collection("analytics").doc("summary").onSnapshot((doc) => {
-        if (doc.exists) {
-            adminAnalytics = doc.data();
-            if (document.getElementById('admin-analytics').style.display !== 'none') renderAdminAnalytics();
-            if (document.getElementById('admin-dashboard').style.display !== 'none') renderAdminDashboard();
-        }
-    });
-}
-
-// --- PAGINATION & ONE-TIME FETCH LOGIC ---
-window.fetchPaginatedCollection = async function(collectionName, reset = false) {
-    if(!window.db) return [];
-    if(reset) lastVisibleDocs[collectionName] = null;
-    
-    let query = db.collection(collectionName);
-    
-    if (collectionName === 'logs') query = query.orderBy('time', 'desc');
-    else if (collectionName === 'users') query = query.orderBy('createdAt', 'desc');
-    else query = query.orderBy('name');
-
-    if (!reset && lastVisibleDocs[collectionName]) {
-        query = query.startAfter(lastVisibleDocs[collectionName]);
-    }
-
-    const snapshot = await query.limit(PAGE_SIZE).get();
-    if (snapshot.empty) return [];
-
-    lastVisibleDocs[collectionName] = snapshot.docs[snapshot.docs.length - 1];
-    
-    const items = [];
-    snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
-    return items;
-};
-
-window.fetchCollectionOnce = async function(collectionName) {
-    if(!window.db) return [];
-    const snapshot = await db.collection(collectionName).get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-};
-
-// --- AUTO-RECONNECT LOGIC ---
-window.addEventListener('online', () => {
-    showToast("🌐 Connection Restored. Reconnecting...");
-    console.log("Network online. Retrying Firebase...");
-    initFirebase();
-    updateNetworkStatusUI();
-});
-
-window.addEventListener('offline', () => {
-    showToast("⚠️ No Internet Connection. Working offline.");
-    updateNetworkStatusUI();
-});
-
-async function seedDatabase() {
-    if (!db) { showToast("Firebase not connected! Check Config."); return; }
-    showToast("Uploading data...");
-    const batch = db.batch();
-
-    // Upload Restaurants
-    (typeof MOCK_RESTAURANTS !== 'undefined' ? MOCK_RESTAURANTS : adminRestaurants).forEach(r => {
-        const ref = db.collection("restaurants").doc(r.id.toString());
-        batch.set(ref, r);
-    });
-
-    // Upload Riders
-    (typeof MOCK_RIDERS !== 'undefined' ? MOCK_RIDERS : adminRiders).forEach(r => {
-        const ref = db.collection("riders").doc(r.id.toString());
-        batch.set(ref, r);
-    });
-
-    // Upload Customers
-    (typeof MOCK_CUSTOMERS !== 'undefined' ? MOCK_CUSTOMERS : adminCustomers).forEach(u => {
-        const ref = db.collection("users").doc(u.id.toString());
-        batch.set(ref, { ...u, role: "user", isApproved: u.status === 'active', username: u.name });
-    });
-
-    // Upload Promotions
-    if(typeof MOCK_PROMOTIONS !== 'undefined') {
-        MOCK_PROMOTIONS.forEach(p => {
-            const ref = db.collection("promotions").doc(p.id.toString());
-            batch.set(ref, p);
-        });
-    }
-
-    // Upload Payments
-    if(typeof MOCK_PAYMENTS !== 'undefined') {
-        MOCK_PAYMENTS.forEach(p => {
-            const ref = db.collection("payments").doc(p.id.toString());
-            batch.set(ref, p);
-        });
-    }
-
-    // Upload Support Tickets
-    if(typeof MOCK_SUPPORT_TICKETS !== 'undefined') {
-        MOCK_SUPPORT_TICKETS.forEach(t => {
-            const ref = db.collection("support").doc(t.id.toString());
-            batch.set(ref, t);
-        });
-    }
-
-    // Upload Admin Accounts
-    if(typeof MOCK_ACCOUNTS !== 'undefined') {
-        MOCK_ACCOUNTS.forEach(a => {
-            const ref = db.collection("admin_accounts").doc(a.id.toString());
-            batch.set(ref, a);
-        });
-    }
-    
-    // Upload Analytics Summary
-    if(typeof MOCK_ANALYTICS !== 'undefined') {
-        batch.set(db.collection("analytics").doc("summary"), MOCK_ANALYTICS);
-    }
-
-    // Upload Orders
-    if(typeof MOCK_ORDERS !== 'undefined') {
-        MOCK_ORDERS.forEach(o => {
-            const ref = db.collection("orders").doc(o.id.toString());
-            batch.set(ref, o);
-        });
-    }
-
-    await batch.commit();
-    showToast("Data Migration Complete! 🎉");
-}
-
-// 2. REAL-TIME USER PROFILE SYNC LISTENER
-function setupUserProfileListener(userId) {
-    // PERMANENT FIX: Skip Firestore operations for Mock/Demo users or unauthenticated sessions
-    // This prevents "Missing or insufficient permissions" errors.
-    const isMock = userId && (userId.toString().startsWith('mock_') || !isNaN(userId));
-
-    if(!db || !userId || isMock) {
-        console.log(`Firebase: Skipping Firestore listener for ${isMock ? 'Mock' : 'Invalid'} User ID: ${userId}`);
-        return;
-    }
-
-    // Clear previous listener if it exists to avoid duplicates
-    if (firebaseUnsubs.profile) firebaseUnsubs.profile();
-
-    // Optimized check: Check both collections but handle permission errors gracefully.
-    // We use a "Safe Check" strategy.
-    console.log(`[Auth] Checking permissions for ID: ${userId}`);
-    
-    const collections = [
-        { name: 'admin_accounts', role: 'admin' },
-        { name: 'riders', role: 'rider' },
-        { name: 'restaurants', role: 'vendor' },
-        { name: 'users', role: 'user' }
-    ];
-
-    async function waterfallProfileLookup() {
-        let foundCol = null;
-        
-        // Optimization: Check for a role hint to speed up lookup
-        const roleHint = localStorage.getItem('kirya_user_role_hint');
-        if (roleHint) {
-            const hintMap = { 'admin': 'admin_accounts', 'rider': 'riders', 'vendor': 'restaurants', 'user': 'users' };
-            const colName = hintMap[roleHint];
-            try {
-                const doc = await db.collection(colName).doc(userId.toString()).get();
-                if (doc.exists) foundCol = { name: colName, role: roleHint };
-            } catch (e) {}
-        }
-
-        if (!foundCol) {
-        // Parallel check to find which collection the user belongs to
-        const checks = await Promise.all(collections.map(async col => {
-            try {
-                const doc = await db.collection(col.name).doc(userId.toString()).get();
-                return doc.exists ? { name: col.name, role: col.role } : null;
-            } catch(e) { return null; }
-        }));
-        
-        foundCol = checks.find(c => c !== null);
-        }
-
-        if (foundCol) {
-            localStorage.setItem('kirya_user_role_hint', foundCol.role);
-            // Attach real-time listener to the identified document
-            firebaseUnsubs.profile = db.collection(foundCol.name).doc(userId.toString())
-                .onSnapshot((doc) => {
-                    if (doc.exists) setupProfileFromDoc(doc, foundCol.role);
-                }, handleProfileError);
-        } else {
-            // Brand new user registration
-            const registered = await handleNewUserRegistration(userId);
-            // Start listening to the newly created 'users' document
-            if (registered) attachUserListener(userId);
-        }
-    }
-
-    waterfallProfileLookup();
-
-    function setupProfileFromDoc(doc, role) {
-        const data = doc.data();
-        const collectionName = doc.ref.parent.id;
-        
-        // Use the role from the document if it exists (e.g., 'Super Admin'), otherwise use default
-        data.role = data.role || role;
-
-        // --- REAL-TIME APPROVAL DETECTION ---
-        // Check if the user was unapproved and is now approved
-        const wasApproved = window.currentUser ? window.currentUser.isApproved : false;
-        const isNowApproved = data.isApproved;
-
-        if (wasApproved === false && isNowApproved === true) {
-            if (window.showToast) window.showToast("🎊 Congratulations! Your account has been approved.");
-            if (window.playNotificationSound) window.playNotificationSound();
-        }
-
-        // ALWAYS show toast on successful role resolution
-        if (window.showToast) {
-            window.showToast(`✅ Verified: Welcome ${data.name || data.username || 'User'} (${data.role})`);
-        }
-        
-        if (window.hideLoading) window.hideLoading();
-
-        console.log(`%c[Verification] Fetched Role from ${collectionName}:`, "color: #007bff; font-weight: bold;", data.role);
-            
-            // Sync Session State
-            const oldRole = window.currentUser ? window.currentUser.role : null;
-            window.currentUser = { 
-                ...window.currentUser, 
-                ...data, 
-                id: userId,
-                _collection: collectionName // Remember the source collection
-            };
-
-            // --- AUTO-ROUTING LOGIC (Perfect Login) ---
-            if (data.isApproved) {
-                // Use the central routing function in app.js
-                if (window.proceedToHome) window.proceedToHome(true);
-            } else {
-                // Account not approved yet, call proceedToHome which now handles this state on login page
-                if (window.proceedToHome) window.proceedToHome(true);
+    if (isAdmin) {
+        firebaseUnsubs.riders = onSnapshot(collection(window.dbMod, 'riders'), (snapshot) => {
+            const riders = [];
+            snapshot.forEach((doc) => riders.push({ id: doc.id, ...doc.data() }));
+            window.adminRiders = riders;
+            if (window.renderAdminRiders && document.getElementById('admin-riders') && document.getElementById('admin-riders').style.display !== 'none') {
+                window.renderAdminRiders();
             }
+        }, (error) => {
+            console.error('Firebase rider listener error:', error);
+        });
 
-            // Re-initialize listeners if role changed or first load
-            if (oldRole !== data.role) setupFirebaseListeners();
-            
-            // Sync Notifications
-            if(data.notifications) {
-                notifications = data.notifications;
-                updateBellDots();
-                if(document.getElementById('notificationsScreen').classList.contains('active')) renderNotifications();
+        firebaseUnsubs.customers = onSnapshot(collection(window.dbMod, 'customers'), (snapshot) => {
+            const customers = [];
+            snapshot.forEach((doc) => customers.push({ id: doc.id, ...doc.data() }));
+            window.adminCustomers = customers;
+            if (window.renderAdminCustomers && document.getElementById('admin-customers') && document.getElementById('admin-customers').style.display !== 'none') {
+                window.renderAdminCustomers();
             }
+        }, (error) => {
+            console.error('Firebase customer listener error:', error);
+        });
 
-            // Update UI
-            updateCartView();
-    }
-
-    function attachUserListener(uid) {
-        firebaseUnsubs.profile = db.collection('users').doc(uid.toString())
-            .onSnapshot((doc) => {
-                if (doc.exists) setupProfileFromDoc(doc, 'user');
-            }, handleProfileError);
-    }
-
-    async function handleNewUserRegistration(userId) {
-        console.log("First-time login detected. Creating default profile...");
-        const authUser = window.auth.currentUser;
-        const email = authUser.email;
-        const phone = authUser.phoneNumber;
-
-        try {
-            let existingData = null;
-
-            // 1. Check if an Admin pre-created this user by Email or Phone
-            if (email) {
-                const emailSnap = await db.collection('users').where('email', '==', email).limit(1).get();
-                if (!emailSnap.empty) existingData = emailSnap.docs[0].data();
+        firebaseUnsubs.restaurants = onSnapshot(collection(window.dbMod, 'restaurants'), (snapshot) => {
+            const restaurants = [];
+            snapshot.forEach((doc) => restaurants.push({ id: doc.id, ...doc.data() }));
+            window.adminRestaurants = restaurants;
+            if (window.renderAdminRestaurants && document.getElementById('admin-restaurants') && document.getElementById('admin-restaurants').style.display !== 'none') {
+                window.renderAdminRestaurants();
             }
-            
-            if (!existingData && phone) {
-                const phoneSnap = await db.collection('users').where('phone', '==', phone).limit(1).get();
-                if (!phoneSnap.empty) existingData = phoneSnap.docs[0].data();
+        }, (error) => {
+            console.error('Firebase restaurant listener error:', error);
+        });
+
+        firebaseUnsubs.payments = onSnapshot(collection(window.dbMod, 'payments'), (snapshot) => {
+            const payments = [];
+            snapshot.forEach((doc) => payments.push({ id: doc.id, ...doc.data() }));
+            window.adminPayments = payments;
+            if (window.renderAdminPayments && document.getElementById('admin-payments') && document.getElementById('admin-payments').style.display !== 'none') {
+                window.renderAdminPayments();
             }
+        }, (error) => {
+            console.error('Firebase payment listener error:', error);
+        });
 
-            // 2. Prepare the final profile
-            const finalProfile = {
-                id: userId,
-                name: existingData?.name || authUser.displayName || "New User",
-                email: email || existingData?.email || "",
-                phone: phone || existingData?.phone || "",
-                role: existingData?.role || 'user', // Keep Admin-assigned role or default to 'user'
-                isApproved: existingData?.isApproved || false,
-                points: existingData?.points || 0,
-                walletBalance: existingData?.walletBalance || 0,
-                createdAt: existingData?.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
-                authRegistered: true
-            };
-
-            // 3. Save to the document named by the actual UID
-            await db.collection('users').doc(userId.toString()).set(finalProfile);
-            if (window.showToast) window.showToast(`🎉 Welcome! Account registered as ${finalProfile.role}`);
-            return true;
-        } catch (err) {
-            console.error("Error in registration flow:", err);
-            if (window.showToast) window.showToast("❌ Registration Error: " + err.message);
-            return false;
-        }
-    }
-
-    function handleProfileError(error) {
-        console.error("Profile sync error:", error);
-        if (window.hideLoading) window.hideLoading();
-        if (document.getElementById('verificationLoadingScreen')) {
-            document.getElementById('verificationLoadingScreen').style.display = 'none';
-        }
-        
-        if (window.showToast) {
-            if (error.code === 'permission-denied') {
-                window.showToast("🚫 Login Denied: Your account doesn't have permission to access this area.");
-            } else {
-                window.showToast("⚠️ System Error: " + error.message);
+        firebaseUnsubs.support = onSnapshot(collection(window.dbMod, 'support'), (snapshot) => {
+            const supportTickets = [];
+            snapshot.forEach((doc) => supportTickets.push({ id: doc.id, ...doc.data() }));
+            window.adminSupportTickets = supportTickets;
+            if (window.renderAdminSupport && document.getElementById('admin-support') && document.getElementById('admin-support').style.display !== 'none') {
+                window.renderAdminSupport();
             }
-        }
-        if (window.hideLoading) window.hideLoading();
+        }, (error) => {
+            console.error('Firebase support listener error:', error);
+        });
     }
 }
 
-window.setupChatListener = function(chatId) {
-    if(!window.db) return;
-    // Clear existing chat listener to prevent memory leaks/duplicate UI updates
-    if (firebaseUnsubs.chat) firebaseUnsubs.chat();
 
-    const chatMessages = document.getElementById('chatMessages');
-    
-    firebaseUnsubs.chat = window.db.collection('chats').doc(chatId).collection('messages')
-        .orderBy('timestamp', 'asc')
-        .onSnapshot((snapshot) => {
-            // Clear and re-render the view from the Firestore snapshot
-            chatMessages.innerHTML = '<div class="chat-date">Today</div>';
-            
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                // Determine message type: 'sent' if I am the sender, else 'received'
-                const type = (data.senderId === window.currentUser.id) ? 'sent' : 'received';
-                
-                const time = data.timestamp 
-                    ? new Date(data.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
-                    : 'Just now';
-                
-                if (window.addMessage) window.addMessage(type, data.text, time);
-            });
-        }, (error) => console.error("Chat listener error:", error));
-};
-
-window.uploadImageToStorage = async function(blob, path, onProgress = null) {
-    if(!window.storage) throw new Error("Firebase Storage not initialized");
-    try {
-        const ref = window.storage.ref(path);
-        const uploadTask = ref.put(blob);
-
-        return new Promise((resolve, reject) => {
-            uploadTask.on('state_changed', 
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    if (onProgress) onProgress(progress);
-                }, 
-                (error) => {
-                    console.error("Storage Upload Error:", error);
-                    if (error.message && error.message.includes('CORS')) {
-                        if (window.showToast) window.showToast("⚠️ Storage Error: Please configure CORS on your Firebase bucket.");
-                    }
-                    reject(error);
-                }, 
-                async () => {
-                    try {
-                        const url = await uploadTask.snapshot.ref.getDownloadURL();
-                        resolve(url);
-                    } catch (e) {
-                        reject(e);
-                    }
-                }
-            );
-        });
-    } catch (e) {
-        console.error("Storage Upload Error:", e);
-        if (e.message && e.message.includes('CORS')) {
-            if (window.showToast) window.showToast("⚠️ Storage Error: Please configure CORS on your Firebase bucket.");
-            throw new Error("CORS configuration required on Firebase Storage bucket.");
-        }
-        throw e;
-    }
-};
-
-window.deleteImageFromStorage = async function(url) {
-    if(!window.storage || !url) return false;
-    // Only attempt to delete if it's a Firebase Storage URL
-    if (!url.includes('firebasestorage.googleapis.com')) return false;
-    try {
-        const ref = window.storage.refFromURL(url);
-        await ref.delete();
-        return true;
-    } catch (e) {
-        console.error("Storage Delete Error:", e);
-        return false;
-    }
-};
-
-window.requestNotificationPermission = async function() {
-    if (!window.messaging) return;
-    
-    try {
-        // Ensure Service Worker is active before attempting to subscribe to PushManager
-        if ('serviceWorker' in navigator) {
-            const registration = await navigator.serviceWorker.ready;
-            if (!registration.active) {
-                console.warn("Firebase Messaging: Service Worker not yet active.");
-                return;
-            }
-        }
-
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-            console.log('Notification permission granted.');
-            
-            // Get FCM Token
-            const token = await window.messaging.getToken({
-                vapidKey: 'BK2f6TpUhGePLF0PW_x4Nvwc3Bp86GEGOmKgFVd9bgtI7G4T_YS_NDZHgWqihO0u4WfCBHFzhZ4TlNgZLyx3sjU' // Generate this in Firebase Console -> Project Settings -> Cloud Messaging
-            });
-            
-            if (token && window.currentUser && window.currentUser.id) {
-                await db.collection('users').doc(window.currentUser.id).update({
-                    fcmToken: token,
-                    notificationsEnabled: true
-                });
-                console.log('Firebase: FCM Token stored');
-            }
-        }
-    } catch (error) {
-        if (error.code === 'messaging/permission-denied' || error.message.includes('permission')) {
-            console.warn('Firebase Messaging: Permission denied or missing config.');
-        } else {
-            console.error('Unable to get messaging token', error);
-        }
-    }
-};
-
-if (window.messaging) {
-    window.messaging.onMessage((payload) => {
-        console.log('Foreground Message received: ', payload);
-        if (window.showToast) window.showToast(`🔔 ${payload.notification.title}: ${payload.notification.body}`);
-        if (window.playNotificationSound) window.playNotificationSound();
-    });
-}
-
-// --- REGISTRATION & ACCOUNT MANAGEMENT ---
-
-/**
- * Public function for users to register via the frontend form.
- * Automatically handles registration without requiring a mode selection.
- */
-window.registerUserAccount = async function(userData) {
-    if (!window.db) throw new Error("Database not connected");
-    
-    // Strictly use the Authenticated UID for document creation
-    const userId = (window.auth.currentUser ? window.auth.currentUser.uid : userData.phoneNumber) || "u_" + Date.now();
-    
-    const newUser = {
-        ...userData,
-        id: userId,
-        role: 'user',
-        isApproved: false, // Users start unapproved
-        points: 0,
-        walletBalance: 0,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    await window.db.collection("users").doc(userId.toString()).set(newUser);
-    return newUser;
-};
-
-/**
- * Admin-only function to create Rider accounts.
- */
-window.adminCreateRider = async function(riderData) {
-    const role = window.getCurrentRole ? window.getCurrentRole() : '';
-    if (role !== 'admin') throw new Error("Permission Denied: Admin only");
-
-    const ref = window.db.collection("riders").doc(riderData.id?.toString() || Date.now().toString());
-    await ref.set({ ...riderData, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-    return ref.id;
-};
-
-/**
- * Admin-only function to create Vendor (Restaurant) accounts.
- */
-window.adminCreateVendor = async function(vendorData) {
-    const role = window.getCurrentRole ? window.getCurrentRole() : '';
-    if (role !== 'admin') throw new Error("Permission Denied: Admin only");
-
-    const ref = window.db.collection("restaurants").doc(vendorData.id?.toString() || Date.now().toString());
-    await ref.set({ ...vendorData, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-    return ref.id;
-};
-
-/**
- * Updates the current rider's location.
- * Restricted by Firestore rules to only allow 'location' and 'lastSeen' updates.
- */
-window.updateRiderLocation = async function(latitude, longitude) {
-    if (!window.auth.currentUser) return;
-    
-    const riderId = window.auth.currentUser.uid;
-    const ref = window.db.collection("riders").doc(riderId);
-    
-    try {
-        await ref.update({
-            location: new firebase.firestore.GeoPoint(latitude, longitude),
-            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    } catch (error) {
-        console.error("Failed to update location. Are you logged in as this rider?", error);
-    }
-};
-
-/**
- * Utility to create a test order in Firestore.
- * Running this in the console will trigger the real-time listeners.
- */
-window.createTestOrder = async function() {
-    if (!window.db || !window.auth || !window.auth.currentUser) {
-        if (window.showToast) window.showToast("❌ Error: You must be logged in to create a test order.");
-        return;
-    }
-
-    const user = window.auth.currentUser;
-    const orderId = 'TEST-' + Date.now();
-    const testOrder = {
-        customerId: user.uid,
-        customerName: user.displayName || "Test User",
-        customerPhone: user.phoneNumber || "+000 000 0000",
-        deliveryAddress: "Test Suite 101, Firebase Towers",
-        items: [
-            { title: "Firebase Burger", basePrice: 25.00, quantity: 1, image: "🍔" },
-            { title: "Firestore Fries", basePrice: 15.00, quantity: 1, image: "🍟" }
-        ],
-        total: 40.00,
-        tip: 5.00,
-        restaurant: "Cloud Kitchen",
-        status: "pending",
-        statusText: "Order Received",
-        statusColor: "#FFBF42",
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        userLat: 24.47,
-        userLng: 54.40,
-        restaurantLat: 24.46,
-        restaurantLng: 54.38
-    };
-
-    try {
-        await window.db.collection("orders").doc(orderId).set(testOrder);
-        if (window.showToast) window.showToast("✅ Test Order Created: " + orderId);
-    } catch (e) {
-        console.error("Test order error:", e);
-        if (window.showToast) window.showToast("❌ Failed: " + e.message);
-    }
-};
-
-/**
- * Creates a user document in Firestore and assigns a role.
- * Note: Auth account creation usually requires Cloud Functions for Admin.
- */
-window.adminCreateUserRecord = async function(userData) {
-    if (!window.db) throw new Error("Database not connected");
-    
-    // Generate a unique ID if one isn't provided (for mock/manual entries)
-    const userId = userData.id || "u_" + Date.now();
-    
-    const newUser = {
-        name: userData.name || "New User",
-        email: userData.email || "",
-        phone: userData.phone || "",
-        role: userData.role || 'user', // 'admin', 'rider', 'vendor', 'user'
-        isApproved: userData.isApproved || false,
-        points: 0,
-        walletBalance: 0,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        ...userData
-    };
-
-    await window.db.collection("users").doc(userId.toString()).set(newUser);
-    return newUser;
-};
-
-/**
- * Admin Helper: Manually set a user's role by their Firebase UID.
- * Use this from the browser console to quickly fix account permissions.
- */
-window.adminSetUserRole = async function(uid, role) {
-    const validRoles = ['admin', 'rider', 'vendor', 'user'];
-    if (!validRoles.includes(role)) {
-        console.error("Invalid role. Choose: admin, rider, vendor, user");
-        return;
-    }
-
-    try {
-        await window.db.collection('users').doc(uid).update({ role: role, isApproved: true });
-        console.log(`✅ Successfully updated UID ${uid} to role: ${role}`);
-        if (window.showToast) window.showToast(`Updated permissions for ${uid}`);
-    } catch (e) {
-        console.error("Update failed:", e);
-    }
-};
-
-/**
- * Utility to seed the sample accounts provided into Firestore.
- * Run this from the browser console once to set up the data.
- */
-window.seedSampleAuthUsers = async function() {
-    if (!window.db) { if (window.showToast) window.showToast("❌ Firebase not connected!"); return; }
-    if (window.showLoading) window.showLoading("Seeding Auth Profiles...");
-    
-    const samples = [
-        { uid: 'vlOZudfefvhPhKZ8TAayOV6ayTc2', collection: 'users', data: { name: 'Sample User', username: 'user123', email: 'user@kirya.app', phone: '+256700000001', role: 'user', isApproved: true } },
-        { uid: 'mICAaywZwya7n88y8d47fY2fnf82', collection: 'riders', data: { name: 'Sample Rider', username: 'rider123', email: 'rider@kirya.app', phone: '+256700000002', role: 'rider', accountStatus: 'active', isApproved: true } },
-        { uid: 'WPbLjNhBhIXnKBUrbDdE3inME3i1', collection: 'restaurants', data: { name: 'Sample Vendor', username: 'vendor123', email: 'vendor@kirya.app', phone: '+256700000003', role: 'vendor', status: 'active', isApproved: true } },
-        { uid: '4Wnx2guR1lajzsdnXr6IOirk83g1', collection: 'admin_accounts', data: { name: 'Main Admin', username: 'admin_master', email: 'admin@kirya.app', phone: '+256700000004', role: 'Super Admin', status: 'active', isApproved: true } }
-    ];
-
-    // 1. Promote CURRENT user to Admin immediately (Standalone write)
-    if (window.auth.currentUser) {
-        const myUid = window.auth.currentUser.uid;
-        const myData = {
-            name: window.currentUser.name || 'Main Admin',
-            email: window.auth.currentUser.email,
-            role: 'Super Admin',
-            status: 'active',
-            isApproved: true,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        try {
-            await window.db.collection('admin_accounts').doc(myUid).set(myData, { merge: true });
-            console.log("Self-promotion successful. You are now an admin.");
-            // Small delay to ensure Firestore rules engine sees the new document
-            await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (e) {
-            console.warn("Self-promotion failed:", e.message);
-        }
-    }
-
-    // 2. Seed samples (This batch will now be authorized as Step 1 made you an admin)
-    const batch = window.db.batch();
-    samples.forEach(s => {
-        const ref = window.db.collection(s.collection).doc(s.uid);
-        batch.set(ref, { ...s.data, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-    });
-
-    try {
-        await batch.commit();
-        if (window.showToast) window.showToast("✅ Seeding Complete! Your account is now a Super Admin.");
-    } catch (e) {
-        console.error("Seed Error:", e);
-        if (window.showToast) window.showToast("❌ Seeding failed: " + e.message);
-    } finally {
-        if (window.hideLoading) window.hideLoading();
-    }
-};
-
-/**
- * Automatically creates/updates the Master Admin document.
- * Call this from the console: createMasterAdmin()
- */
-window.createMasterAdmin = async function() {
-    if (!window.db) { console.error("DB not connected"); return; }
-    const uid = "4Wnx2guR1lajzsdnXr6IOirk83g1";
-    const adminData = {
-        name: 'Main Admin',
-        email: 'admin@kirya.app',
-        username: 'admin_master',
-        role: 'Super Admin',
-        status: 'active',
-        isApproved: true,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    try {
-        await window.db.collection('admin_accounts').doc(uid).set(adminData, { merge: true });
-        if (window.showToast) window.showToast("✅ Master Admin Created Successfully!");
-        console.log("Master Admin document set for UID:", uid);
-    } catch (e) {
-        if (e.code === 'permission-denied') {
-            console.error("Master Admin Creation Failed: You do not have permission to write to Firestore. Please use the Firebase Console to manually create this document first or update your Security Rules.");
-            if (window.showToast) window.showToast("🚫 Permission Denied. Use Firebase Console to create admin.");
-        } else {
-            console.error("Master Admin Creation Failed:", e);
-        }
-    }
-};
-
-/**
- * Listen to a single order's changes in real-time.
- * Useful for updating the tracking screen without re-rendering the whole list.
- */
-window.listenToOrder = function(orderId, onUpdate) {
-    if (!window.db || !orderId) return null;
-    return window.db.collection("orders").doc(orderId).onSnapshot((doc) => {
-        if (doc.exists) {
-            onUpdate({ id: doc.id, ...doc.data() });
-        }
-    }, (error) => console.error("Order listener error:", error));
-};
-// --- FIREBASE INTEGRATION END ---
+// Initialize Firebase when the script loads
+initFirebase();

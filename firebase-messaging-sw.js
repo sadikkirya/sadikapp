@@ -1,13 +1,14 @@
-importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.12.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-    apiKey: "AIzaSyBBU2fUlkRf7VqVJmT-Vh7TfNpPgmQrqWU",
-    authDomain: "kirya-e2248.firebaseapp.com",
-    projectId: "kirya-e2248",
-    storageBucket: "kirya-e2248.firebasestorage.app",
-    messagingSenderId: "308339449512",
-    appId: "1:308339449512:web:d2b1fb44c4ba36a505ac9d"
+    apiKey: "AIzaSyBZ_7aveKKu7UsIi03wSzjptuZ38XqfJvc",
+    authDomain: "delivery-app-6a47f.firebaseapp.com",
+    projectId: "delivery-app-6a47f",
+    storageBucket: "delivery-app-6a47f.firebasestorage.app",
+    messagingSenderId: "525706344286",
+    appId: "1:525706344286:web:1ce4079529b7f0d09d81cf",
+    measurementId: "G-N9HGCESZTS"
 });
 
 const messaging = firebase.messaging();

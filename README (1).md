@@ -1,2 +1,0 @@
-# Kirya
-Delivery App

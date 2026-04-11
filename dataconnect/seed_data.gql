@@ -1,0 +1,120 @@
+mutation SeedData @transaction @auth(level: PUBLIC, insecureReason: "Seed data is for testing and development purposes and can be publicly accessible.") {
+  user_insertMany(data: [
+    {
+      id: "user1",
+      authId: "firebase_auth_id_1",
+      role: "customer",
+      displayName: "Alice Smith",
+      email: "alice@example.com",
+      phoneNumber: "+15551234567",
+      address: "123 Main St, Anytown, USA",
+      createdAt: "2023-01-01T10:00:00Z"
+    },
+    {
+      id: "user2",
+      authId: "firebase_auth_id_2",
+      role: "driver",
+      displayName: "Bob Johnson",
+      email: "bob@example.com",
+      phoneNumber: "+15559876543",
+      address: "456 Oak Ave, Anytown, USA",
+      createdAt: "2023-01-01T10:05:00Z"
+    },
+    {
+      id: "user3",
+      authId: "firebase_auth_id_3",
+      role: "owner",
+      displayName: "Charlie Brown",
+      email: "charlie@example.com",
+      phoneNumber: "+15555551212",
+      address: "789 Pine Ln, Anytown, USA",
+      createdAt: "2023-01-01T10:10:00Z"
+    }
+  ])
+  store_insertMany(data: [
+    {
+      id: "store1",
+      name: "Alice's Bakery",
+      address: "100 Bakery Ln, Anytown, USA",
+      phoneNumber: "+15551112222",
+      ownerId: "user3",
+      cuisineType: "Bakery",
+      createdAt: "2023-01-01T11:00:00Z"
+    },
+    {
+      id: "store2",
+      name: "Bob's Burgers",
+      address: "200 Burger Blvd, Anytown, USA",
+      phoneNumber: "+15553334444",
+      ownerId: "user3",
+      cuisineType: "Fast Food",
+      createdAt: "2023-01-01T11:15:00Z"
+    }
+  ])
+  product_insertMany(data: [
+    {
+      id: "product1",
+      name: "Croissant",
+      price: 3.50,
+      storeId: "store1",
+      category: "Pastry",
+      inventoryCount: 50,
+      createdAt: "2023-01-01T12:00:00Z"
+    },
+    {
+      id: "product2",
+      name: "Cheeseburger",
+      price: 8.99,
+      storeId: "store2",
+      category: "Burgers",
+      inventoryCount: 100,
+      createdAt: "2023-01-01T12:05:00Z"
+    }
+  ])
+  order_insertMany(data: [
+    {
+      id: "order1",
+      customerId: "user1",
+      storeId: "store1",
+      orderDate: "2023-01-01T13:00:00Z",
+      status: "pending",
+      totalAmount: 7.00,
+      deliveryAddress: "123 Main St, Anytown, USA"
+    },
+    {
+      id: "order2",
+      customerId: "user1",
+      storeId: "store2",
+      orderDate: "2023-01-01T13:30:00Z",
+      status: "processing",
+      totalAmount: 17.98,
+      deliveryAddress: "123 Main St, Anytown, USA",
+      driverId: "user2"
+    }
+  ])
+  orderItem_insertMany(data: [
+    {
+      orderId: "order1",
+      productId: "product1",
+      quantity: 2,
+      priceAtTimeOfOrder: 3.50
+    },
+    {
+      orderId: "order2",
+      productId: "product2",
+      quantity: 2,
+      priceAtTimeOfOrder: 8.99
+    }
+  ])
+  delivery_insertMany(data: [
+    {
+      orderId: "order2",
+      driverId: "user2",
+      pickupTime: "2023-01-01T14:00:00Z",
+      deliveryTime: "2023-01-01T14:30:00Z",
+      status: "delivered",
+      createdAt: "2023-01-01T13:45:00Z",
+      estimatedDeliveryTime: "2023-01-01T14:30:00Z"
+    }
+  ])
+}
