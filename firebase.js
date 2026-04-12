@@ -355,6 +355,30 @@ function setupFirebaseListeners() {
             orderBy('timestamp', 'desc'),
             limit(50)
         );
+
+        // ROLE-SPECIFIC DATA FETCHING (Hybrid Architecture)
+        if (role === 'rider') {
+            firebaseUnsubs.riderData = onSnapshot(doc(window.dbMod, 'riders', user.uid), (doc) => {
+                if (doc.exists()) {
+                    window.currentUser = { ...window.currentUser, ...doc.data() };
+                    if (window.updateProfileUI) window.updateProfileUI();
+                }
+            });
+        } else if (role === 'vendor') {
+            firebaseUnsubs.vendorData = onSnapshot(doc(window.dbMod, 'vendors', user.uid), (doc) => {
+                if (doc.exists()) {
+                    window.currentUser = { ...window.currentUser, ...doc.data() };
+                    if (window.updateProfileUI) window.updateProfileUI();
+                }
+            });
+            // Real-time Products for Vendor
+            firebaseUnsubs.products = onSnapshot(query(collection(window.dbMod, 'products'), where('vendorId', '==', user.uid)), (snap) => {
+                const prods = [];
+                snap.forEach(d => prods.push({id: d.id, ...d.data()}));
+                window.merchantMenuItems = prods;
+                if (window.renderMerchantMenuItems) window.renderMerchantMenuItems(prods);
+            });
+        }
     } else if (!isAdmin) {
         ordersQuery = query(
             collection(window.dbMod, 'orders'),

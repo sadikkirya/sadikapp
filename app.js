@@ -674,7 +674,8 @@ function proceedToHome(skipSave = false) {
 
     // CRITICAL SECURITY: If the account is not approved, clear restoration memory 
     // to prevent the app from bypassing the gate on the next refresh.
-    if (!window.currentUser.isGuest && window.currentUser.isApproved !== true) {
+    const isUserBlocked = !window.currentUser.isGuest && ['pending', 'rejected', 'suspended'].includes(window.currentUser.status);
+    if (isUserBlocked) {
         sessionStorage.removeItem('kirya_last_screen');
     }
     if (document.getElementById('verificationLoadingScreen')) {
@@ -682,7 +683,7 @@ function proceedToHome(skipSave = false) {
     }
 
     // If account is not approved, stay on login page with a verification message
-    if (!window.currentUser.isGuest && window.currentUser.isApproved !== true) {
+    if (isUserBlocked) {
         if (window.hideLoading) window.hideLoading();
 
         // --- ABSOLUTE GATEKEEPER: Hide ALL app screens ---
@@ -694,11 +695,23 @@ function proceedToHome(skipSave = false) {
 
         // Show the waiting screen or login screen with status
         loginScreen?.classList.add('active');
+        const status = window.currentUser.status || 'pending';
+        
         if (statusMsg) {
-            statusMsg.innerHTML = `✨ <b>Account Under Verification</b><br>Thank you for joining Kirya! Our team is reviewing your details. We will notify you once your account is ready.
-            <br><br>
-            <button onclick="window.open('https://wa.me/971562889428', '_blank')" style="background:none; border:1px solid #019E81; color:#019E81; padding:10px 20px; border-radius:25px; font-weight:bold; cursor:pointer; font-size:0.95em; display:flex; align-items:center; gap:8px; justify-content:center; margin:10px auto; width:100%;"><span>💬</span> Contact Support Center</button>
-            <button onclick="window.confirmLogout()" style="background:none; border:none; color:#666; font-size:0.85em; font-weight:bold; cursor:pointer; margin-top:5px; text-decoration:underline;">Logout / Switch Account</button>`;
+            if (status === 'pending') {
+                statusMsg.innerHTML = `✨ <b>Account Under Verification</b><br>Thank you for joining Kirya! Our team is reviewing your details.
+                <br><br>
+                <button onclick="window.open('https://wa.me/971562889428', '_blank')" style="background:none; border:1px solid #019E81; color:#019E81; padding:10px 20px; border-radius:25px; font-weight:bold; cursor:pointer; font-size:0.95em; display:flex; align-items:center; gap:8px; justify-content:center; margin:10px auto; width:100%;"><span>💬</span> Contact Support Center</button>
+                <button onclick="window.confirmLogout()" style="background:none; border:none; color:#666; font-size:0.85em; font-weight:bold; cursor:pointer; margin-top:5px; text-decoration:underline;">Logout / Switch Account</button>`;
+            } else if (status === 'rejected') {
+                statusMsg.innerHTML = `<span style="color:#ff4757;">🚫 <b>Account Rejected</b></span><br>Access to the platform has been denied by the administrator.
+                <br><br>
+                <button onclick="window.confirmLogout()" style="background:none; border:none; color:#666; font-size:0.85em; font-weight:bold; cursor:pointer; margin-top:5px; text-decoration:underline;">Logout / Switch Account</button>`;
+            } else if (status === 'suspended') {
+                statusMsg.innerHTML = `<span style="color:#ff4757;">⚠️ <b>Account Suspended</b></span><br>Your account has been temporarily suspended. Please contact support.
+                <br><br>
+                <button onclick="window.confirmLogout()" style="background:none; border:none; color:#666; font-size:0.85em; font-weight:bold; cursor:pointer; margin-top:5px; text-decoration:underline;">Logout / Switch Account</button>`;
+            }
             statusMsg.style.display = 'block';
         }
         
@@ -1029,14 +1042,15 @@ window.handleSignUp = async function() {
                 email: email,
                 phone: phone,
                 role: 'user',
-                isApproved: false, // Default state for new users
+                status: 'pending', // REQUIRED: Approval System
+                isApproved: false, // Legacy compatibility
                 points: 500, // Sign-up bonus
                 walletBalance: 0,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 authRegistered: true
             };
 
-            // 3. Connect to Database (Save to Firestore)
+            // 3. Create main User document
             await window.db.collection('users').doc(user.uid).set(profile);
             if (window.hideLoading) window.hideLoading();
             const statusMsg = document.getElementById('authStatusMsg');

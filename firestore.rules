@@ -1,18 +1,52 @@
-rules_version='2'
+rules_versionbases/{database}/documents {
+    
+    // HELPER FUNCTIONSequest.resource.data.role != 'admin';
+ laimin() || (isAuthenticated() && request.auth.uid == userId && request.resource.data.role == resource.data.role);
+ }// VENDORS COLLECTION
+    match /vendors/{vendorId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == vendorId && isStatusActive());
+    }
 
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2026, 5, 11);
+    // RIDERS COLLECTION
+    match /riders/{riderId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == riderId && isStatusActive());
+    }
+
+    // ORDERS COLLECTION
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() || 
+        resource.data.userId == request.auth.uid || 
+        resource.data.riderId == request.auth.uid ||
+        resource.data.vendorId == request.auth.uid
+      );
+      allow create: if isAuthenticated() && isStatusActive();
+      allow update: if isAuthenticated() && (
+        isAdmin() || 
+        (resource.data.userId == request.auth.uid && request.resource.data.status == 'cancelled') ||
+        (resource.data.riderId == request.auth.uid) ||
+        (resource.data.vendorId == request.auth.uid)
+      );
+    }
+
+    // PRODUCTS COLLECTION
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin() || (isAuthenticated() && getRole() == 'vendor' && request.resource.data.vendorId == request.auth.uid);
+    }
+
+    // CHATS SUBCOLLECTION
+    match /chats/{chatId}/{document=**} {
+      allow read, write: if isAuthenticated() && (
+        isAdmin() || 
+        exists(/databases/$(database)/documents/orders/$(chatId)) && 
+        (
+          get(/databases/$(database)/documents/orders/$(chatId)).data.userId == request.auth.uid ||
+          get(/databases/$(database)/documents/orders/$(chatId)).data.riderId == request.auth.uid
+        )
+      );
     }
   }
 }
