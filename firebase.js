@@ -6,9 +6,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/fireba
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, sendPasswordResetEmail, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 import { getFirestore, enableIndexedDbPersistence, collection, query, where, orderBy, limit, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
-import { getStorage } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-storage.js";
+import { ref, set, onValue, off, serverTimestamp as rtdbTimestamp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
+import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-storage.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-functions.js";
-import { getMessaging, isSupported } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging.js";
+import { getMessaging, isSupported, getToken } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js";
 
 // Your web app's Firebase configuration
@@ -24,24 +25,47 @@ const firebaseConfig = {
 
 // Initialize Firebase
 // Initialize Firebase (Modular)
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+let app;
+try {
+    // Fix for "u[v] is not a function" error: ensure single initialization
+    // and avoid service resets during hot reloads or iframe environment settling.
+    if (!window.firebaseAppInstance) {
+        app = initializeApp(firebaseConfig);
+        window.firebaseAppInstance = app;
+        
+        const analytics = getAnalytics(app);
 
-// Modular objects for new realtime listeners and other internal operations
-window.authMod = getAuth(app);
-window.dbMod = getFirestore(app);
-window.rtdb = getDatabase(app);
-window.storage = getStorage(app);
-window.functionsMod = getFunctions(app);
+        // Modular objects for new realtime listeners and other internal operations
+        window.authMod = getAuth(app);
+        window.dbMod = getFirestore(app);
+        window.rtdb = getDatabase(app);
+        window.storage = getStorage(app);
+        window.functionsMod = getFunctions(app);
 
-// Bridge to Compat layer for legacy app.js support
-// Use the already initialized app instance if possible
-if (window.firebase) {
-    window.firebase.initializeApp(firebaseConfig);
-    window.auth = window.firebase.auth();
-    window.db = window.firebase.firestore();
-} else {
-    console.warn("Firebase Compat SDK not found.");
+        // 1. ENABLE OFFLINE PERSISTENCE (Local Sync) - MUST BE BEFORE ANY OTHER DB CALL
+        enableIndexedDbPersistence(window.dbMod, { synchronizeTabs: true }).catch((err) => {
+            if (err.code === 'failed-precondition') {
+                console.warn('Firestore Persistence: Multiple tabs open, shared access enabled.');
+            } else if (err.code === 'unimplemented') {
+                console.warn('Firestore Persistence: Browser not supported.');
+            }
+        });
+        
+        // Bridge to Compat layer for legacy app.js support
+        if (window.firebase) {
+            if (!window.firebase.apps.length) {
+                window.firebase.initializeApp(firebaseConfig);
+            }
+            window.auth = window.firebase.auth();
+            window.db = window.firebase.firestore();
+        } else {
+            console.warn("Firebase Compat SDK not found.");
+        }
+    } else {
+        app = window.firebaseAppInstance;
+    }
+} catch (e) {
+    console.error("Firebase Initialization Error:", e);
 }
 
 window.isCloudConnected = false;
@@ -58,6 +82,38 @@ isSupported().then(supported => {
             .catch((err) => console.warn("Firebase: SW registration failed", err));
     }
 });
+
+/**
+ * Requests permission for push notifications and saves the token to Firestore.
+ * Call this after a user logs in.
+ */
+window.requestNotificationPermission = async function() {
+    if (!window.messaging) return;
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            // Note: Replace 'YOUR_VAPID_KEY' with the key from Firebase Console > Project Settings > Cloud Messaging
+            const token = await getToken(window.messaging, { 
+                vapidKey: 'AIzaSyBZ_7aveKKu7UsIi03wSzjptuZ38XqfJvc' // Example key
+            });
+            
+            if (token && window.currentUser?.id) {
+                console.log("FCM Token Acquired:", token);
+                const col = window.currentUser._collection || 'users';
+                // Save token to the user's document for backend targeting
+                await window.dbMod.collection(col).doc(window.currentUser.id).update({
+                    fcmToken: token,
+                    notificationsEnabled: true,
+                    lastTokenRefresh: new Date().toISOString()
+                });
+            }
+        } else {
+            console.warn("Notification permission denied.");
+        }
+    } catch (err) {
+        console.error("Error acquiring FCM token:", err);
+    }
+};
 
 // Store unsubscribe functions to prevent duplicate listeners
 let lastVisibleDocs = {
@@ -103,6 +159,8 @@ window.setupUserProfileListener = function(uid) {
                 const newHint = (data.role === 'Super Admin' || data.role === 'Manager') ? 'admin' : data.role;
                 localStorage.setItem('kirya_user_role_hint', newHint);
                 
+                // Trigger UI updates if data changes in Firebase Console
+                if (window.currentUser.status !== data.status && window.proceedToHome) window.proceedToHome(true);
                 if (window.updateProfileUI) window.updateProfileUI();
                 if (window.appReady && !window.isRouted && window.proceedToHome) {
                     window.proceedToHome(true);
@@ -129,6 +187,11 @@ window.setupUserProfileListener = function(uid) {
 function initFirebase() {
     try {
         console.log("Firebase Initialized with Modular SDK");
+
+        if (authListenerRegistered) {
+            console.log("Firebase: Auth listener already registered.");
+            return;
+        }
 
         // Set up auth state listener
         onAuthStateChanged(window.authMod, (user) => {
@@ -164,13 +227,6 @@ function initFirebase() {
                 if (window.showLoginScreen) window.showLoginScreen();
             }
         });
-
-        // 1. ENABLE OFFLINE PERSISTENCE (Local Sync) - MUST BE BEFORE ANY OTHER DB CALL
-        try {
-            enableIndexedDbPersistence(window.dbMod, { synchronizeTabs: true });
-        } catch (e) {
-            console.log('Firestore settings already configured or error:', e);
-        }
 
         // Helpers for Auth Providers
         window.signInWithGoogle = async function() {
@@ -235,11 +291,8 @@ function initFirebase() {
 
         // Start listeners only when Auth state is confirmed to prevent "Insufficient Permissions"
         // Ensure this listener is only registered once
-        if (!authListenerRegistered) {
-            console.log("Firebase: Initialized. Waiting for auth state to start listeners...");
-            // setupFirebaseListeners() will now be triggered by onAuthStateChanged
-            authListenerRegistered = true;
-        }
+        console.log("Firebase: Initialized. Waiting for auth state to start listeners...");
+        authListenerRegistered = true;
 
         if (window.showToast) window.showToast("✅ Firebase Connected");
         updateNetworkStatusUI();
@@ -260,6 +313,106 @@ window.logToFirestore = function(action, details = {}) {
         time: new Date().toLocaleString()
     };
     window.db.collection('admin_logs').add(log).catch(e => console.error("Log error", e));
+};
+
+/**
+ * Updates the rider's live location in Realtime Database.
+ */
+window.updateRiderLiveLocation = function(riderId, lat, lng, status = 'online') {
+    if (!window.rtdb || !riderId) return;
+    const riderRef = ref(window.rtdb, `locations/riders/${riderId}`);
+    set(riderRef, {
+        lat,
+        lng,
+        status,
+        timestamp: rtdbTimestamp(),
+        name: window.currentUser?.name || 'Rider'
+    }).catch(e => console.error("RTDB Update Error:", e));
+};
+
+/**
+ * Listens to a specific rider's live location.
+ * Returns an unsubscribe function.
+ */
+window.listenToRiderLiveLocation = function(riderId, callback) {
+    if (!window.rtdb || !riderId) return () => {};
+    const riderRef = ref(window.rtdb, `locations/riders/${riderId}`);
+    const unsubscribe = onValue(riderRef, (snapshot) => {
+        if (snapshot.exists()) {
+            callback(snapshot.val());
+        }
+    });
+    return () => off(riderRef, 'value', unsubscribe);
+};
+
+/**
+ * Listens to a specific order for real-time status updates.
+ */
+window.listenToOrder = function(orderId, callback) {
+    if (!window.dbMod || !orderId) return () => {};
+    return onSnapshot(doc(window.dbMod, 'orders', orderId), (snapshot) => {
+        if (snapshot.exists()) callback({ id: snapshot.id, ...snapshot.data() });
+    });
+};
+
+/**
+ * Uploads a blob to Firebase Storage and returns the download URL.
+ */
+window.uploadImageToStorage = async function(blob, path, onProgress) {
+    if (!window.storage) throw new Error("Storage not initialized");
+    const storageRef = sRef(window.storage, path);
+    const uploadTask = uploadBytesResumable(storageRef, blob);
+
+    return new Promise((resolve, reject) => {
+        uploadTask.on('state_changed', 
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                if (onProgress) onProgress(progress);
+            }, 
+            (error) => reject(error), 
+            () => {
+                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                    resolve(downloadURL);
+                });
+            }
+        );
+    });
+};
+
+/**
+ * Deletes an image from Firebase Storage using its URL.
+ */
+window.deleteImageFromStorage = async function(url) {
+    if (!window.storage || !url || !url.includes('firebasestorage.googleapis.com')) return;
+    try {
+        const fileRef = sRef(window.storage, url);
+        await deleteObject(fileRef);
+    } catch (e) {
+        console.warn("Storage deletion failed:", e);
+    }
+};
+
+/**
+ * Fetches a collection once (helper for admin lists).
+ */
+window.fetchCollectionOnce = async function(colName) {
+    if (!window.db) return [];
+    const snap = await window.db.collection(colName).get();
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+/**
+ * Fetches paginated data using the lastVisibleDocs cursor.
+ */
+window.fetchPaginatedCollection = async function(colName, startOver = false) {
+    if (!window.db) return [];
+    if (startOver) lastVisibleDocs[colName] = null;
+    let q = window.db.collection(colName).limit(PAGE_SIZE);
+    if (lastVisibleDocs[colName]) q = q.startAfter(lastVisibleDocs[colName]);
+    const snap = await q.get();
+    if (snap.empty) return [];
+    lastVisibleDocs[colName] = snap.docs[snap.docs.length - 1];
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
 // Bridge for Auth user creation

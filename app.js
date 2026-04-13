@@ -236,6 +236,7 @@ window.onload = () => {
   window.updateAdminSidebarBadges = updateAdminSidebarBadges;
   window.updateRiderNearbyOrders = updateRiderNearbyOrders;
   window.proceedToHome = proceedToHome;
+  window.seedDatabase = seedDatabase;
   window.updateCartView = updateCartView;
   window.updateBellDots = updateBellDots;
   window.renderNotifications = renderNotifications;
@@ -245,6 +246,10 @@ window.onload = () => {
   window.openTrackOrderById = (orderId) => {
       const order = (window.currentUser.orders || []).find(o => o.id === orderId);
       if(order) openTrackOrder(order);
+  };
+  window.listenToOrder = (orderId, callback) => {
+      if (window.dbMod) return window.listenToOrder(orderId, callback);
+      return () => {};
   };
   window.reorder = (orderId) => {
       const order = (window.currentUser.orders || []).find(o => o.id === orderId);
@@ -1430,6 +1435,7 @@ favorites = new Set(); // Initialized in loadUserProfile
 let isCheckoutAccordionOpen = false; let allergyNotes = ''; let recipientDetails = { name: '', phone: '' }; let userPhoneNumber = '+971 50 123 4567'; let selectedPaymentMethod = { value: 'cod', icon: '💵', text: 'Cash on Delivery' }; let tipPercentage = 0;
 let riderMarker, riderRoutePolyline, riderProgressPolyline, routeAnimationFrame;
 let dailySalesChartInstance, topItemsChartInstance;
+  let peakHoursChartInstance;
 let trackMap, trackRiderMarker;
 let trackRouteAnimationFrame;
 let userPoints = 1250;
@@ -2166,6 +2172,10 @@ function startApp() {
                 updateAdminDashboard();
                 if (document.getElementById('admin-orders').style.display !== 'none') renderAdminOrders();
                 if (document.getElementById('admin-riders').style.display !== 'none') renderAdminRiders();
+            }
+            // Refresh Heatmap if currently active on the Live Map
+            if (adminLayers.heatmap && adminMap && adminMap.hasLayer(adminLayers.heatmap)) {
+                window.refreshAdminHeatmap();
             }
             if (document.getElementById('trackOrderScreen').classList.contains('active')) {
                 const activeOrder = window.allOrders.find(o => o.id === (window.lastTrackedOrderId || (window.allOrders.length > 0 ? window.allOrders[window.allOrders.length-1].id : null)));
@@ -4981,6 +4991,7 @@ if (trackBackBtn) {
 
 function openTrackOrder(order = null) {
     document.getElementById('trackOrderScreen').classList.add('active');
+    window.geofenceAlerted = false; // Reset alert flag for new tracking session
 
     // Clear previous listener to avoid duplicate data streams
     if (currentOrderUnsub) {
@@ -4998,9 +5009,17 @@ function openTrackOrder(order = null) {
             currentOrderUnsub = window.listenToOrder(orderId, (updatedOrder) => {
                 updateTrackOrderScreen(updatedOrder);
                 
-                // If a rider is assigned and active, ensure the animation is running
-                if (['rider_assigned', 'rider_picking', 'rider_delivering'].includes(updatedOrder.status)) {
-                    startDeliveryAnimation(updatedOrder.id, updatedOrder.restaurantLat, updatedOrder.restaurantLng, updatedOrder.userLat, updatedOrder.userLng, 'delivery');
+                // REALITY CHECK: If order has a real rider UID, listen to RTDB instead of simulating
+                if (updatedOrder.riderId && ['rider_accepted', 'picked', 'rider_delivering'].includes(updatedOrder.status)) {
+                    if (window.riderLiveUnsub) window.riderLiveUnsub();
+                    window.riderLiveUnsub = window.listenToRiderLiveLocation(updatedOrder.riderId, (loc) => {
+                        updateRiderPositionOnAllMaps([loc.lat, loc.lng]);
+                        
+                        // REALITY SYNC: Calculate distance to user and update UI
+                        const distance = calculateDistance([loc.lat, loc.lng], [updatedOrder.userLat, updatedOrder.userLng]);
+                        const time = Math.ceil(distance * 3); // Approx 3 mins per km
+                        updateUserTrackingInfo(updatedOrder.id, distance, time);
+                    });
                 }
             });
 
@@ -5822,6 +5841,15 @@ function updateUserTrackingInfo(orderId, distance, time) {
         const order = window.allOrders.find(o => o.id === orderId);
         if (order && ['rider_picking', 'rider_delivering'].includes(order.status)) {
             const statusText = order.status === 'rider_picking' ? 'Order Accepted' : 'Order on the way';
+            
+            // GEOFENCE ALERT: 500m proximity check
+            if (distance <= 0.5 && !window.geofenceAlerted) {
+                window.geofenceAlerted = true;
+                showToast("🚀 Your rider is within 500 meters!");
+                playNotificationSound();
+                if (window.logToFirestore) window.logToFirestore('Geofence Alert', { orderId, distance });
+            }
+
             infoDiv.innerHTML = `<div style="font-size:1.2em; font-weight:bold; color:#019E81;">
                 ${statusText}
             </div>
@@ -6558,20 +6586,11 @@ function startRiderLocationTracking() {
             // Update marker position
             if (riderLocationMarker) {
                 riderLocationMarker.setLatLng([lat, lng]);
-                // --- RTDB UPDATE START ---
-                if (rtdb && isRiderOnline) {
-                    // Simulating a unique ID for the current user/rider
-                    const myRiderId = 'rider_123'; 
-                    rtdb.ref('locations/riders/' + myRiderId).set({
-                        lat: lat,
-                        lng: lng,
-                        heading: position.coords.heading || 0,
-                        status: 'online',
-                        timestamp: firebase.database.ServerValue.TIMESTAMP,
-                        name: 'My Rider' // You can pull this from profile
-                    });
+                
+                // UPDATE REALTIME DATABASE FOR LIVE TRACKING
+                if (isRiderOnline && window.currentUser?.id) {
+                    window.updateRiderLiveLocation(window.currentUser.id, lat, lng, 'online');
                 }
-                // --- RTDB UPDATE END ---
             } else {
                 updateRiderPositionOnAllMaps([lat, lng]);
                 
@@ -7102,9 +7121,11 @@ function initMerchantCharts() {
     // Prevent re-initialization
     if (dailySalesChartInstance) dailySalesChartInstance.destroy();
     if (topItemsChartInstance) topItemsChartInstance.destroy();
+    if (peakHoursChartInstance) peakHoursChartInstance.destroy();
 
     const salesCtx = document.getElementById('dailySalesChart')?.getContext('2d');
     const itemsCtx = document.getElementById('topItemsChart')?.getContext('2d');
+    const peakCtx = document.getElementById('vendorPeakHoursChart')?.getContext('2d');
 
     if (!salesCtx || !itemsCtx) return;
 
@@ -7157,6 +7178,42 @@ function initMerchantCharts() {
         },
         options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
     });
+
+    // NEW: Peak Order Times Chart (Real data from Firestore/Global State)
+    if (peakCtx && window.allOrders) {
+        const vendorId = window.currentUser.id;
+        const hourlyData = new Array(24).fill(0);
+        const labels = Array.from({length: 24}, (_, i) => `${i}:00`);
+
+        // Aggregate orders by hour
+        window.allOrders.forEach(order => {
+            if (order.vendorId === vendorId || order.vendorId === 'current_vendor') {
+                const date = new Date(order.timestamp);
+                if (!isNaN(date.getTime())) {
+                    const hour = date.getHours();
+                    hourlyData[hour]++;
+                }
+            }
+        });
+
+        peakHoursChartInstance = new Chart(peakCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Orders per Hour',
+                    data: hourlyData,
+                    backgroundColor: '#019E81',
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    }
 }
 
 
@@ -8807,6 +8864,45 @@ function renderAdminConfig() {
     `;
 }
 
+/**
+ * Seeds Firestore with the current MOCK_ data.
+ */
+async function seedDatabase() {
+    if (!window.db || !window.isCloudConnected) {
+        showToast("Please connect to Firebase first!");
+        return;
+    }
+
+    const confirmed = await customPopup({ title: 'Seed Database', message: 'This will upload all mock restaurants, riders, and customers to Firestore. Continue?', type: 'confirm' });
+    if (!confirmed) return;
+
+    window.showLoading("Seeding Firestore...");
+    try {
+        const batch = window.db.batch();
+        
+        // Seed Restaurants
+        MOCK_RESTAURANTS.forEach(res => {
+            const ref = window.db.collection('restaurants').doc(res.id.toString());
+            batch.set(ref, { ...res, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+        });
+
+        // Seed Riders
+        MOCK_RIDERS.forEach(rider => {
+            const ref = window.db.collection('riders').doc(rider.id.toString());
+            batch.set(ref, { ...rider, isApproved: true });
+        });
+
+        await batch.commit();
+        window.hideLoading();
+        showToast("✅ Database seeded successfully!");
+        renderAdminTabContent(getCurrentAdminTab());
+    } catch (e) {
+        console.error("Seed Error:", e);
+        window.hideLoading();
+        showToast("❌ Seeding failed: " + e.message);
+    }
+}
+
 function renderAdminAnalytics() {
     try {
         const content = document.getElementById('admin-analytics');
@@ -9342,28 +9438,46 @@ function toggleAdminLayer(layer) {
     else adminMap.addLayer(adminLayers[layer]);
 }
 
+/**
+ * Refreshes the heatmap data based on real order origination points.
+ */
+function refreshAdminHeatmap() {
+    if (!adminMap) return;
+    
+    // Generate heatmap points from order user locations (origination)
+    const heatData = [];
+    
+    // 1. Order Origins (Real Demand)
+    const orders = window.allOrders || adminOrders || [];
+    orders.forEach(o => {
+        const lat = o.userLat || o.lat;
+        const lng = o.userLng || o.lng;
+        if (lat && lng) {
+            heatData.push([lat, lng, 1.0]); // Full intensity for active/recent orders
+        }
+    });
+
+    // 2. Customer Base (Potential Demand)
+    if (adminCustomers) {
+        adminCustomers.forEach(c => {
+            const lat = c.lat || 24.4539 + (Math.random() - 0.5) * 0.05;
+            const lng = c.lng || 54.3773 + (Math.random() - 0.5) * 0.05;
+            heatData.push([lat, lng, 0.3]); // Lower intensity for general customer base
+        });
+    }
+    
+    if (adminLayers.heatmap) adminMap.removeLayer(adminLayers.heatmap);
+    adminLayers.heatmap = L.heatLayer(heatData, {radius: 25, blur: 15, maxZoom: 17});
+    adminLayers.heatmap.addTo(adminMap);
+}
+
+window.refreshAdminHeatmap = refreshAdminHeatmap;
+
 function toggleAdminHeatmap(checkbox) {
     if (!adminMap) return;
     
     if (checkbox.checked) {
-        if (!adminLayers.heatmap) {
-            // Generate mock heatmap points from customers/orders
-            const heatData = [];
-            // Use customers
-            adminCustomers.forEach(c => {
-                // Randomize positions near center for demo
-                const lat = 24.4539 + (Math.random() - 0.5) * 0.08;
-                const lng = 54.3773 + (Math.random() - 0.5) * 0.08;
-                heatData.push([lat, lng, 0.8]); // intensity
-            });
-            // Use orders
-            adminOrders.forEach(o => {
-                if(o.lat && o.lng) heatData.push([o.lat, o.lng, 1.0]);
-            });
-            
-            adminLayers.heatmap = L.heatLayer(heatData, {radius: 25, blur: 15, maxZoom: 17});
-        }
-        adminLayers.heatmap.addTo(adminMap);
+        refreshAdminHeatmap();
     } else {
         if (adminLayers.heatmap) adminMap.removeLayer(adminLayers.heatmap);
     }
