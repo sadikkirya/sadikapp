@@ -2,84 +2,132 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // HELPER FUNCTIONS
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: Firebase Auth UID
+    // Fields: name (string), email (string), phone (string), role (string), status (string)
+    //
+    // Collection: riders
+    // Document ID: Firebase Auth UID
+    // Fields: name (string), email (string), phone (string), role (string), status (string), vehicle (string)
+    //
+    // Collection: restaurants
+    // Document ID: Numeric or Random ID
+    // Fields: name (string), category (string), status (string), menu (array)
+    //
+    // Collection: orders
+    // Document ID: Order ID (ORD...)
+    // Fields: customerId (UID), vendorId (string), riderId (UID), status (string), total (number)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
     function isAuthenticated() {
       return request.auth != null;
     }
 
+    function isOwner(id) {
+      return isAuthenticated() && request.auth.uid == id;
+    }
+
     function isAdmin() {
       return isAuthenticated() && (
-        get(/databases/$(database)/documents/admin_accounts/$(request.auth.uid)).data.role == 'Super Admin' ||
-        get(/databases/$(database)/documents/admin_accounts/$(request.auth.uid)).data.role == 'Manager'
+        (exists(/databases/$(database)/documents/admin_accounts/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/admin_accounts/$(request.auth.uid)).data.role in ['Super Admin', 'Manager']) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Super Admin', 'Manager'])
       );
     }
 
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
     }
 
-    // USERS COLLECTION (Customers)
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // --- USERS (CUSTOMERS) ---
     match /users/{userId} {
-      allow read: if isAuthenticated() && (isAdmin() || isOwner(userId));
-      allow write: if isAdmin() || isOwner(userId);
-    }
-
-    // VENDORS (RESTAURANTS) COLLECTION
-    match /restaurants/{vendorId} {
-      allow read: if true;
-      allow write: if isAdmin() || isOwner(vendorId);
-    }
-
-    // RIDERS COLLECTION
-    match /riders/{riderId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin() || isOwner(riderId);
-    }
-
-    // ADMIN ACCOUNTS
-    match /admin_accounts/{adminId} {
-      allow read: if isAdmin() || isOwner(adminId);
+      allow read: if isOwner(userId) || isAdmin();
+      
+      allow create: if isOwner(userId) && 
+                    request.resource.data.role == 'user' && 
+                    request.resource.data.status == 'pending';
+      
+      allow update: if isOwner(userId) && 
+                    request.resource.data.role == resource.data.role && 
+                    request.resource.data.status == resource.data.status;
+                    
       allow write: if isAdmin();
     }
 
-    // ORDERS COLLECTION
+    // --- RIDERS ---
+    match /riders/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId);
+      allow write: if isAdmin();
+    }
+
+    // --- RESTAURANTS ---
+    match /restaurants/{resId} {
+      allow read: if true;
+      allow write: if isAdmin() || isOwner(resId);
+    }
+
+    // --- ORDERS ---
     match /orders/{orderId} {
       allow read: if isAuthenticated() && (
-        isAdmin() || 
-        resource.data.customerId == request.auth.uid || 
-        resource.data.riderId == request.auth.uid ||
-        resource.data.vendorId == request.auth.uid
+        request.auth.uid == resource.data.customerId || 
+        request.auth.uid == resource.data.riderId || 
+        request.auth.uid == resource.data.vendorId || 
+        isAdmin()
       );
-      allow create: if isAuthenticated();
+      
+      allow create: if isAuthenticated() && 
+                    request.resource.data.customerId == request.auth.uid;
+      
       allow update: if isAuthenticated() && (
-        isAdmin() || 
-        (resource.data.customerId == request.auth.uid && request.resource.data.status == 'cancelled') ||
-        (resource.data.riderId == request.auth.uid) ||
-        (resource.data.vendorId == request.auth.uid)
-      );
-      allow delete: if isAdmin();
-    }
-
-    // PRODUCTS COLLECTION
-    match /products/{productId} {
-      allow read: if true;
-      allow write: if isAdmin() || (isAuthenticated() && request.resource.data.vendorId == request.auth.uid);
-    }
-
-    // CHATS COLLECTION
-    match /chats/{chatId}/{document=**} {
-      allow read, write: if isAuthenticated() && (
-        isAdmin() || 
-        exists(/databases/$(database)/documents/orders/$(chatId)) && 
-        (
-          get(/databases/$(database)/documents/orders/$(chatId)).data.customerId == request.auth.uid ||
-          get(/databases/$(database)/documents/orders/$(chatId)).data.riderId == request.auth.uid
-        )
+        request.auth.uid == resource.data.customerId || 
+        request.auth.uid == resource.data.riderId || 
+        request.auth.uid == resource.data.vendorId || 
+        isAdmin()
       );
     }
+
+    // --- CHATS ---
+    match /chats/{chatId} {
+      function isChatParticipant() {
+        let order = get(/databases/$(database)/documents/orders/$(chatId)).data;
+        return request.auth.uid == order.customerId || 
+               request.auth.uid == order.riderId || 
+               isAdmin();
+      }
+
+      allow read: if isAuthenticated() && isChatParticipant();
+
+      match /messages/{msgId} {
+        allow read: if isAuthenticated() && isChatParticipant();
+        allow create: if isAuthenticated() && isChatParticipant() && 
+                      request.resource.data.senderId == request.auth.uid;
+      }
+    }
+
+    // --- LOGS ---
     match /admin_logs/{logId} {
-      allow read: if isAdmin();
-      allow create: if isAuthenticated();
+      allow read, write: if isAdmin();
+    }
+
+    // --- ADMIN ACCOUNTS ---
+    match /admin_accounts/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin();
     }
   }
 }

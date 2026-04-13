@@ -13,6 +13,18 @@ window.getImageHtml = function(src, fallback = '🍽️', customStyle = '') {
     return `<span style="${customStyle}">${src || fallback}</span>`;
 };
 
+window.toggleTablePassword = function(id, actualPassword) {
+    const el = document.getElementById(`pass-${id}`);
+    if (!el) return;
+    if (el.textContent === '********') {
+        el.textContent = actualPassword || 'password123';
+        el.style.color = '#333';
+    } else {
+        el.textContent = '********';
+        el.style.color = '#999';
+    }
+};
+
 /**
  * Triggers the logout modal or confirmation.
  * Global export for all screens (Admin, Rider, Vendor, User).
@@ -50,8 +62,20 @@ window.confirmLogout = async function() {
 
     // Clear user session data
     window.currentUser = { name: '', phone: '', points: 500, isApproved: false, walletBalance: 0, isGuest: true };
-    localStorage.clear();
-    sessionStorage.clear();
+
+    // Use surgical removal instead of .clear() to avoid breaking Firebase/GAPI auth callbacks
+    const keysToRemove = [
+        'kirya_user_profile', 
+        'kirya_cart', 
+        'kirya_user_settings', 
+        'kirya_last_screen', 
+        'kirya_notifications',
+        'kirya_user_role_hint'
+    ];
+    keysToRemove.forEach(k => {
+        localStorage.removeItem(k);
+        sessionStorage.removeItem(k);
+    });
 
     if (window.hideLoading) window.hideLoading();
     if (window.showToast) window.showToast("Logged out successfully");
@@ -115,8 +139,8 @@ window.onload = () => {
   let notifications = [];
   let favorites = new Set();
   let appReady = false;
-  let isRouted = false;
   window.appReady = false;
+  window.isRouted = false;
   const previewLatestUpdateIds = {};
   let adminChartUpdateInterval = null;
   let adminChartsInstances = {};
@@ -126,6 +150,7 @@ window.onload = () => {
   let adminOrderSearchTerm = '';
   let adminOrderCurrentStatus = 'all';
   let editingAdminId = null;
+  let riderHeartbeatInterval = null;
   let adminFilters = {
       restaurants: { status: 'all', search: '', category: 'all' },
       riders: { status: 'all', search: '' },
@@ -665,7 +690,7 @@ function saveUserProfile(syncToDb = true) {
 }
 
 function proceedToHome(skipSave = false) {
-    isRouted = true;
+    window.isRouted = true;
     if (!skipSave) saveUserProfile(true); 
 
     const loginScreen = document.getElementById('loginScreen');
@@ -888,7 +913,7 @@ window.handleLogin = async function() {
     else if (checkMatch(adminRestaurants, 'vendor')) {}
     else if (checkMatch(adminCustomers, 'user')) {}
 
-    if (matchedUser) {
+    if (matchedUser && password === "password123") {
         showToast(`Welcome back, ${matchedUser.name}!`);
         window.currentUser = { 
             ...window.currentUser, 
@@ -927,6 +952,14 @@ window.handleLogin = async function() {
 
                 if (match) {
                     emailToSignIn = match.docs[0].data().email;
+                    // Save role hint to help firebase.js find the correct collection on next load
+                    const col = match.ref.parent.id;
+                    let roleHint = 'user';
+                    if (col === 'admin_accounts') roleHint = 'admin';
+                    else if (col === 'riders') roleHint = 'rider';
+                    else if (col === 'restaurants') roleHint = 'vendor';
+                    localStorage.setItem('kirya_user_role_hint', roleHint);
+
                     if (!emailToSignIn) {
                         if (window.hideLoading) window.hideLoading();
                         await window.customPopup({ title: 'Invalid Account', message: "This account exists but does not have a linked email address for authentication.", type: 'alert' });
@@ -2088,20 +2121,9 @@ function startApp() {
           console.log('Splash finished. Initializing login gate...');
           appReady = true;
           window.appReady = true;
-          
-          setTimeout(() => {
-              // If auth is present but hasn't finished routing yet, show verification
-              const isFirebaseAuthenticating = window.auth && window.auth.currentUser;
-              if (!isRouted && isFirebaseAuthenticating) {
-                  window.showVerificationScreen("Verifying Profile...");
-                  // Safety trigger: If still not routed after 3 seconds, force proceed
-                  setTimeout(() => { if(!isRouted) proceedToHome(true); }, 3000);
-                  return;
-              }
-              if (!isRouted) {
-                  window.showLoginScreen();
-              }
-          }, 100);
+          // After splash, always show login screen initially. Firebase auth listener will then route.
+          // This prevents a blank screen or flashing of previous state.
+          window.showLoginScreen();
         },500);
       } else {
         console.error('Splash or home element not found:', {splash, home});
@@ -6637,6 +6659,30 @@ function stopRiderLocationTracking() {
     }
 }
 
+function startRiderHeartbeat() {
+    if (riderHeartbeatInterval) clearInterval(riderHeartbeatInterval);
+    riderHeartbeatInterval = setInterval(() => {
+        if (!isRiderOnline) return;
+
+        // Update Firestore for long-term status
+        if (window.db && window.currentUser?.id) {
+            window.db.collection('riders').doc(window.currentUser.id.toString()).update({
+                lastSeen: 'Just now',
+                lastSeenTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).catch(() => {});
+        }
+
+        // Update Realtime Database for Admin Map "Live" status
+        if (window.rtdb && window.currentUser?.id) {
+            const riderId = window.currentUser.id.toString();
+            window.rtdb.ref('locations/riders/' + riderId).update({
+                status: 'online',
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            }).catch(() => {});
+        }
+    }, 30000); // 30 second pulse
+}
+
 function toggleRiderStatus() {
     isRiderOnline = !isRiderOnline;
     const btn = document.getElementById('riderStatusToggle');
@@ -6671,6 +6717,7 @@ function toggleRiderStatus() {
         
         if (riderSimulationInterval) clearInterval(riderSimulationInterval);
         riderSimulationInterval = setInterval(simulateRiderMovements, 5000); // every 5 seconds
+        startRiderHeartbeat();
         simulateRiderMovements(); // Run once immediately
 
         // Simulate an incoming order
@@ -6693,6 +6740,8 @@ function toggleRiderStatus() {
         msg.style.fontWeight = 'normal';
 
         if (riderSimulationInterval) clearInterval(riderSimulationInterval);
+        if (riderHeartbeatInterval) { clearInterval(riderHeartbeatInterval); riderHeartbeatInterval = null; }
+        
         // Also remove simulated riders from RTDB when offline
         if (rtdb) {
             rtdb.ref('locations/riders/rider_2').remove();
@@ -7358,7 +7407,16 @@ function renderAdminDashboard() {
         const orders = (window.allOrders && window.allOrders.length > 0) ? window.allOrders : (adminOrders || []);
         const riders = adminRiders || [];
 
-        // Sidebar badges are now handled by the auto-updater function    
+        // Improved Status Indicators
+        const isDemo = window.currentUser?.id?.toString().startsWith('demo_');
+        const syncStatus = (window.isCloudConnected && !isDemo) ? 
+            '<span style="color:#019E81; font-size:0.85em; font-weight:bold;" title="Connected to Production Firestore">● Cloud Synced (LIVE)</span>' : 
+            '<span style="color:#FFBF42; font-size:0.85em; font-weight:bold;" title="Using local mock data or disconnected">○ Local / Sandbox Mode</span>';
+
+        const authStatus = (window.currentUser && window.currentUser.id && !isDemo && !window.currentUser.isGuest) ?
+            '<span style="color:#019E81; font-size:0.85em; font-weight:bold;">🛡️ Auth Active</span>' :
+            '<span style="color:#666; font-size:0.85em; font-weight:bold;">🧪 Demo / Guest Session</span>';
+
         const activeRiders = riders.filter(r => r.status === 'online' || r.status === 'busy').length;
         
         // Calculate total stats
@@ -7369,7 +7427,10 @@ function renderAdminDashboard() {
         
         content.innerHTML = `
             <div class="dashboard-card">
-                <h3 style="font-size:1.2em; font-weight:800; margin-bottom:15px;">📊 Platform Stats</h3>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h3 style="font-size:1.2em; font-weight:800; margin:0;">📊 Platform Stats</h3>
+                    <div style="display:flex; gap:15px;">${authStatus} ${syncStatus}</div>
+                </div>
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:15px;">
                 <div style="padding:15px; background:#e0f2f1; border-radius:12px;">
                     <div style="font-size:0.85em; color:#666; margin-bottom:8px;">Total Orders</div>
@@ -7591,8 +7652,11 @@ function renderAdminRestaurants() {
                 <table class="admin-table">
                     <thead>
                         <tr>
+                            <th>Auth</th>
                             <th>Photos</th>
                             <th onclick="sortAdminTable('restaurants', 'name')">Restaurant</th>
+                            <th>Email</th>
+                            <th>Password</th>
                             <th>Contact</th>
                             <th>Stats</th>
                             <th onclick="sortAdminTable('restaurants', 'status')">Status ↕</th>
@@ -7642,6 +7706,7 @@ function renderAdminRestaurantsList() {
             const commission = (restaurant.revenue * (restaurant.commission || 0) / 100).toFixed(2);
             return `
         <tr>
+            <td style="text-align:center;">${restaurant.authRegistered ? '<span title="Real Auth Account" style="color:#019E81; font-size:1.2em;">🛡️</span>' : '<span title="Firestore Document Only" style="color:#999; font-size:1.2em;">📄</span>'}</td>
             <td>
                 <div style="display:flex; gap:5px;">
                     <div onclick="triggerAdminPhotoUpload('restaurants', '${restaurant.id}', 'profilePhoto')" style="width:35px; height:35px; background:#f0f0f0; border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid #eee; cursor:pointer;" title="Click to upload Profile Photo">
@@ -7657,12 +7722,20 @@ function renderAdminRestaurantsList() {
                 <div style="font-size:0.8em; color:#666;">${restaurant.category || ''}</div>
                 ${window.getRestaurantStatusHtml ? window.getRestaurantStatusHtml(restaurant.openingHours) : ''}
             </td>
+            <td><div style="font-size:0.85em;">${restaurant.email || 'N/A'}</div></td>
+            <td>
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <span id="pass-${restaurant.id}" style="color:#999; font-family:monospace;">********</span>
+                    <button onclick="window.toggleTablePassword('${restaurant.id}', '${restaurant.password || 'password123'}')" style="background:none; border:none; cursor:pointer; font-size:0.9em; padding:0;" title="Show Password">👁️</button>
+                </div>
+            </td>
             <td><div style="font-weight:600;">${restaurant.phone || 'N/A'}</div><div style="font-size:0.8em; color:#666;">${restaurant.owner || 'No owner'}</div></td>
             <td><div style="font-weight:600;">${restaurant.orders || 0} orders</div><div style="font-size:0.8em;">UGX ${(restaurant.revenue || 0).toLocaleString()}</div></td>
             <td><span style="background:${restaurant.status === 'active' ? '#4caf50' : '#f44336'}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${(restaurant.status || 'unknown').toUpperCase()}</span></td>
             <td style="font-weight:bold; color:#019E81;">UGX ${commission}</td>
             <td>
                 <button onclick="toggleAdminItemStatus('restaurant', ${restaurant.id})" class="action-btn-table" style="background:#2196f3; color:#fff;">${restaurant.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                <button onclick="window.resendWelcomeEmail('${restaurant.id}', 'vendor')" class="action-btn-table" style="background:#019E81; color:#fff;">📧 Resend</button>
                 <button onclick="openAdminMenuManager(${restaurant.id})" class="action-btn-table" style="background:#9c27b0; color:#fff;">Menu</button>
                 <button onclick="openAdminModal('vendor', ${restaurant.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
                 <button onclick="deleteAdminItem('restaurant', ${restaurant.id})" class="action-btn-table" style="background:#f44336; color:#fff;">Delete</button>
@@ -7743,8 +7816,11 @@ function renderAdminRiders() {
                 <table class="admin-table">
                     <thead>
                         <tr>
+                            <th>Auth</th>
                             <th>Photo</th>
                             <th onclick="sortAdminTable('riders', 'name')">Name ↕</th>
+                            <th>Email</th>
+                            <th>Password</th>
                             <th onclick="sortAdminTable('riders', 'phone')">Contact ↕</th>
                             <th onclick="sortAdminTable('riders', 'vehicle')">Vehicle ↕</th>
                             <th onclick="sortAdminTable('riders', 'earnings')">Earnings ↕</th>
@@ -7792,12 +7868,20 @@ function renderAdminRidersList() {
         
         return `
             <tr>
+                <td style="text-align:center;">${rider.authRegistered ? '<span title="Real Auth Account" style="color:#019E81; font-size:1.2em;">🛡️</span>' : '<span title="Firestore Document Only" style="color:#999; font-size:1.2em;">📄</span>'}</td>
                 <td>
                     <div onclick="triggerAdminPhotoUpload('riders', '${rider.id}', 'profilePhoto')" style="width:35px; height:35px; background:#f0f0f0; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid #eee; cursor:pointer;" title="Upload Photo">
                         ${window.getImageHtml(rider.profilePhoto, '🚴')}
                     </div>
                 </td>
                 <td><div style="font-weight:bold;">${rider.name || 'N/A'}</div></td>
+                <td><div style="font-size:0.85em;">${rider.email || 'N/A'}</div></td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <span id="pass-${rider.id}" style="color:#999; font-family:monospace;">********</span>
+                        <button onclick="window.toggleTablePassword('${rider.id}', '${rider.password || 'password123'}')" style="background:none; border:none; cursor:pointer; font-size:0.9em; padding:0;" title="Show Password">👁️</button>
+                    </div>
+                </td>
                 <td><div style="font-weight:600;">${rider.phone || 'N/A'}</div></td>
                 <td>${rider.vehicle || 'N/A'}<br><span style="font-size:0.8em; color:#888;">${rider.license || ''}</span></td>
                 <td><div style="font-weight:600;">${rider.completedOrders || 0} orders</div><div style="font-size:0.8em;">UGX ${(rider.earnings || 0).toLocaleString()}</div></td>
@@ -7805,6 +7889,7 @@ function renderAdminRidersList() {
                 <td style="font-size:0.85em; color:#666;">${rider.lastSeen || 'N/A'}</td>
                 <td>
                     <button onclick="verifyCustomerWhatsApp('${rider.phone}')" class="action-btn-table" style="background:#25D366; color:#fff;">Verify WA</button>
+                    <button onclick="window.resendWelcomeEmail('${rider.id}', 'rider')" class="action-btn-table" style="background:#019E81; color:#fff;">📧 Resend</button>
                     <button onclick="contactRider('${rider.phone}')" class="action-btn-table" style="background:#2196f3; color:#fff;">Call</button>
                     <button onclick="chatWithRider('${rider.id}', '${rider.name}')" class="action-btn-table" style="background:#019E81; color:#fff;">Chat</button>
                     <button onclick="toggleRiderAccountStatus(${rider.id})" class="action-btn-table" style="background:${accountStatusColor}; color:#fff;">${accountStatus === 'active' ? 'Suspend' : 'Activate'}</button>
@@ -7887,8 +7972,11 @@ function renderAdminCustomers() {
                 <table class="admin-table">
                     <thead>
                         <tr>
+                            <th>Auth</th>
                             <th>Photo</th>
                             <th onclick="sortAdminTable('customers', 'name')">Name ↕</th>
+                            <th onclick="sortAdminTable('customers', 'email')">Email ↕</th>
+                            <th>Password</th>
                             <th onclick="sortAdminTable('customers', 'phone')">Contact ↕</th>
                             <th onclick="sortAdminTable('customers', 'orders')">Stats ↕</th>
                             <th onclick="sortAdminTable('customers', 'status')">Status ↕</th>
@@ -7931,18 +8019,27 @@ function renderAdminCustomersList() {
     
     return filteredCustomers.map(customer => `
         <tr>
+            <td style="text-align:center;">${customer.authRegistered ? '<span title="Real Auth Account" style="color:#019E81; font-size:1.2em;">🛡️</span>' : '<span title="Firestore Document Only" style="color:#999; font-size:1.2em;">📄</span>'}</td>
             <td>
                 <div onclick="triggerAdminPhotoUpload('customers', '${customer.id}', 'profilePhoto')" style="width:35px; height:35px; background:#f0f0f0; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid #eee; cursor:pointer;" title="Upload Photo">
                     ${window.getImageHtml(customer.profilePhoto, '👤')}
                 </div>
             </td>
             <td><div style="font-weight:bold;">${customer.name || 'N/A'}</div><div style="font-size:0.8em; color:#666;">Joined: ${customer.joined || ''}</div></td>
-            <td><div style="font-weight:600;">${customer.phone || 'N/A'}</div><div style="font-size:0.8em; color:#666;">${customer.email || 'No email'}</div></td>
+            <td><div style="font-size:0.9em; font-weight:600;">${customer.email || 'No email'}</div></td>
+            <td>
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <span id="pass-${customer.id}" style="color:#999; font-family:monospace;">********</span>
+                    <button onclick="window.toggleTablePassword('${customer.id}', '${customer.password || 'password123'}')" style="background:none; border:none; cursor:pointer; font-size:0.9em; padding:0;" title="Show Password">👁️</button>
+                </div>
+            </td>
+            <td><div style="font-weight:600;">${customer.phone || 'N/A'}</div></td>
             <td><div style="font-weight:600;">${customer.orders || 0} orders</div><div style="font-size:0.8em;">UGX ${(customer.totalSpent || 0).toFixed(2)}</div></td>
             <td><span style="background:${customer.status === 'active' ? '#4caf50' : (customer.status === 'pending_verification' ? '#FFBF42' : '#f44336')}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${(customer.status || 'unknown') === 'pending_verification' ? 'PENDING' : (customer.status || 'unknown').toUpperCase()}</span></td>
             <td style="font-size:0.85em; color:#666;">${customer.lastOrder || 'N/A'}</td>
             <td>
                 <button onclick="verifyCustomerWhatsApp('${customer.phone}')" class="action-btn-table" style="background:#25D366; color:#fff;">Verify WA</button>
+                <button onclick="window.resendWelcomeEmail('${customer.id}', 'customer')" class="action-btn-table" style="background:#019E81; color:#fff;">📧 Resend</button>
                 ${customer.status === 'pending_verification' ? `<button onclick="approveCustomer('${customer.id}')" class="action-btn-table" style="background:#4caf50; color:#fff;">Approve</button>` : `<button onclick="openAdminNotificationModal('${customer.id}', '${customer.name.replace(/'/g, "\\'")}')" class="action-btn-table" style="background:#607d8b; color:#fff;">Notify</button>`}
                 <button onclick="contactCustomer('${customer.phone}')" class="action-btn-table" style="background:#2196f3; color:#fff;">Call</button>
                 <button onclick="toggleAdminItemStatus('customer', ${customer.id}, 'active', 'inactive')" class="action-btn-table" style="background:#9c27b0; color:#fff;">${customer.status === 'active' ? 'Deactivate' : 'Activate'}</button>
@@ -9825,8 +9922,11 @@ function openAdminModal(type, id = null) {
             ${!id ? `
                 <label for="addRestaurantEmail" class="admin-form-label">Account Email (for login)</label>
                 <input type="email" id="addRestaurantEmail" placeholder="vendor@kirya.app" class="admin-form-input">
-                <label for="addRestaurantPassword" class="admin-form-label">Temporary Password</label>
-                <input type="password" id="addRestaurantPassword" placeholder="Minimum 6 characters" class="admin-form-input">
+                <label class="admin-form-label">Temporary Password</label>
+                <div style="position:relative; display:flex; align-items:center; margin-bottom:15px;">
+                    <input type="password" id="addRestaurantPassword" placeholder="Minimum 6 characters" class="admin-form-input" style="margin-bottom:0; flex:1;">
+                    <button type="button" onclick="window.togglePasswordVisibility('addRestaurantPassword')" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; font-size:1.2em;">👁️</button>
+                </div>
             ` : ''}
             <label for="addRestaurantCategory" class="admin-form-label">Vendor Category</label>
             <select id="addRestaurantCategory" class="admin-form-input">${categoryOptions}</select>
@@ -9878,8 +9978,11 @@ function openAdminModal(type, id = null) {
             <label for="addRiderEmail" class="admin-form-label">Email</label>
             <input type="email" id="addRiderEmail" placeholder="Email" class="admin-form-input" value="${r.email || ''}">
             ${!id ? `
-                <label for="addRiderPassword" class="admin-form-label">Temporary Password</label>
-                <input type="password" id="addRiderPassword" placeholder="Minimum 6 characters" class="admin-form-input">
+                <label class="admin-form-label">Temporary Password</label>
+                <div style="position:relative; display:flex; align-items:center; margin-bottom:15px;">
+                    <input type="password" id="addRiderPassword" placeholder="Minimum 6 characters" class="admin-form-input" style="margin-bottom:0; flex:1;">
+                    <button type="button" onclick="window.togglePasswordVisibility('addRiderPassword')" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; font-size:1.2em;">👁️</button>
+                </div>
             ` : ''}
             <label for="addRiderVehicle" class="admin-form-label">Vehicle</label>
             <input type="text" id="addRiderVehicle" placeholder="Vehicle (e.g., Motorcycle)" class="admin-form-input" value="${r.vehicle || ''}">
@@ -9909,8 +10012,11 @@ function openAdminModal(type, id = null) {
             <label for="addCustomerEmail" class="admin-form-label">Email</label>
             <input type="email" id="addCustomerEmail" placeholder="Email" class="admin-form-input" value="${c.email || ''}">
             ${!id ? `
-                <label for="addCustomerPassword" class="admin-form-label">Temporary Password</label>
-                <input type="password" id="addCustomerPassword" placeholder="Minimum 6 characters" class="admin-form-input">
+                <label class="admin-form-label">Temporary Password</label>
+                <div style="position:relative; display:flex; align-items:center; margin-bottom:15px;">
+                    <input type="password" id="addCustomerPassword" placeholder="Minimum 6 characters" class="admin-form-input" style="margin-bottom:0; flex:1;">
+                    <button type="button" onclick="window.togglePasswordVisibility('addCustomerPassword')" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; font-size:1.2em;">👁️</button>
+                </div>
             ` : ''}
             <label for="addCustomerAddress" class="admin-form-label">Address</label>
             <input type="text" id="addCustomerAddress" placeholder="Address" class="admin-form-input" value="${c.address || ''}">
@@ -9957,8 +10063,11 @@ function openAdminModal(type, id = null) {
             <label for="addAccountEmail" class="admin-form-label">Email</label>
             <input type="email" id="addAccountEmail" placeholder="Email" class="admin-form-input" value="${acc.email || ''}">
             ${!id ? `
-                <label for="addAccountPassword" class="admin-form-label">Temporary Password</label>
-                <input type="password" id="addAccountPassword" placeholder="Minimum 6 characters" class="admin-form-input">
+                <label class="admin-form-label">Temporary Password</label>
+                <div style="position:relative; display:flex; align-items:center; margin-bottom:15px;">
+                    <input type="password" id="addAccountPassword" placeholder="Minimum 6 characters" class="admin-form-input" style="margin-bottom:0; flex:1;">
+                    <button type="button" onclick="window.togglePasswordVisibility('addAccountPassword')" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; font-size:1.2em;">👁️</button>
+                </div>
             ` : ''}
             <label for="addAccountPhone" class="admin-form-label">Phone</label>
             <input type="tel" id="addAccountPhone" placeholder="Phone" class="admin-form-input" value="${acc.phone || ''}">
@@ -10294,9 +10403,19 @@ async function saveAdminData(type) {
     // Request Auth User Creation (Requires Cloud Function)
     if (window.adminCreateAuthUser && authData) {
         try {
-            await window.adminCreateAuthUser(type, authData);
+            const result = await window.adminCreateAuthUser(authData.role, authData);
+            if (result.success) {
+                showToast(`Auth account created for ${authData.email}`);
+                logActivity('Audit Log: User Created', `${authData.role.toUpperCase()} "${authData.name}" created by ${window.currentUser.name || 'Super Admin'}`, 'Admin');
+                // Update Firestore to show it's now a real auth account
+                const col = authData.collection;
+                if (db) await db.collection(col).doc(result.uid).update({ authRegistered: true });
+                // Re-render current tab
+                renderAdminTabContent(getCurrentAdminTab());
+            }
         } catch(e) {
             console.error("Auth creation failed:", e);
+            showToast("User saved to database, but Auth account failed: " + e.message);
         }
     }
 
@@ -10304,6 +10423,38 @@ async function saveAdminData(type) {
     showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} saved successfully!`);
     closeAdminAddModal();
 }
+
+window.resendWelcomeEmail = async function(userId, type) {
+    const dataMap = { 'customer': adminCustomers, 'rider': adminRiders, 'vendor': adminRestaurants };
+    const list = dataMap[type];
+    const user = list.find(u => u.id == userId);
+    
+    if (!user || !user.email) {
+        showToast("User email not found.");
+        return;
+    }
+
+    const confirmed = await window.customPopup({ title: 'Resend Email', message: `Send a new welcome email to ${user.email}?`, type: 'confirm' });
+    if (!confirmed) return;
+
+    window.showLoading("Queuing Email...");
+    try {
+        if (db) {
+            await db.collection('mail').add({
+                to: user.email,
+                message: {
+                    subject: 'Welcome back to Kirya!',
+                    html: `<h3>Hello ${user.name}!</h3><p>An admin has requested a resend of your welcome details. Your account is active and ready for use.</p><p>Login: ${user.email}</p>`
+                }
+            });
+            logActivity('Audit Log: Email Resent', `Welcome email resent to ${user.email} by ${window.currentUser.name || 'Admin'}`, 'Admin');
+            showToast("✅ Email queued successfully!");
+        }
+    } catch (e) {
+        console.error(e);
+        showToast("❌ Failed to send email.");
+    } finally { window.hideLoading(); }
+};
 
 function openAdminMenuManager(resId) {
     // Open the existing merchant menu screen but conceptually for the selected restaurant

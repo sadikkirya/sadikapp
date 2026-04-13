@@ -1,15 +1,15 @@
-// Firebase v12.12.0 Modular SDK Implementation
-import "https://www.gstatic.com/firebasejs/12.12.0/firebase-app-compat.js";
-import "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth-compat.js";
-import "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore-compat.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged, sendPasswordResetEmail, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
-import { getFirestore, enableIndexedDbPersistence, collection, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
-import { getStorage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js";
-import { getMessaging, isSupported } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-analytics.js";
+// Firebase v10.13.2 Stable SDK Implementation
+import "https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js";
+import "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js";
+import "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, sendPasswordResetEmail, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+import { getFirestore, enableIndexedDbPersistence, collection, query, where, orderBy, limit, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import { getDatabase } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-storage.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-functions.js";
+import { getMessaging, isSupported } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -23,27 +23,30 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-if (!window.firebase) {
-    throw new Error('Firebase compat SDK failed to load.');
-}
-const compatApp = window.firebase.initializeApp(firebaseConfig);
+// Initialize Firebase (Modular)
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
-// Compatibility objects for legacy app.js code
-window.firebase = window.firebase;
-window.auth = window.firebase.auth();
-window.db = window.firebase.firestore();
-window.firebaseConfig = firebaseConfig;
-window.initFirebase = initFirebase;
-
 // Modular objects for new realtime listeners and other internal operations
 window.authMod = getAuth(app);
-// If using a named database, specify it here: getFirestore(app, "your-db-id")
-window.dbMod = getFirestore(app); 
+window.dbMod = getFirestore(app);
 window.rtdb = getDatabase(app);
 window.storage = getStorage(app);
 window.functionsMod = getFunctions(app);
+
+// Bridge to Compat layer for legacy app.js support
+// Use the already initialized app instance if possible
+if (window.firebase) {
+    window.firebase.initializeApp(firebaseConfig);
+    window.auth = window.firebase.auth();
+    window.db = window.firebase.firestore();
+} else {
+    console.warn("Firebase Compat SDK not found.");
+}
+
+window.isCloudConnected = false;
+window.firebaseConfig = firebaseConfig;
+window.initFirebase = initFirebase;
 
 // Initialize messaging only if supported
 isSupported().then(supported => {
@@ -69,6 +72,60 @@ let firebaseAuthState = { initialized: false, signedIn: false, uid: null };
 
 let firebaseUnsubs = { orders: null, riders: null, customers: null, restaurants: null, promotions: null, payments: null, support: null, accounts: null, logs: null, analytics: null, chat: null, profile: null };
 
+/**
+ * Sets up a real-time listener for the current user's profile document.
+ */
+window.setupUserProfileListener = function(uid) {
+    if (!window.dbMod) return;
+
+    if (firebaseUnsubs.profile) {
+        firebaseUnsubs.profile();
+        firebaseUnsubs.profile = null;
+    }
+
+    // Optimized Collection Discovery Logic
+    const roleHint = localStorage.getItem('kirya_user_role_hint');
+    let collectionsToTry = ['users', 'admin_accounts', 'riders', 'restaurants'];
+    
+    // Reorder based on hint to minimize latency and re-sync errors
+    if (roleHint === 'admin') collectionsToTry = ['admin_accounts', 'users', 'riders', 'restaurants'];
+    else if (roleHint === 'rider') collectionsToTry = ['riders', 'users', 'admin_accounts', 'restaurants'];
+    else if (roleHint === 'vendor') collectionsToTry = ['restaurants', 'users', 'admin_accounts', 'riders'];
+
+    const startListener = (index) => {
+        const coll = collectionsToTry[index];
+        return onSnapshot(doc(window.dbMod, coll, uid), (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.data();
+                window.currentUser = { ...window.currentUser, ...data, id: uid, _collection: coll };
+                
+                // Update local hint based on verified role
+                const newHint = (data.role === 'Super Admin' || data.role === 'Manager') ? 'admin' : data.role;
+                localStorage.setItem('kirya_user_role_hint', newHint);
+                
+                if (window.updateProfileUI) window.updateProfileUI();
+                if (window.appReady && !window.isRouted && window.proceedToHome) {
+                    window.proceedToHome(true);
+                }
+            } else if (index < collectionsToTry.length - 1) {
+                // Fallback: Try next collection if not found here
+                if (firebaseUnsubs.profile) firebaseUnsubs.profile();
+                firebaseUnsubs.profile = startListener(index + 1);
+            }
+        }, (error) => {
+            // Fallback: Try next collection if permission denied (likely wrong user type for this collection)
+            if (error.code === 'permission-denied' && index < collectionsToTry.length - 1) {
+                if (firebaseUnsubs.profile) firebaseUnsubs.profile();
+                firebaseUnsubs.profile = startListener(index + 1);
+            } else {
+                console.error(`Firebase: Profile listener error [${coll}]`, error);
+            }
+        });
+    };
+
+    firebaseUnsubs.profile = startListener(0);
+};
+
 function initFirebase() {
     try {
         console.log("Firebase Initialized with Modular SDK");
@@ -82,7 +139,7 @@ function initFirebase() {
                 || (signedIn && firebaseAuthState.uid !== uid);
 
             if (!authChanged) {
-                console.log("Firebase: Auth state unchanged, skipping session reset.");
+                console.log("Firebase: Auth state unchanged.");
                 return;
             }
 
@@ -95,15 +152,15 @@ function initFirebase() {
                 if (!window.currentUser) window.currentUser = { id: user.uid };
                 else window.currentUser.id = user.uid;
 
-                window.setupUserProfileListener(user.uid);
+                if (window.setupUserProfileListener) window.setupUserProfileListener(user.uid);
                 if (window.setupFirebaseListeners) window.setupFirebaseListeners();
+                window.isCloudConnected = true;
             } else {
-                window.clearUserSession();
-                // Handle potential errors returning from a redirect login flow
-                if (window.authMod) {
-                    // Note: getRedirectResult is not available in modular SDK v9+
-                    // Error handling for redirect flows should be done in the signInWithRedirect call
+                // Only clear session if we were previously signed in to avoid wiping Guest/Demo state on init
+                if (firebaseAuthState.signedIn) {
+                    window.clearUserSession();
                 }
+                window.isCloudConnected = false;
                 if (window.showLoginScreen) window.showLoginScreen();
             }
         });
@@ -125,8 +182,7 @@ function initFirebase() {
                 // For now, we'll use default persistence
 
                 const provider = new GoogleAuthProvider();
-                // Switching to Redirect to bypass Cross-Origin-Opener-Policy (COOP) restrictions
-                await signInWithRedirect(window.authMod, provider);
+                await signInWithPopup(window.authMod, provider);
             } catch (error) {
                 if (error.code === 'auth/unauthorized-domain') {
                     if (window.showToast) window.showToast("🚫 Domain unauthorized. Please add " + window.location.hostname + " to your Firebase Console settings.");
@@ -189,6 +245,7 @@ function initFirebase() {
         updateNetworkStatusUI();
     } catch (e) {
         console.error("Firebase Init Error:", e);
+        window.isCloudConnected = false;
     }
 }
 
@@ -226,13 +283,19 @@ window.adminCreateAuthUser = async function(type, formData) {
 
 // Bridge functions for Admin creation in app.js
 window.adminCreateVendor = async function(data) {
-    if (!window.db) return;
+    if (!window.db || !window.authMod.currentUser) {
+        console.warn("Firestore Sync: Using Local/Demo session. Skipping remote write to avoid permission error.");
+        return Promise.resolve();
+    }
     const id = data.id.toString();
     return window.db.collection('restaurants').doc(id).set(data, { merge: true });
 };
 
 window.adminCreateUserRecord = async function(data) {
-    if (!window.db) return;
+    if (!window.db || !window.authMod.currentUser) {
+        console.warn("Firestore Sync: Using Local/Demo session. Skipping remote write to avoid permission error.");
+        return Promise.resolve();
+    }
     const col = data.role === 'rider' ? 'riders' : 'users';
     const id = data.id.toString();
     return window.db.collection(col).doc(id).set(data, { merge: true });
@@ -316,14 +379,19 @@ window.clearUserSession = function() {
 
     window.currentUser = { role: 'user', points: 0, walletBalance: 0 };
 
-    // Clear User Data from local storage
-    localStorage.removeItem('kirya_user_profile');
-    localStorage.removeItem('kirya_cart');
-    localStorage.removeItem('kirya_user_settings');
-    localStorage.removeItem('kirya_last_screen');
-    localStorage.removeItem('kirya_notifications');
-    localStorage.removeItem('kirya_user_role_hint');
-    sessionStorage.clear(); // Clear session storage as well
+    // Clear only specific app keys to avoid breaking Firebase internal state/callbacks
+    const keysToRemove = [
+        'kirya_user_profile',
+        'kirya_cart',
+        'kirya_user_settings',
+        'kirya_last_screen',
+        'kirya_notifications',
+        'kirya_user_role_hint'
+    ];
+    keysToRemove.forEach(k => {
+        localStorage.removeItem(k);
+        sessionStorage.removeItem(k);
+    });
 
     if (window.favorites) window.favorites.clear();
     if (window.cart) window.cart = [];

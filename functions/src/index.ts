@@ -16,10 +16,11 @@ export const adminCreateUser = onCall(async (request) => {
   }
 
   // 2. Verify caller is an admin
-  const adminDoc = await admin.firestore().collection('admin_accounts').doc(request.auth.uid).get();
+  const uid = request.auth.uid;
+  const adminDoc = await admin.firestore().collection('admin_accounts').doc(uid).get();
   const adminData = adminDoc.data();
   if (!adminData || !['Super Admin', 'Manager'].includes(adminData.role)) {
-    throw new HttpsError('permission-denied', 'Only authorized admins can create users.');
+    throw new HttpsError('permission-denied', `User ${uid} is not an authorized admin.`);
   }
 
   const { email, password, name, role, collection, ...otherData } = request.data;
