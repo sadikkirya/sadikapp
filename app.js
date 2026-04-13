@@ -935,7 +935,7 @@ window.handleLogin = async function() {
     }
 
     // --- FIREBASE UNIVERSAL LOGIN ---
-    if (window.auth && window.db) {
+    if (window.authSignIn && window.db) {
         try {
             if (window.showLoading) window.showLoading("Identifying Account...");
 
@@ -983,8 +983,7 @@ window.handleLogin = async function() {
             // Set Firebase Auth Persistence based on Remember Me checkbox
             // Note: In modular SDK, persistence is handled automatically
             // The auth state persistence is managed by the browser's default behavior
-
-            await window.auth.signInWithEmailAndPassword(emailToSignIn, password);
+            await window.authSignIn(emailToSignIn, password);
             
             // Role-based routing is handled automatically by onAuthStateChanged in firebase.js
             return;
@@ -1077,16 +1076,12 @@ window.handleSignUp = async function() {
     if (!emailRegex.test(email)) { await window.customPopup({ title: 'Invalid Email', message: "Sign up requires a valid email address.", type: 'alert' }); return; }
     if (password.length < 6) { await window.customPopup({ title: 'Weak Password', message: "For your security, password must be at least 6 characters.", type: 'alert' }); return; }
 
-    if (window.auth && window.db) {
+    if (window.authSignUp && window.db) {
         try {
             if (window.showLoading) window.showLoading("Creating Your Account...");
             
             // 1. Create Auth User
-            // Apply persistence preference during signup as well
-            const persistence = rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
-            await window.auth.setPersistence(persistence);
-
-            const userCredential = await window.auth.createUserWithEmailAndPassword(email, password);
+            const userCredential = await window.authSignUp(email, password);
             const user = userCredential.user;
 
             // 2. Prepare Profile Data
@@ -1485,19 +1480,19 @@ let adminOrders = [...MOCK_ORDERS];
 window.adminOrders = [...MOCK_ORDERS];
 
 const MOCK_RESTAURANTS = [
-    { id: 1, name: 'Burger King', category: 'Restaurants', rating: 4.5, status: 'active', orders: 245, revenue: 12500.00, phone: '+971 4 123 4567', address: 'Dubai Mall', owner: 'BK UAE LLC', commission: 15, menu: [
-        { id: 101, name: "Whopper", price: 22.00, img: "assets/whopper.jpg", active: true },
+    { id: 1, name: 'Burger King', category: 'Restaurants', rating: 4.5, status: 'active', orders: 245, revenue: 12500.00, phone: '+971 4 123 4567', address: 'Dubai Mall', owner: 'BK UAE LLC', commission: 15, profilePhoto: 'https://images.unsplash.com/photo-1626229650236-737940449a58?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=800&auto=format&fit=crop', menu: [
+        { id: 101, name: "Whopper", price: 22.00, img: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 102, name: "Chicken Royale", price: 20.00, img: "assets/chicken_royale.jpg", active: true },
         { id: 103, name: "Onion Rings", price: 10.00, img: "🧅", active: true },
     ] },
-    { id: 2, name: 'Pizza Hut', category: 'Restaurants', rating: 4.7, status: 'active', orders: 189, revenue: 18900.00, phone: '+971 4 234 5678', address: 'Mall of Emirates', owner: 'PH Middle East', commission: 12, menu: [
-        { id: 201, name: "Pepperoni Pizza", price: 45.00, img: "🍕", active: true },
+    { id: 2, name: 'Pizza Hut', category: 'Restaurants', rating: 4.7, status: 'active', orders: 189, revenue: 18900.00, phone: '+971 4 234 5678', address: 'Mall of Emirates', owner: 'PH Middle East', commission: 12, profilePhoto: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?q=80&w=800&auto=format&fit=crop', menu: [
+        { id: 201, name: "Pepperoni Pizza", price: 45.00, img: "https://images.unsplash.com/photo-1628840042765-356cda07504e?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 202, name: "Veggie Supreme", price: 42.00, img: "🍕", active: true },
         { id: 203, name: "Garlic Bread", price: 15.00, img: "🥖", active: false },
     ] },
-    { id: 3, name: 'KFC', category: 'Restaurants', rating: 4.6, status: 'active', orders: 312, revenue: 15600.00, phone: '+971 4 345 6789', address: 'Dubai Festival City', owner: 'KFC UAE', commission: 18, menu: [
+    { id: 3, name: 'KFC', category: 'Restaurants', rating: 4.6, status: 'active', orders: 312, revenue: 15600.00, phone: '+971 4 345 6789', address: 'Dubai Festival City', owner: 'KFC UAE', commission: 18, profilePhoto: 'https://images.unsplash.com/photo-1513639776629-7b61b0ac49cb?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 301, name: "Zinger Burger", price: 18.00, img: "🍔", active: true },
-        { id: 302, name: "9pc Bucket", price: 75.00, img: "🍗", active: true },
+        { id: 302, name: "9pc Bucket", price: 75.00, img: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 303, name: "Fries", price: 8.00, img: "🍟", active: true },
     ] },
     { id: 4, name: 'Starbucks', category: 'Drinks', rating: 4.8, status: 'active', orders: 156, revenue: 12480.00, phone: '+971 4 456 7890', address: 'Dubai Mall', owner: 'Starbucks UAE', commission: 10, menu: [
@@ -1539,12 +1534,12 @@ let adminRestaurants = [...MOCK_RESTAURANTS];
 window.adminRestaurants = [...MOCK_RESTAURANTS];
 
 const MOCK_RIDERS = [
-    { id: 1, name: 'Ahmed Hassan', phone: '+971 50 111 2222', email: 'ahmed.hassan@email.com', status: 'offline', rating: 4.8, completedOrders: 1247, earnings: 8750.00, vehicle: 'Motorcycle', license: 'DL123456', joined: '2023-01-15', lastSeen: '2 mins ago', accountStatus: 'active' },
-    { id: 2, name: 'Fatima Al-Zahra', phone: '+971 55 333 4444', email: 'fatima.zahra@email.com', status: 'offline', rating: 4.9, completedOrders: 892, earnings: 6240.00, vehicle: 'Scooter', license: 'DL234567', joined: '2023-03-22', lastSeen: '1 hour ago', accountStatus: 'active' },
-    { id: 3, name: 'Omar Khalid', phone: '+971 52 555 6666', email: 'omar.khalid@email.com', status: 'offline', rating: 4.7, completedOrders: 1563, earnings: 10941.00, vehicle: 'Motorcycle', license: 'DL345678', joined: '2022-11-08', lastSeen: '5 mins ago', accountStatus: 'suspended' },
-    { id: 4, name: 'Layla Mahmoud', phone: '+971 56 777 8888', email: 'layla.mahmoud@email.com', status: 'offline', rating: 4.6, completedOrders: 734, earnings: 5138.00, vehicle: 'Car', license: 'DL456789', joined: '2023-05-14', lastSeen: 'Yesterday', accountStatus: 'active' },
-    { id: 5, name: 'Youssef Al-Rashid', phone: '+971 58 999 0000', email: 'youssef.rashid@email.com', status: 'offline', rating: 4.8, completedOrders: 1102, earnings: 7714.00, vehicle: 'Motorcycle', license: 'DL567890', joined: '2023-02-28', lastSeen: '10 mins ago', accountStatus: 'active' },
-    { id: 6, name: 'Aisha Al-Mansoori', phone: '+971 50 222 3333', email: 'aisha.mansoori@email.com', status: 'offline', rating: 4.9, completedOrders: 945, earnings: 6615.00, vehicle: 'Scooter', license: 'DL678901', joined: '2023-04-10', lastSeen: 'Just now', accountStatus: 'active' }
+    { id: 1, name: 'Ahmed Hassan', phone: '+971 50 111 2222', email: 'ahmed.hassan@email.com', status: 'offline', rating: 4.8, completedOrders: 1247, earnings: 8750.00, vehicle: 'Motorcycle', license: 'DL123456', joined: '2023-01-15', lastSeen: '2 mins ago', accountStatus: 'active', profilePhoto: 'https://images.unsplash.com/photo-1624759314986-43bf3536584d?q=80&w=200&auto=format&fit=crop' },
+    { id: 2, name: 'Fatima Al-Zahra', phone: '+971 55 333 4444', email: 'fatima.zahra@email.com', status: 'offline', rating: 4.9, completedOrders: 892, earnings: 6240.00, vehicle: 'Scooter', license: 'DL234567', joined: '2023-03-22', lastSeen: '1 hour ago', accountStatus: 'active', profilePhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop' },
+    { id: 3, name: 'Omar Khalid', phone: '+971 52 555 6666', email: 'omar.khalid@email.com', status: 'offline', rating: 4.7, completedOrders: 1563, earnings: 10941.00, vehicle: 'Motorcycle', license: 'DL345678', joined: '2022-11-08', lastSeen: '5 mins ago', accountStatus: 'suspended', profilePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop' },
+    { id: 4, name: 'Layla Mahmoud', phone: '+971 56 777 8888', email: 'layla.mahmoud@email.com', status: 'offline', rating: 4.6, completedOrders: 734, earnings: 5138.00, vehicle: 'Car', license: 'DL456789', joined: '2023-05-14', lastSeen: 'Yesterday', accountStatus: 'active', profilePhoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop' },
+    { id: 5, name: 'Youssef Al-Rashid', phone: '+971 58 999 0000', email: 'youssef.rashid@email.com', status: 'offline', rating: 4.8, completedOrders: 1102, earnings: 7714.00, vehicle: 'Motorcycle', license: 'DL567890', joined: '2023-02-28', lastSeen: '10 mins ago', accountStatus: 'active', profilePhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop' },
+    { id: 6, name: 'Aisha Al-Mansoori', phone: '+971 50 222 3333', email: 'aisha.mansoori@email.com', status: 'offline', rating: 4.9, completedOrders: 945, earnings: 6615.00, vehicle: 'Scooter', license: 'DL678901', joined: '2023-04-10', lastSeen: 'Just now', accountStatus: 'active', profilePhoto: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200&auto=format&fit=crop' }
 ];
 let adminRiders = [...MOCK_RIDERS];
 window.adminRiders = [...MOCK_RIDERS];
@@ -2769,16 +2764,16 @@ const categoryConfig = {
       {
         name: "Promotions",
         items: [
-          { title: "Family Feast", desc: "2 Large Pizzas, Garlic Bread & Coke", price: "85.00", oldPrice: "120.00", image: "🍕" },
-          { title: "Mega Burger Box", desc: "2 Burgers, Fries & Nuggets", price: "45.00", oldPrice: "60.00", image: "🍔" }
+          { title: "Family Feast", desc: "2 Large Pizzas, Garlic Bread & Coke", price: "85.00", oldPrice: "120.00", image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=400&auto=format&fit=crop" },
+          { title: "Mega Burger Box", desc: "2 Burgers, Fries & Nuggets", price: "45.00", oldPrice: "60.00", image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=400&auto=format&fit=crop" }
         ]
       },
       {
         name: "Best Sellers",
         items: [
-          { title: "Crispy Chicken", desc: "3pcs Fried Chicken with Coleslaw", price: "25.00", image: "🍗" },
-          { title: "Cheese Burger", desc: "Beef patty, Cheddar, Lettuce", price: "18.00", image: "🍔" },
-          { title: "Pepperoni Pizza", desc: "Mozzarella & Beef Pepperoni", price: "40.00", image: "🍕" }
+          { title: "Crispy Chicken", desc: "3pcs Fried Chicken with Coleslaw", price: "25.00", image: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?q=80&w=400&auto=format&fit=crop" },
+          { title: "Cheese Burger", desc: "Beef patty, Cheddar, Lettuce", price: "18.00", image: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=400&auto=format&fit=crop" },
+          { title: "Pepperoni Pizza", desc: "Mozzarella & Beef Pepperoni", price: "40.00", image: "https://images.unsplash.com/photo-1628840042765-356cda07504e?q=80&w=400&auto=format&fit=crop" }
         ]
       },
       {

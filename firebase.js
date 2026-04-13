@@ -3,7 +3,7 @@ import "https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js";
 import "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js";
 import "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, sendPasswordResetEmail, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, sendPasswordResetEmail, RecaptchaVerifier, signInWithPhoneNumber, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 import { getFirestore, enableIndexedDbPersistence, collection, query, where, orderBy, limit, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
 import { ref, set, onValue, off, serverTimestamp as rtdbTimestamp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
@@ -187,6 +187,12 @@ window.setupUserProfileListener = function(uid) {
 function initFirebase() {
     try {
         console.log("Firebase Initialized with Modular SDK");
+
+        // Expose Modular Auth Helpers to window for app.js
+        window.authSignIn = (email, pass) => signInWithEmailAndPassword(window.authMod, email, pass);
+        window.authSignUp = (email, pass) => createUserWithEmailAndPassword(window.authMod, email, pass);
+        window.authSignOut = () => signOut(window.authMod);
+        window.authSendPasswordReset = (email) => sendPasswordResetEmail(window.authMod, email);
 
         if (authListenerRegistered) {
             console.log("Firebase: Auth listener already registered.");
