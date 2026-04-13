@@ -1,32 +1,57 @@
+import { onCall, HttpsError } from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
+
+if (admin.apps.length === 0) {
+  admin.initializeApp();
+}
+
 /**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
+ * Callable function to create a new user from the Admin panel.
+ * This handles both Firebase Auth creation and Firestore profile creation.
  */
+export const adminCreateUser = onCall(async (request) => {
+  // 1. Verify caller is authenticated
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+  }
 
-import {setGlobalOptions} from "firebase-functions";
-import {onRequest} from "firebase-functions/https";
-import * as logger from "firebase-functions/logger";
+  // 2. Verify caller is an admin
+  const adminDoc = await admin.firestore().collection('admin_accounts').doc(request.auth.uid).get();
+  const adminData = adminDoc.data();
+  if (!adminData || !['Super Admin', 'Manager'].includes(adminData.role)) {
+    throw new HttpsError('permission-denied', 'Only authorized admins can create users.');
+  }
 
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
+  const { email, password, name, role, collection, ...otherData } = request.data;
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+  // Validation
+  if (!email || !password || !name || !role || !collection) {
+    throw new HttpsError('invalid-argument', 'Missing required user fields.');
+  }
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+  try {
+    // 3. Create user in Firebase Auth
+    const userRecord = await admin.auth().createUser({
+      email,
+      password,
+      displayName: name,
+    });
+
+    // 4. Create profile in the specified Firestore collection
+    const profile = {
+      ...otherData,
+      id: userRecord.uid,
+      email,
+      name,
+      role,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    await admin.firestore().collection(collection).doc(userRecord.uid).set(profile);
+
+    return { success: true, uid: userRecord.uid };
+  } catch (error: any) {
+    console.error("Error creating user:", error);
+    throw new HttpsError('internal', error.message || 'Unable to create user.');
+  }
+});

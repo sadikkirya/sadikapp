@@ -7,6 +7,7 @@ import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateCh
 import { getFirestore, enableIndexedDbPersistence, collection, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js";
 import { getMessaging, isSupported } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-analytics.js";
 
@@ -42,6 +43,7 @@ window.authMod = getAuth(app);
 window.dbMod = getFirestore(app); 
 window.rtdb = getDatabase(app);
 window.storage = getStorage(app);
+window.functionsMod = getFunctions(app);
 
 // Initialize messaging only if supported
 isSupported().then(supported => {
@@ -189,6 +191,52 @@ function initFirebase() {
         console.error("Firebase Init Error:", e);
     }
 }
+
+// Helper to log activities to Firestore
+window.logToFirestore = function(action, details = {}) {
+    if (!window.db) return;
+    const log = {
+        action,
+        details: typeof details === 'string' ? details : JSON.stringify(details),
+        user: window.currentUser ? (window.currentUser.name || window.currentUser.id) : 'System',
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        time: new Date().toLocaleString()
+    };
+    window.db.collection('admin_logs').add(log).catch(e => console.error("Log error", e));
+};
+
+// Bridge for Auth user creation
+// Note: This is a placeholder for a Cloud Function call
+window.adminCreateAuthUser = async function(type, formData) {
+    try {
+        const createUser = httpsCallable(window.functionsMod, 'adminCreateUser');
+        const result = await createUser(formData);
+        
+        window.logToFirestore('Auth Creation Success', {
+            type: type,
+            uid: result.data.uid
+        });
+        return result.data;
+    } catch (error) {
+        console.error("Cloud function error:", error);
+        window.showToast("Auth Creation Failed: " + error.message);
+        throw error;
+    }
+};
+
+// Bridge functions for Admin creation in app.js
+window.adminCreateVendor = async function(data) {
+    if (!window.db) return;
+    const id = data.id.toString();
+    return window.db.collection('restaurants').doc(id).set(data, { merge: true });
+};
+
+window.adminCreateUserRecord = async function(data) {
+    if (!window.db) return;
+    const col = data.role === 'rider' ? 'riders' : 'users';
+    const id = data.id.toString();
+    return window.db.collection(col).doc(id).set(data, { merge: true });
+};
 
 /**
  * Global Logout Function
@@ -470,6 +518,15 @@ function setupFirebaseListeners() {
             }
         }, (error) => {
             console.error('Firebase support listener error:', error);
+        });
+
+        firebaseUnsubs.logs = onSnapshot(query(collection(window.dbMod, 'admin_logs'), orderBy('timestamp', 'desc'), limit(50)), (snapshot) => {
+            const logs = [];
+            snapshot.forEach((doc) => logs.push({ id: doc.id, ...doc.data() }));
+            window.adminLogs = logs;
+            if (document.getElementById('admin-logs') && document.getElementById('admin-logs').style.display !== 'none') {
+                window.renderAdminLogs();
+            }
         });
     }
 }

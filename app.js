@@ -652,6 +652,14 @@ function saveUserProfile(syncToDb = true) {
     if (syncToDb && db && currentUser.id && !currentUser.isGuest && !isMockId) {
         const col = currentUser._collection || 'users';
         db.collection(col).doc(currentUser.id.toString()).set(currentUser, { merge: true })
+            .then(() => {
+                if (window.logToFirestore) {
+                    window.logToFirestore('Setting Sync', {
+                        user: currentUser.name || currentUser.username,
+                        collection: col
+                    });
+                }
+            })
             .catch(e => console.error("User profile sync error", e));
     }
 }
@@ -792,6 +800,14 @@ function proceedToHome(skipSave = false) {
     document.querySelectorAll('#adminScreen, #riderScreen, #shopPortalScreen').forEach(s => s.classList.remove('active'));
 
     const role = window.currentUser.role;
+    // Set database collection hint for automatic syncing
+    if (!window.currentUser._collection) {
+        if (role === 'rider') window.currentUser._collection = 'riders';
+        else if (role === 'vendor') window.currentUser._collection = 'restaurants';
+        else if (role === 'admin' || role === 'Super Admin' || role === 'Manager') window.currentUser._collection = 'admin_accounts';
+        else window.currentUser._collection = 'users';
+    }
+
     if (role === 'admin' || role === 'Super Admin' || role === 'Manager') openAdmin();
     else if (window.currentUser.role === 'rider') openRider();
     else if (window.currentUser.role === 'vendor') openShopPortal();
@@ -1131,6 +1147,12 @@ window.switchToRole = function(role) {
     
     // Update current user role
     window.currentUser.role = role;
+    // Set database collection hint for syncing
+    if (role === 'rider') window.currentUser._collection = 'riders';
+    else if (role === 'vendor') window.currentUser._collection = 'restaurants';
+    else if (role === 'admin') window.currentUser._collection = 'admin_accounts';
+    else window.currentUser._collection = 'users';
+
     if (role === 'admin') window.currentUser.role = 'Super Admin';
     
     // Update role-specific properties
@@ -1211,6 +1233,9 @@ async function processExistingUser(userData, docId, role, rememberMe) {
         ...userData,
         id: docId,
         role: role, // Use selected role for routing consistency
+        _collection: (role === 'rider') ? 'riders' : 
+                     (role === 'vendor') ? 'restaurants' : 
+                     (role === 'admin' || role === 'Super Admin' || role === 'Manager') ? 'admin_accounts' : 'users',
         isGuest: false,
         rememberMe: rememberMe,
         isApproved: userData.isApproved || false 
@@ -3144,8 +3169,10 @@ const resShareBtn = document.getElementById('resShareBtn');
 function openRestaurant(name, menuData) {
   document.getElementById('resScreenName').textContent = name;
   
-  // Display Rating
   const restaurant = adminRestaurants.find(r => r.name === name);
+  if (restaurant) document.getElementById('merchantMenuScreen').dataset.restaurantId = restaurant.id;
+
+  // Display Rating
   const ratingEl = document.getElementById('resRating');
   if (ratingEl) {
       ratingEl.textContent = (restaurant && restaurant.rating) ? restaurant.rating.toFixed(1) : 'New';
@@ -4313,6 +4340,8 @@ if (placeOrderBtn) {
                     statusColor: '#FFBF42',
                     items: [...cart],
                     total: itemsTotal,
+                    customerId: window.currentUser.id,
+                    vendorId: document.getElementById('merchantMenuScreen').dataset.restaurantId || 'unknown',
                     tip: tipAmount,
                 driverNotes: driverNotes,
                     customerName: recipientDetails.name || 'Valued Customer',
@@ -7623,7 +7652,11 @@ function renderAdminRestaurantsList() {
                     </div>
                 </div>
             </td>
-            <td><div style="font-weight:bold;">${restaurant.name || 'N/A'}</div><div style="font-size:0.8em; color:#666;">${restaurant.category || ''}</div></td>
+            <td>
+                <div style="font-weight:bold;">${restaurant.name || 'N/A'}</div>
+                <div style="font-size:0.8em; color:#666;">${restaurant.category || ''}</div>
+                ${window.getRestaurantStatusHtml ? window.getRestaurantStatusHtml(restaurant.openingHours) : ''}
+            </td>
             <td><div style="font-weight:600;">${restaurant.phone || 'N/A'}</div><div style="font-size:0.8em; color:#666;">${restaurant.owner || 'No owner'}</div></td>
             <td><div style="font-weight:600;">${restaurant.orders || 0} orders</div><div style="font-size:0.8em;">UGX ${(restaurant.revenue || 0).toLocaleString()}</div></td>
             <td><span style="background:${restaurant.status === 'active' ? '#4caf50' : '#f44336'}; color:#fff; padding:4px 8px; border-radius:12px; font-size:0.75em; font-weight:600;">${(restaurant.status || 'unknown').toUpperCase()}</span></td>
@@ -9789,6 +9822,12 @@ function openAdminModal(type, id = null) {
         formHtml = `
             <label for="addRestaurantName" class="admin-form-label">Name</label>
             <input type="text" id="addRestaurantName" placeholder="Name" class="admin-form-input" value="${r.name || ''}">
+            ${!id ? `
+                <label for="addRestaurantEmail" class="admin-form-label">Account Email (for login)</label>
+                <input type="email" id="addRestaurantEmail" placeholder="vendor@kirya.app" class="admin-form-input">
+                <label for="addRestaurantPassword" class="admin-form-label">Temporary Password</label>
+                <input type="password" id="addRestaurantPassword" placeholder="Minimum 6 characters" class="admin-form-input">
+            ` : ''}
             <label for="addRestaurantCategory" class="admin-form-label">Vendor Category</label>
             <select id="addRestaurantCategory" class="admin-form-input">${categoryOptions}</select>
             <label for="addRestaurantRating" class="admin-form-label">Rating</label>
@@ -9838,6 +9877,10 @@ function openAdminModal(type, id = null) {
             <input type="tel" id="addRiderPhone" placeholder="Phone" class="admin-form-input" value="${r.phone || ''}">
             <label for="addRiderEmail" class="admin-form-label">Email</label>
             <input type="email" id="addRiderEmail" placeholder="Email" class="admin-form-input" value="${r.email || ''}">
+            ${!id ? `
+                <label for="addRiderPassword" class="admin-form-label">Temporary Password</label>
+                <input type="password" id="addRiderPassword" placeholder="Minimum 6 characters" class="admin-form-input">
+            ` : ''}
             <label for="addRiderVehicle" class="admin-form-label">Vehicle</label>
             <input type="text" id="addRiderVehicle" placeholder="Vehicle (e.g., Motorcycle)" class="admin-form-input" value="${r.vehicle || ''}">
             <label for="addRiderLicense" class="admin-form-label">License Plate</label>
@@ -9865,6 +9908,10 @@ function openAdminModal(type, id = null) {
             <input type="tel" id="addCustomerPhone" placeholder="Phone" class="admin-form-input" value="${c.phone || ''}">
             <label for="addCustomerEmail" class="admin-form-label">Email</label>
             <input type="email" id="addCustomerEmail" placeholder="Email" class="admin-form-input" value="${c.email || ''}">
+            ${!id ? `
+                <label for="addCustomerPassword" class="admin-form-label">Temporary Password</label>
+                <input type="password" id="addCustomerPassword" placeholder="Minimum 6 characters" class="admin-form-input">
+            ` : ''}
             <label for="addCustomerAddress" class="admin-form-label">Address</label>
             <input type="text" id="addCustomerAddress" placeholder="Address" class="admin-form-input" value="${c.address || ''}">
             <label class="admin-form-label">Profile Photo</label>
@@ -9909,6 +9956,10 @@ function openAdminModal(type, id = null) {
             <input type="text" id="addAccountName" placeholder="Name" class="admin-form-input" value="${acc.name || ''}">
             <label for="addAccountEmail" class="admin-form-label">Email</label>
             <input type="email" id="addAccountEmail" placeholder="Email" class="admin-form-input" value="${acc.email || ''}">
+            ${!id ? `
+                <label for="addAccountPassword" class="admin-form-label">Temporary Password</label>
+                <input type="password" id="addAccountPassword" placeholder="Minimum 6 characters" class="admin-form-input">
+            ` : ''}
             <label for="addAccountPhone" class="admin-form-label">Phone</label>
             <input type="tel" id="addAccountPhone" placeholder="Phone" class="admin-form-input" value="${acc.phone || ''}">
             <label for="addAccountRole" class="admin-form-label">Role</label>
@@ -9934,12 +9985,35 @@ function openAdminModal(type, id = null) {
     modal.style.display = 'flex';
 }
 
+window.getRestaurantStatusHtml = function(openingHours) {
+    if (!openingHours || !openingHours.includes('-')) return '';
+    const now = new Date();
+    const currentTime = now.getHours() * 100 + now.getMinutes();
+    
+    try {
+        const parts = openingHours.split('-').map(p => p.trim());
+        const parseTime = (t) => {
+            const [h, m] = t.split(':').map(Number);
+            return h * 100 + m;
+        };
+        const openTime = parseTime(parts[0]);
+        const closeTime = parseTime(parts[1]);
+
+        const isOpen = currentTime >= openTime && currentTime <= closeTime;
+        return `<div style="display:flex; align-items:center; gap:5px; margin-top:4px;">
+            <span style="width:8px; height:8px; border-radius:50%; background:${isOpen ? '#4caf50' : '#f44336'};"></span>
+            <span style="font-size:0.75em; font-weight:700; color:${isOpen ? '#4caf50' : '#f44336'};">${isOpen ? 'OPEN' : 'CLOSED'}</span>
+        </div>`;
+    } catch(e) { return ''; }
+};
+
 function closeAdminAddModal() {
     document.getElementById('adminAddModal').style.display = 'none';
 }
 
 async function saveAdminData(type) {
     if (window.showLoading) window.showLoading(`Saving ${type}...`);
+    let authData = null;
 
     if (type === 'restaurant' || type === 'vendor') {
         const data = {
@@ -9953,7 +10027,11 @@ async function saveAdminData(type) {
             phone: document.getElementById('addRestaurantPhone').value,
             address: document.getElementById('addRestaurantAddress').value,
             owner: document.getElementById('addRestaurantOwner').value,
-            commission: parseInt(document.getElementById('addRestaurantCommission').value) || 0
+            commission: parseInt(document.getElementById('addRestaurantCommission').value) || 0,
+            minimumOrder: 0,
+            deliveryRadius: 5, // km
+            isFeatured: false,
+            openingHours: "09:00 - 22:00"
         };
         const profileURL = document.getElementById('addRestaurantProfileURL').value.trim();
         const coverURL = document.getElementById('addRestaurantCoverURL').value.trim();
@@ -9987,6 +10065,16 @@ async function saveAdminData(type) {
             }
         }
 
+        if (!editingAdminId) {
+            authData = {
+                email: document.getElementById('addRestaurantEmail').value,
+                password: document.getElementById('addRestaurantPassword').value,
+                name: data.name,
+                role: 'vendor',
+                collection: 'restaurants'
+            };
+        }
+
         // Real-time Sync: Create/Update in Firestore
         if (window.adminCreateVendor) {
             try {
@@ -10018,15 +10106,28 @@ async function saveAdminData(type) {
             phone: document.getElementById('addRiderPhone').value,
             email: document.getElementById('addRiderEmail').value,
             status: 'offline',
+            workStatus: 'available',
             rating: 0,
             completedOrders: 0,
             earnings: 0,
             vehicle: document.getElementById('addRiderVehicle').value,
+            vehicleModel: '',
             license: document.getElementById('addRiderLicense').value,
-            joined: new Date().toISOString().slice(0, 10)
+            joined: new Date().toISOString().slice(0, 10),
+            emergencyContact: ''
         };
         const profileURL = document.getElementById('addRiderProfileURL').value.trim();
         if(profileURL) data.profilePhoto = profileURL;
+
+        if (!editingAdminId) {
+            authData = {
+                email: data.email,
+                password: document.getElementById('addRiderPassword').value,
+                name: data.name,
+                role: 'rider',
+                collection: 'riders'
+            };
+        }
 
         data.isApproved = true; // Admin created riders are pre-approved
         const riderProfilePhoto = document.getElementById('addRiderProfilePhoto').files[0];
@@ -10074,10 +10175,22 @@ async function saveAdminData(type) {
             status: 'active',
             joined: new Date().toISOString().slice(0, 10),
             lastOrder: 'N/A',
-            address: document.getElementById('addCustomerAddress').value
+            address: document.getElementById('addCustomerAddress').value,
+            loyaltyTier: 'Bronze',
+            isEmailVerified: false
         };
         const profileURL = document.getElementById('addCustomerProfileURL').value.trim();
         if(profileURL) data.profilePhoto = profileURL;
+
+        if (!editingAdminId) {
+            authData = {
+                email: data.email,
+                password: document.getElementById('addCustomerPassword').value,
+                name: data.name,
+                role: 'user',
+                collection: 'users'
+            };
+        }
 
         const customerProfilePhoto = document.getElementById('addCustomerProfilePhoto').files[0];
         if (customerProfilePhoto) {
@@ -10137,10 +10250,21 @@ async function saveAdminData(type) {
             phone: document.getElementById('addAccountPhone').value,
             role: document.getElementById('addAccountRole').value,
             status: 'active',
-            lastLogin: 'Just now'
+            lastLogin: 'Just now',
+            accessLevel: 1
         };
         const profileURL = document.getElementById('addAccountProfileURL').value.trim();
         if(profileURL) data.profilePhoto = profileURL;
+
+        if (!editingAdminId) {
+            authData = {
+                email: data.email,
+                password: document.getElementById('addAccountPassword').value,
+                name: data.name,
+                role: data.role,
+                collection: 'admin_accounts'
+            };
+        }
 
         const adminProfilePhoto = document.getElementById('addAccountProfilePhoto').files[0];
         if (adminProfilePhoto) {
@@ -10165,6 +10289,15 @@ async function saveAdminData(type) {
             adminAccounts.push({ ...data, id: Date.now() });
         }
         renderAdminAccounts();
+    }
+
+    // Request Auth User Creation (Requires Cloud Function)
+    if (window.adminCreateAuthUser && authData) {
+        try {
+            await window.adminCreateAuthUser(type, authData);
+        } catch(e) {
+            console.error("Auth creation failed:", e);
+        }
     }
 
     if (window.hideLoading) window.hideLoading();

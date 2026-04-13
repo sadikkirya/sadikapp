@@ -1,52 +1,85 @@
-rules_versionbases/{database}/documents {
-    
-    // HELPER FUNCTIONSequest.resource.data.role != 'admin';
- laimin() || (isAuthenticated() && request.auth.uid == userId && request.resource.data.role == resource.data.role);
- }// VENDORS COLLECTION
-    match /vendors/{vendorId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == vendorId && isStatusActive());
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // HELPER FUNCTIONS
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/admin_accounts/$(request.auth.uid)).data.role == 'Super Admin' ||
+        get(/databases/$(database)/documents/admin_accounts/$(request.auth.uid)).data.role == 'Manager'
+      );
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // USERS COLLECTION (Customers)
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isAdmin() || isOwner(userId));
+      allow write: if isAdmin() || isOwner(userId);
+    }
+
+    // VENDORS (RESTAURANTS) COLLECTION
+    match /restaurants/{vendorId} {
+      allow read: if true;
+      allow write: if isAdmin() || isOwner(vendorId);
     }
 
     // RIDERS COLLECTION
     match /riders/{riderId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == riderId && isStatusActive());
+      allow write: if isAdmin() || isOwner(riderId);
+    }
+
+    // ADMIN ACCOUNTS
+    match /admin_accounts/{adminId} {
+      allow read: if isAdmin() || isOwner(adminId);
+      allow write: if isAdmin();
     }
 
     // ORDERS COLLECTION
     match /orders/{orderId} {
       allow read: if isAuthenticated() && (
         isAdmin() || 
-        resource.data.userId == request.auth.uid || 
+        resource.data.customerId == request.auth.uid || 
         resource.data.riderId == request.auth.uid ||
         resource.data.vendorId == request.auth.uid
       );
-      allow create: if isAuthenticated() && isStatusActive();
+      allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (
         isAdmin() || 
-        (resource.data.userId == request.auth.uid && request.resource.data.status == 'cancelled') ||
+        (resource.data.customerId == request.auth.uid && request.resource.data.status == 'cancelled') ||
         (resource.data.riderId == request.auth.uid) ||
         (resource.data.vendorId == request.auth.uid)
       );
+      allow delete: if isAdmin();
     }
 
     // PRODUCTS COLLECTION
     match /products/{productId} {
       allow read: if true;
-      allow write: if isAdmin() || (isAuthenticated() && getRole() == 'vendor' && request.resource.data.vendorId == request.auth.uid);
+      allow write: if isAdmin() || (isAuthenticated() && request.resource.data.vendorId == request.auth.uid);
     }
 
-    // CHATS SUBCOLLECTION
+    // CHATS COLLECTION
     match /chats/{chatId}/{document=**} {
       allow read, write: if isAuthenticated() && (
         isAdmin() || 
         exists(/databases/$(database)/documents/orders/$(chatId)) && 
         (
-          get(/databases/$(database)/documents/orders/$(chatId)).data.userId == request.auth.uid ||
+          get(/databases/$(database)/documents/orders/$(chatId)).data.customerId == request.auth.uid ||
           get(/databases/$(database)/documents/orders/$(chatId)).data.riderId == request.auth.uid
         )
       );
+    }
+    match /admin_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
     }
   }
 }
