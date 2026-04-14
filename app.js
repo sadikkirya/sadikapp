@@ -13,6 +13,27 @@ window.getImageHtml = function(src, fallback = '🍽️', customStyle = '') {
     return `<span style="${customStyle}">${src || fallback}</span>`;
 };
 
+/**
+ * Toggles a global 'Connection Lost' banner.
+ * Used by Firebase listeners to indicate network health.
+ */
+window.toggleConnectionBanner = function(show) {
+    let banner = document.getElementById('connectionLostBanner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'connectionLostBanner';
+        banner.style.cssText = 'position:fixed; top:0; left:0; width:100%; background:#ff4757; color:#fff; text-align:center; padding:10px; z-index:30000; font-weight:bold; display:none; box-shadow:0 2px 10px rgba(0,0,0,0.2);';
+        banner.innerHTML = '⚠️ Connection to server lost. Attempting to reconnect...';
+        document.body.appendChild(banner);
+        
+        const style = document.createElement('style');
+        style.textContent = '@keyframes slideDownBanner { from { transform: translateY(-100%); } to { transform: translateY(0); } }';
+        document.head.appendChild(style);
+    }
+    banner.style.display = show ? 'block' : 'none';
+    if (show) banner.style.animation = 'slideDownBanner 0.3s ease';
+};
+
 window.toggleTablePassword = function(id, actualPassword) {
     const el = document.getElementById(`pass-${id}`);
     if (!el) return;
@@ -248,7 +269,7 @@ window.onload = () => {
       if(order) openTrackOrder(order);
   };
   window.listenToOrder = (orderId, callback) => {
-      if (window.dbMod) return window.listenToOrder(orderId, callback);
+      if (window.db) return window.listenToOrder(orderId, callback);
       return () => {};
   };
   window.reorder = (orderId) => {
@@ -679,9 +700,9 @@ function saveUserProfile(syncToDb = true) {
     // 3. PUSH LOCAL CHANGES TO DATABASE
     const isMockId = currentUser.id && (currentUser.id.toString().startsWith('mock_') || currentUser.id.toString().startsWith('demo_') || !isNaN(currentUser.id));
 
-    if (syncToDb && db && currentUser.id && !currentUser.isGuest && !isMockId) {
+    if (syncToDb && window.db && currentUser.id && !currentUser.isGuest && !isMockId) {
         const col = currentUser._collection || 'users';
-        db.collection(col).doc(currentUser.id.toString()).set(currentUser, { merge: true })
+        setDoc(doc(window.db, col, currentUser.id.toString()), currentUser, { merge: true })
             .then(() => {
                 if (window.logToFirestore) {
                     window.logToFirestore('Setting Sync', {
@@ -719,6 +740,13 @@ function proceedToHome(skipSave = false) {
     if (isUserBlocked) {
         sessionStorage.removeItem('kirya_last_screen');
     }
+
+    // ABSOLUTE LOGIN HIDE: If the user is authenticated and not blocked, 
+    // force hide the login screen immediately to prevent hangs.
+    if (!window.currentUser.isGuest && !isUserBlocked) {
+        if (loginScreen) { loginScreen.classList.remove('active'); loginScreen.style.display = 'none'; }
+    }
+
     if (document.getElementById('verificationLoadingScreen')) {
         document.getElementById('verificationLoadingScreen').style.display = 'none';
     }
@@ -946,17 +974,17 @@ window.handleLogin = async function() {
 
             // 1. If identifier is NOT an email, look it up in Firestore
             if (!isEmail) {
-                const collections = ['admin_accounts', 'riders', 'restaurants', 'users'];
+                const colls = ['admin_accounts', 'riders', 'restaurants', 'users'];
                 const cleanIdentifier = identifier.trim();
 
                 // Perform all identity lookups in parallel for maximum speed
-                const searchPromises = collections.flatMap(col => [
-                    window.db.collection(col).where('username', '==', cleanIdentifier).limit(1).get(),
-                    window.db.collection(col).where('phone', '==', cleanIdentifier).limit(1).get()
+                const identityPromises = colls.flatMap(col => [
+                    getDocs(query(collection(window.db, col), where('username', '==', cleanIdentifier), limit(1))),
+                    getDocs(query(collection(window.db, col), where('phone', '==', cleanIdentifier), limit(1)))
                 ]);
 
-                const snapshots = await Promise.all(searchPromises);
-                const match = snapshots.find(snap => !snap.empty);
+                const identitySnapshots = await Promise.all(identityPromises);
+                const match = identitySnapshots.find(snap => !snap.empty);
 
                 if (match) {
                     emailToSignIn = match.docs[0].data().email;
@@ -986,7 +1014,11 @@ window.handleLogin = async function() {
             // Set Firebase Auth Persistence based on Remember Me checkbox
             // Note: In modular SDK, persistence is handled automatically
             // The auth state persistence is managed by the browser's default behavior
+            const loginBtn = document.getElementById('mainLoginBtn');
+            if (loginBtn) { loginBtn.disabled = true; loginBtn.style.opacity = '0.5'; }
+            
             await window.authSignIn(emailToSignIn, password);
+            if (loginBtn) { loginBtn.disabled = false; loginBtn.style.opacity = '1'; }
             
             // Role-based routing is handled automatically by onAuthStateChanged in firebase.js
             return;
@@ -1019,14 +1051,14 @@ window.handleLogin = async function() {
     }
 
     // --- FALLBACK: DATABASE LOOKUP (If Firebase Auth fails/is missing) ---
-    if (db) {
+    if (window.db) {
         try {
             // Placeholder: Search 'users' collection by username/email for Firestore
-            const snapshot = await db.collection('users').where('username', '==', identifier).limit(1).get();
+            const userSnapshot = await getDocs(query(collection(window.db, 'users'), where('username', '==', identifier), limit(1)));
             
-            if (!snapshot.empty) {
-                const userData = snapshot.docs[0].data();
-                await processExistingUser(userData, snapshot.docs[0].id, userData.role || 'user', rememberMe);
+            if (!userSnapshot.empty) {
+                const userData = userSnapshot.docs[0].data();
+                await processExistingUser(userData, userSnapshot.docs[0].id, userData.role || 'user', rememberMe);
                 return;
             }
 
@@ -1098,12 +1130,12 @@ window.handleSignUp = async function() {
                 isApproved: false, // Legacy compatibility
                 points: 500, // Sign-up bonus
                 walletBalance: 0,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                createdAt: fsTimestamp(),
                 authRegistered: true
             };
 
             // 3. Create main User document
-            await window.db.collection('users').doc(user.uid).set(profile);
+            await setDoc(doc(window.db, 'users', user.uid), profile);
             if (window.hideLoading) window.hideLoading();
             const statusMsg = document.getElementById('authStatusMsg');
             if (statusMsg) {
@@ -1121,8 +1153,8 @@ window.handleSignUp = async function() {
 function loginAsGuest() {
     showToast("Entering as Guest...");
     // Guests should always use SESSION persistence to clear data on tab close
-    if (window.auth) {
-        window.auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+    if (window.auth && window.setPersistence) {
+        window.setPersistence(window.auth, window.authPersistenceSession);
     }
     window.currentUser = { ...window.currentUser, isGuest: true, isApproved: true, role: 'user', name: 'Guest User' };
     proceedToHome();
@@ -1224,23 +1256,23 @@ window.switchToRole = function(role) {
 };
 
 async function registerNewUser(username, phone, role, rememberMe) {
-    if (db) {
+    if (window.db) {
         try {
             const newUser = {
                 username: username,
                 phone: phone,
                 role: role,
                 isApproved: true, // Grant immediate approval for development/sample data
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                createdAt: fsTimestamp(),
                 orders: [],
                 walletBalance: 0,
                 points: 500
             };
-            const docRef = db.collection('users').doc(); 
-            await docRef.set(newUser);
-            currentUser = { ...currentUser, ...newUser, id: docRef.id, isGuest: false };
+            const newUserRef = doc(collection(window.db, 'users')); 
+            await setDoc(newUserRef, newUser);
+            currentUser = { ...currentUser, ...newUser, id: newUserRef.id, isGuest: false };
             currentUser.rememberMe = rememberMe;
-            setupUserProfileListener(docRef.id);
+            setupUserProfileListener(newUserRef.id);
 
             showToast("Registration successful! Awaiting approval.");
             proceedToHome();
@@ -1284,9 +1316,9 @@ async function processExistingUser(userData, docId, role, rememberMe) {
 }
 
 window.approveUser = async function(userId) {
-    if(db) {
+    if(window.db) {
         try {
-            await db.collection('users').doc(userId).update({ isApproved: true });
+            await updateDoc(doc(window.db, 'users', userId), { isApproved: true });
             showToast("User approved!");
         } catch(e) {
             showToast("Error: " + e.message);
@@ -1345,9 +1377,9 @@ window.customPopup = function({ title = '', message = '', type = 'alert', defaul
 
 window.rejectUser = async function(userId) {
     if(await customPopup({ title: 'Confirm Action', message: "Are you sure you want to reject and delete this user?", type: 'confirm' })) {
-        if(db) {
+        if(window.db) {
             try {
-                await db.collection('users').doc(userId).delete();
+                await deleteDoc(doc(window.db, 'users', userId));
                 showToast("User rejected and removed.");
             } catch(e) {
                 showToast("Error: " + e.message);
@@ -1950,7 +1982,7 @@ document.getElementById('saveItemBtn')?.addEventListener('click', async () => {
         if (window.db) {
             const restaurant = adminRestaurants.find(r => r.id == resId);
             if (restaurant) {
-                window.db.collection('restaurants').doc(resId.toString()).set(restaurant, { merge: true });
+                    setDoc(doc(window.db, 'restaurants', resId.toString()), restaurant, { merge: true });
             }
         }
     }
@@ -2125,9 +2157,14 @@ function startApp() {
           console.log('Splash finished. Initializing login gate...');
           appReady = true;
           window.appReady = true;
-          // After splash, always show login screen initially. Firebase auth listener will then route.
-          // This prevents a blank screen or flashing of previous state.
-          window.showLoginScreen();
+          
+          // FIX: If Firebase already authenticated the user while splash was active, 
+          // proceed immediately instead of resetting back to the login screen.
+          if (window.currentUser && !window.currentUser.isGuest && window.proceedToHome) {
+              window.proceedToHome(true); 
+          } else {
+              window.showLoginScreen();
+          }
         },500);
       } else {
         console.error('Splash or home element not found:', {splash, home});
@@ -4401,7 +4438,7 @@ if (placeOrderBtn) {
 
                 // Firebase Save
                 if(db) {
-                    db.collection("orders").doc(newOrder.id).set(newOrder)
+                    setDoc(doc(db, "orders", newOrder.id), newOrder)
                     .then(() => console.log("Order saved to Firebase"))
                     .catch(e => console.error("Order save error", e));
                 }
@@ -4517,7 +4554,7 @@ function updateOrderStatus(orderId, status, statusText, statusColor = '#019E81')
         
         // Firebase Sync
         if(db) {
-            db.collection("orders").doc(orderId).update({ status: status, statusText: statusText, statusColor: statusColor })
+            updateDoc(doc(db, "orders", orderId), { status: status, statusText: statusText, statusColor: statusColor })
             .catch(e => console.error("Firebase update failed", e));
         }
         
@@ -4661,23 +4698,23 @@ async function submitRating(orderId) {
         if (db) {
             try {
                 // 1. Update Order in Firestore
-                await db.collection('orders').doc(orderId).update({
+                await updateDoc(doc(db, 'orders', orderId), {
                     rating: currentRating,
                     ratingComment: comment
                 });
 
                 // 2. Store Review in Firestore
-                await db.collection('reviews').add({
+                await addDoc(collection(db, 'reviews'), {
                     orderId,
                     restaurant: order.restaurant,
                     customer: order.customerName || currentUser.username || currentUser.name,
                     rating: currentRating,
                     comment: comment,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    timestamp: fsTimestamp()
                 });
 
                 // 3. Update Restaurant Average Rating
-                const resSnap = await db.collection('restaurants').where('name', '==', order.restaurant).limit(1).get();
+                const resSnap = await getDocs(query(collection(db, 'restaurants'), where('name', '==', order.restaurant), limit(1)));
                 if (!resSnap.empty) {
                     const resDoc = resSnap.docs[0];
                     const resData = resDoc.data();
@@ -4686,7 +4723,7 @@ async function submitRating(orderId) {
                     const newCount = oldCount + 1;
                     const newRating = ((oldRating * oldCount) + currentRating) / newCount;
                     
-                    await resDoc.ref.update({
+                    await updateDoc(resDoc.ref, {
                         rating: Number(newRating.toFixed(1)),
                         totalRatings: newCount
                     });
@@ -5205,11 +5242,11 @@ async function sendMessage() {
     if(!chatId) return;
 
     try {
-        await db.collection('chats').doc(chatId).collection('messages').add({
+        await addDoc(collection(db, 'chats', chatId, 'messages'), {
             senderId: window.currentUser.id || 'guest',
             senderRole: getCurrentRole(),
             text: text,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            timestamp: fsTimestamp()
         });
         chatInput.value = '';
     } catch(e) {
@@ -5288,6 +5325,20 @@ function openAdmin() {
     // Initialize admin dashboard
     closeAdminSidebar();
     renderAdminTabContent(getCurrentAdminTab());
+    
+    // Inject Re-sync Button into Sidebar if not present
+    const sidebar = document.getElementById('adminSidebar');
+    if (sidebar && !document.getElementById('adminResyncBtn')) {
+        const resyncItem = document.createElement('div');
+        resyncItem.id = 'adminResyncBtn';
+        resyncItem.className = 'sidebar-item';
+        resyncItem.style.marginTop = 'auto'; // Push to bottom
+        resyncItem.style.color = '#019E81';
+        resyncItem.innerHTML = `<span class="sidebar-item-icon">🔄</span><span>Re-sync Data</span>`;
+        resyncItem.onclick = () => { if(window.adminResync) window.adminResync(); };
+        sidebar.appendChild(resyncItem);
+    }
+
     setTimeout(() => {
         switchAdminTab('dashboard');
     }, 100);
@@ -5455,7 +5506,7 @@ function updateVendorTabsCounts() {
 function updateAdminDashboard() {
     // Update admin stats and order list
     const adminContent = document.getElementById('admin-dashboard');
-    if (adminContent) {
+    if (adminContent && window.allOrders) {
         const pendingOrders = window.allOrders ? window.allOrders.filter(o => o.status === 'pending').length : 0;
         // Fix: readyCount based on 'ready' status
         const readyOrders = window.allOrders ? window.allOrders.filter(o => o.status === 'ready').length : 0;
@@ -5467,7 +5518,7 @@ function updateAdminDashboard() {
 
         adminContent.innerHTML = `${adminAlertMessage}
             <div class="dashboard-card">
-                <h3>Platform Stats</h3>
+                <h3>Platform Stats ${window.isCloudConnected ? '<span style="color:#019E81; font-size:0.6em; vertical-align:middle;">● LIVE</span>' : ''}</h3>
                 <div style="display:flex; justify-content:space-between; margin-top:10px;">
                     <div>Pending Orders</div>
                     <div style="font-weight:bold; color:#FFBF42;">${pendingOrders}</div>
@@ -6393,10 +6444,10 @@ function simulateRiderMovements() {
     const riderIdsToSimulate = [2, 3, 4]; // IDs from MOCK_RIDERS
 
     riderIdsToSimulate.forEach(riderId => {
-        const riderRef = rtdb.ref('locations/riders/rider_' + riderId);
+        const riderRef = window.rRef(window.rtdb, 'locations/riders/rider_' + riderId);
 
         // Get current position or set initial
-        riderRef.once('value').then(snapshot => {
+        window.rGet(riderRef).then(snapshot => {
             let currentPos = snapshot.val();
             if (!currentPos) {
                 currentPos = {
@@ -6410,11 +6461,11 @@ function simulateRiderMovements() {
             const newLat = currentPos.lat + (Math.random() - 0.5) * 0.001;
             const newLng = currentPos.lng + (Math.random() - 0.5) * 0.001;
 
-            riderRef.set({
+            window.rSet(riderRef, {
                 lat: newLat,
                 lng: newLng,
                 status: 'online',
-                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                timestamp: rtdbTimestamp(),
                 name: currentPos.name
             });
         });
@@ -6682,19 +6733,19 @@ function startRiderHeartbeat() {
         if (!isRiderOnline) return;
 
         // Update Firestore for long-term status
-        if (window.db && window.currentUser?.id) {
-            window.db.collection('riders').doc(window.currentUser.id.toString()).update({
+        if (window.db && window.currentUser?.id && window.updateDoc) {
+            updateDoc(doc(window.db, 'riders', window.currentUser.id.toString()), {
                 lastSeen: 'Just now',
-                lastSeenTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+                lastSeenTimestamp: fsTimestamp()
             }).catch(() => {});
         }
 
         // Update Realtime Database for Admin Map "Live" status
         if (window.rtdb && window.currentUser?.id) {
             const riderId = window.currentUser.id.toString();
-            window.rtdb.ref('locations/riders/' + riderId).update({
+            window.rUpdate(window.rRef(window.rtdb, 'locations/riders/' + riderId), {
                 status: 'online',
-                timestamp: firebase.database.ServerValue.TIMESTAMP
+                timestamp: rtdbTimestamp()
             }).catch(() => {});
         }
     }, 30000); // 30 second pulse
@@ -6773,9 +6824,8 @@ function toggleRiderStatus() {
     const statusStr = isRiderOnline ? 'online' : 'offline';
     
     // FIREBASE SYNC: Update Rider Status
-    if(db) {
-        // Using ID 1 as string for demo consistency, usually actual Auth UID
-        db.collection('riders').doc(myRiderId.toString()).update({ 
+    if(window.db && window.updateDoc) {
+        updateDoc(doc(window.db, 'riders', myRiderId.toString()), { 
             status: statusStr,
             lastSeen: 'Just now'
         }).catch(err => console.log("Rider status sync local only (mock)"));
@@ -8115,14 +8165,14 @@ async function approveCustomer(id) {
     if (customer) {
         customer.status = 'active';
         showToast(`${customer.name} marked as Active`);
-        if(db) {
+        if(window.db && window.updateDoc) {
             try {
-                await db.collection('users').doc(customer.id.toString()).update({ isApproved: true });
+                await updateDoc(doc(window.db, 'users', customer.id.toString()), { isApproved: true });
                 
                 // Email Notification Trigger
                 // This pattern works with the "Trigger Email" Firebase Extension
-                if (customer.email) {
-                    await db.collection('mail').add({
+                if (customer.email && window.addDoc) {
+                    await addDoc(collection(window.db, 'mail'), {
                         to: customer.email,
                         message: {
                             subject: 'Welcome to Kirya - Account Approved!',
@@ -8594,8 +8644,8 @@ async function triggerAdminPhotoUpload(collection, id, field) {
         const url = await customPopup({ title: 'Image Path', message: 'Paste the URL or local path (e.g. assets/menu/burger.jpg):', type: 'prompt' });
         if (url && (url.startsWith('http') || url.startsWith('assets/'))) {
             const updateData = { [field]: url };
-            if (db && id !== 'current') {
-                try { await db.collection(collection).doc(id.toString()).update(updateData); } catch (e) { console.error(e); }
+            if (window.db && id !== 'current' && window.updateDoc) {
+                try { await updateDoc(doc(window.db, collection, id.toString()), updateData); } catch (e) { console.error(e); }
             }
 
             // Update local mocks
@@ -8645,9 +8695,9 @@ window.handlePhotoRemoval = async function(collection, id, field) {
     // 2. Update Firestore/Local Data
     const updateData = { [field]: null };
     
-    if (db && id !== 'current') {
+    if (window.db && id !== 'current' && window.updateDoc) {
         try {
-            await db.collection(collection).doc(id.toString()).update(updateData);
+            await updateDoc(doc(window.db, collection, id.toString()), updateData);
         } catch (e) { console.error(e); }
     }
 
@@ -8706,8 +8756,8 @@ async function handleAdminUniversalPhotoUpload(event, collection, id, field) {
 
         addToRecentUploads(url);
 
-        if (db && !isMockId) {
-            await db.collection(actualCollection).doc(actualId.toString()).update({ [field]: url });
+        if (window.db && !isMockId && window.updateDoc) {
+            await updateDoc(doc(window.db, actualCollection, actualId.toString()), { [field]: url });
         }
         
         // Update local mock data
@@ -8795,15 +8845,15 @@ async function sendAdminNotificationToUser() {
         role: 'user'
     };
 
-    if(db) {
+    if(window.db && window.updateDoc && window.getDoc) {
         try {
-            const docRef = db.collection('customers').doc(targetCustomerForNotif.toString());
-            const doc = await docRef.get();
-            if(doc.exists) {
-                const data = doc.data();
+            const userRef = doc(window.db, 'users', targetCustomerForNotif.toString());
+            const userSnap = await getDoc(userRef);
+            if(userSnap.exists()) {
+                const data = userSnap.data();
                 const userNotifs = data.notifications || [];
                 userNotifs.unshift(newNotif);
-                await docRef.update({ notifications: userNotifs });
+                await updateDoc(userRef, { notifications: userNotifs });
                 showToast('Notification sent to user!');
             }
         } catch(e) { console.error(e); showToast('Database sync failed'); }
@@ -8842,8 +8892,8 @@ function renderAdminConfig() {
             <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee; margin-bottom:20px;">
                 <h4 style="margin-bottom:10px;">🔥 Firebase Connection</h4>
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                    <div style="width:10px; height:10px; border-radius:50%; background:${isConnected ? '#4caf50' : '#f44336'};"></div>
-                    <div style="font-weight:bold; color:#333;">${isConnected ? 'Connected' : 'Not Connected'}</div>
+                    <div style="width:10px; height:10px; border-radius:50%; background:${window.isCloudConnected ? '#4caf50' : '#f44336'};"></div>
+                    <div style="font-weight:bold; color:#333;">${window.isCloudConnected ? 'Connected' : 'Not Connected'}</div>
                 </div>
                 <div style="font-family:monospace; background:#333; color:#fff; padding:10px; border-radius:6px; font-size:0.8em; margin-bottom:10px;">
                     Project ID: ${window.firebaseConfig ? window.firebaseConfig.projectId : 'Unknown'}<br>
@@ -8876,18 +8926,18 @@ async function seedDatabase() {
 
     window.showLoading("Seeding Firestore...");
     try {
-        const batch = window.db.batch();
+        const batch = writeBatch(window.db);
         
         // Seed Restaurants
         MOCK_RESTAURANTS.forEach(res => {
-            const ref = window.db.collection('restaurants').doc(res.id.toString());
-            batch.set(ref, { ...res, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            const resRef = doc(window.db, 'restaurants', res.id.toString());
+            batch.set(resRef, { ...res, createdAt: fsTimestamp() });
         });
 
         // Seed Riders
         MOCK_RIDERS.forEach(rider => {
-            const ref = window.db.collection('riders').doc(rider.id.toString());
-            batch.set(ref, { ...rider, isApproved: true });
+            const riderRef = doc(window.db, 'riders', rider.id.toString());
+            batch.set(riderRef, { ...rider, isApproved: true });
         });
 
         await batch.commit();
@@ -9404,8 +9454,8 @@ function initAdminLiveMap() {
     });
     
     // --- RTDB LISTENER START ---
-    if (rtdb) {
-        rtdb.ref('locations/riders').on('value', (snapshot) => {
+    if (window.rtdb && window.rOnValue) {
+        window.rOnValue(window.rRef(window.rtdb, 'locations/riders'), (snapshot) => {
             const riders = snapshot.val();
             if (!riders) return;
             
@@ -10551,8 +10601,8 @@ window.resendWelcomeEmail = async function(userId, type) {
 
     window.showLoading("Queuing Email...");
     try {
-        if (db) {
-            await db.collection('mail').add({
+        if (window.db && window.addDoc) {
+            await addDoc(collection(window.db, 'mail'), {
                 to: user.email,
                 message: {
                     subject: 'Welcome back to Kirya!',

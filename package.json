@@ -1,5 +1,8 @@
 {
   "type": "module",
+  "scripts": {
+    "dev": "npx http-server . -p 5501"
+  },
   "dependencies": {
     "firebase": "^12.12.0"
   }
