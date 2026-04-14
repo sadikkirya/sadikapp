@@ -712,7 +712,10 @@ function proceedToHome(skipSave = false) {
 
     // CRITICAL SECURITY: If the account is not approved, clear restoration memory 
     // to prevent the app from bypassing the gate on the next refresh.
-    const isUserBlocked = !window.currentUser.isGuest && ['pending', 'rejected', 'suspended'].includes(window.currentUser.status);
+    // FIX: Admins and Managers should bypass the verification gate.
+    const isAdmin = ['admin', 'Super Admin', 'Manager'].includes(window.currentUser.role) || window.currentUser._collection === 'admin_accounts';
+    const isUserBlocked = !window.currentUser.isGuest && !isAdmin && ['pending', 'rejected', 'suspended'].includes(window.currentUser.status);
+
     if (isUserBlocked) {
         sessionStorage.removeItem('kirya_last_screen');
     }

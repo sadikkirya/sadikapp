@@ -4,13 +4,13 @@ import "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js";
 import "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, sendPasswordResetEmail, RecaptchaVerifier, signInWithPhoneNumber, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
-import { getFirestore, enableIndexedDbPersistence, collection, query, where, orderBy, limit, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import { initializeFirestore, enableIndexedDbPersistence, collection, query, where, orderBy, limit, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
 import { ref, set, onValue, off, serverTimestamp as rtdbTimestamp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
 import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-storage.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-functions.js";
-import { getMessaging, isSupported, getToken } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js";
+import { getMessaging, isSupported as isMessagingSupported, getToken } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging.js";
+import { getAnalytics, isSupported as isAnalyticsSupported } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -27,40 +27,40 @@ const firebaseConfig = {
 // Initialize Firebase (Modular)
 let app;
 try {
-    // Fix for "u[v] is not a function" error: ensure single initialization
-    // and avoid service resets during hot reloads or iframe environment settling.
     if (!window.firebaseAppInstance) {
+        // 1. Initialize Modular SDK first. This registers the '[DEFAULT]' app for functional services.
         app = initializeApp(firebaseConfig);
         window.firebaseAppInstance = app;
-        
-        const analytics = getAnalytics(app);
 
-        // Modular objects for new realtime listeners and other internal operations
-        window.authMod = getAuth(app);
-        window.dbMod = getFirestore(app);
-        window.rtdb = getDatabase(app);
-        window.storage = getStorage(app);
-        window.functionsMod = getFunctions(app);
-
-        // 1. ENABLE OFFLINE PERSISTENCE (Local Sync) - MUST BE BEFORE ANY OTHER DB CALL
-        enableIndexedDbPersistence(window.dbMod, { synchronizeTabs: true }).catch((err) => {
-            if (err.code === 'failed-precondition') {
-                console.warn('Firestore Persistence: Multiple tabs open, shared access enabled.');
-            } else if (err.code === 'unimplemented') {
-                console.warn('Firestore Persistence: Browser not supported.');
-            }
-        });
-        
-        // Bridge to Compat layer for legacy app.js support
-        if (window.firebase) {
-            if (!window.firebase.apps.length) {
-                window.firebase.initializeApp(firebaseConfig);
-            }
-            window.auth = window.firebase.auth();
-            window.db = window.firebase.firestore();
-        } else {
-            console.warn("Firebase Compat SDK not found.");
+        // 2. Initialize via Compat SDK for legacy code support.
+        if (window.firebase && !window.firebase.apps.length) {
+            window.firebase.initializeApp(firebaseConfig);
         }
+
+        // 3. Setup Compat Objects (Required for legacy app.js code)
+        window.auth = window.firebase.auth();
+        window.db = window.firebase.firestore();
+
+        // 4. Setup Modular Objects (Required for new functional syntax)
+        // Aliasing authMod to compat auth prevents GAPI initialization conflicts.
+        window.authMod = window.auth; 
+        window.dbMod = initializeFirestore(app, {
+            experimentalForceLongPolling: true, // Fixes WebChannel "Fetch failed" in proxy/restricted networks
+            experimentalAutoDetectLongPolling: false, // Prevents upgrading to streams which fail in this environment
+        });
+        window.rtdb = getDatabase();
+        window.storage = getStorage();
+        window.functionsMod = getFunctions();
+
+        isAnalyticsSupported().then(supported => {
+            if (supported) getAnalytics(app);
+        }).catch(() => {});
+
+        // 4. Enable Persistence
+        enableIndexedDbPersistence(window.dbMod, { synchronizeTabs: true }).catch((err) => {
+            if (err.code === 'failed-precondition') console.warn('Firestore Persistence: Multiple tabs open.');
+            else if (err.code === 'unimplemented') console.warn('Firestore Persistence: Browser not supported.');
+        });
     } else {
         app = window.firebaseAppInstance;
     }
@@ -73,7 +73,7 @@ window.firebaseConfig = firebaseConfig;
 window.initFirebase = initFirebase;
 
 // Initialize messaging only if supported
-isSupported().then(supported => {
+isMessagingSupported().then(supported => {
     if (supported) {
         window.messaging = getMessaging(app);
         // Explicitly register the service worker to ensure it's active for push subscriptions
@@ -100,8 +100,8 @@ window.requestNotificationPermission = async function() {
             if (token && window.currentUser?.id) {
                 console.log("FCM Token Acquired:", token);
                 const col = window.currentUser._collection || 'users';
-                // Save token to the user's document for backend targeting
-                await window.dbMod.collection(col).doc(window.currentUser.id).update({
+                // Fix: Modular Firestore objects don't have .collection(); use window.db (Compat)
+                await window.db.collection(col).doc(window.currentUser.id).update({
                     fcmToken: token,
                     notificationsEnabled: true,
                     lastTokenRefresh: new Date().toISOString()
@@ -139,6 +139,15 @@ window.setupUserProfileListener = function(uid) {
         firebaseUnsubs.profile = null;
     }
 
+    // Safety Timeout: If Firestore is slow/blocked, force navigation after 4 seconds
+    // so the user isn't stuck on the login form indefinitely.
+    const routingTimeout = setTimeout(() => {
+        if (!window.isRouted && window.proceedToHome) {
+            console.warn("Firebase: Profile fetch timed out. Proceeding with local/cached data.");
+            window.proceedToHome(true);
+        }
+    }, 4000);
+
     // Optimized Collection Discovery Logic
     const roleHint = localStorage.getItem('kirya_user_role_hint');
     let collectionsToTry = ['users', 'admin_accounts', 'riders', 'restaurants'];
@@ -152,8 +161,11 @@ window.setupUserProfileListener = function(uid) {
         const coll = collectionsToTry[index];
         return onSnapshot(doc(window.dbMod, coll, uid), (snapshot) => {
             if (snapshot.exists()) {
+                clearTimeout(routingTimeout); // Cancel the safety timeout
                 const data = snapshot.data();
-                window.currentUser = { ...window.currentUser, ...data, id: uid, _collection: coll };
+                // Mark as not guest and ensure status defaults to active for admin collection if missing
+                window.currentUser = { ...window.currentUser, ...data, id: uid, _collection: coll, isGuest: false };
+                if (coll === 'admin_accounts' && !window.currentUser.status) window.currentUser.status = 'active';
                 
                 // Update local hint based on verified role
                 const newHint = (data.role === 'Super Admin' || data.role === 'Manager') ? 'admin' : data.role;
@@ -167,12 +179,14 @@ window.setupUserProfileListener = function(uid) {
                 }
             } else if (index < collectionsToTry.length - 1) {
                 // Fallback: Try next collection if not found here
+                clearTimeout(routingTimeout); // Reset timeout for next attempt if needed
                 if (firebaseUnsubs.profile) firebaseUnsubs.profile();
                 firebaseUnsubs.profile = startListener(index + 1);
             }
         }, (error) => {
             // Fallback: Try next collection if permission denied (likely wrong user type for this collection)
             if (error.code === 'permission-denied' && index < collectionsToTry.length - 1) {
+                clearTimeout(routingTimeout);
                 if (firebaseUnsubs.profile) firebaseUnsubs.profile();
                 firebaseUnsubs.profile = startListener(index + 1);
             } else {
@@ -218,8 +232,12 @@ function initFirebase() {
 
             if (user) {
                 console.log("Firebase: Auth state changed ->", user.uid);
-                if (!window.currentUser) window.currentUser = { id: user.uid };
-                else window.currentUser.id = user.uid;
+                // Immediately mark as not guest to allow routing to proceed if Firestore is slow
+                window.currentUser = { 
+                    ...(window.currentUser || {}), 
+                    id: user.uid, 
+                    isGuest: false 
+                };
 
                 if (window.setupUserProfileListener) window.setupUserProfileListener(user.uid);
                 if (window.setupFirebaseListeners) window.setupFirebaseListeners();
