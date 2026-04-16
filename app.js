@@ -248,6 +248,15 @@ window.onload = () => {
   window.renderAdminRestaurants = renderAdminRestaurants;
   window.renderAdminRiders = renderAdminRiders;
   window.renderAdminCustomers = renderAdminCustomers;
+  window.renderAdminCategories = renderAdminCategories;
+  window.renderAdminBanners = renderAdminBanners;
+  window.renderAdminFilters = renderAdminFilters;
+  window.renderAdminBrands = renderAdminBrands;
+  window.renderAdminDiscovery = renderAdminDiscovery;
+  window.renderAdminRewards = renderAdminRewards;
+  window.renderAdminReferrals = renderAdminReferrals;
+  window.renderAdminWallet = renderAdminWallet;
+  window.renderAdminNotificationsTab = renderAdminNotificationsTab;
   window.renderAdminPromotions = renderAdminPromotions;
   window.renderAdminPayments = renderAdminPayments;
   window.renderAdminSupport = renderAdminSupport;
@@ -384,6 +393,19 @@ window.onload = () => {
   window.assignSupportTicket = assignSupportTicket;
   window.viewSupportTicket = viewSupportTicket;
   window.openAdminModal = openAdminModal;
+  window.deleteAdminCategory = (id) => deleteAdminItem('category', id);
+  window.deleteAdminBanner = (id) => deleteAdminItem('banner', id);
+  window.deleteAdminFilter = (id) => deleteAdminItem('filter', id);
+  window.deleteAdminBrand = (id) => deleteAdminItem('brand', id);
+  window.deleteAdminDiscovery = (id) => deleteAdminItem('discovery', id);
+  window.deleteAdminReward = (id) => deleteAdminItem('reward', id);
+  window.deleteAdminGlobalNotif = (id) => deleteAdminItem('global_notif', id);
+  window.toggleAdminCategoryStatus = (id) => toggleAdminItemStatus('category', id);
+  window.toggleAdminBannerStatus = (id) => toggleAdminItemStatus('banner', id);
+  window.toggleAdminFilterStatus = (id) => toggleAdminItemStatus('filter', id);
+  window.toggleAdminBrandStatus = (id) => toggleAdminItemStatus('brand', id);
+  window.toggleAdminDiscoveryStatus = (id) => toggleAdminItemStatus('discovery', id);
+  window.toggleAdminRewardStatus = (id) => toggleAdminItemStatus('reward', id);
   window.deleteAdminItem = deleteAdminItem;
   window.toggleAdminItemStatus = toggleAdminItemStatus;
   window.toggleRiderAccountStatus = toggleRiderAccountStatus;
@@ -1676,6 +1698,70 @@ const MOCK_ANALYTICS = {
 };
 let adminAnalytics = {...MOCK_ANALYTICS};
 window.adminAnalytics = {...MOCK_ANALYTICS};
+
+const MOCK_CATEGORIES = [
+    { id: 1, name: 'Food', icon: '🍕', status: 'active' },
+    { id: 2, name: 'Groceries', icon: '🛒', status: 'active' },
+    { id: 3, name: 'Shops', icon: '🛍️', status: 'active' },
+    { id: 4, name: 'Pharmacies', icon: '💊', status: 'active' },
+    { id: 5, name: 'Packages', icon: '📦', status: 'active' },
+    { id: 6, name: 'Drinks', icon: '🥤', status: 'active' }
+];
+let adminCategories = [...MOCK_CATEGORIES];
+window.adminCategories = [...MOCK_CATEGORIES];
+
+const MOCK_BANNERS = [
+    { id: 1, headline: 'FreeDelivery on Your First order', sub: 'Treat yourself, we got it!', image: '🚴‍♂️', status: 'active' },
+    { id: 2, headline: '20% Off All Pizzas!', sub: 'This weekend only.', image: '🍕', status: 'active' },
+    { id: 3, headline: 'Fresh Groceries Delivered', sub: 'From farm to your table.', image: '🛒', status: 'active' }
+];
+let adminBanners = [...MOCK_BANNERS];
+
+const MOCK_FILTERS = [
+    { id: 1, name: 'Promotions', icon: '🏷️', status: 'active' },
+    { id: 2, name: 'Fast Food', icon: '🍟', status: 'active' },
+    { id: 3, name: 'Chicken', icon: '🍗', status: 'active' },
+    { id: 4, name: 'Burgers', icon: '🍔', status: 'active' }
+];
+let adminFiltersList = [...MOCK_FILTERS];
+
+const MOCK_BRANDS = [
+    { id: 1, name: "McDonald's", icon: '🍔', deliveryInfo: 'Free delivery', status: 'active' },
+    { id: 2, name: 'KFC', icon: '🍗', deliveryInfo: 'Free delivery', status: 'active' },
+    { id: 3, name: 'Pizza Hut', icon: '🍕', deliveryInfo: 'Free delivery', status: 'active' }
+];
+let adminBrands = [...MOCK_BRANDS];
+
+const MOCK_DISCOVERY = [
+    { id: 1, title: 'These Are For You', sub: 'Personalized shop recommendations', type: 'Horizontal Scroll', status: 'active' },
+    { id: 2, title: 'For You', sub: 'Handpicked restaurant grid', type: 'Grid', status: 'active' }
+];
+let adminDiscovery = [...MOCK_DISCOVERY];
+
+const MOCK_ADMIN_REWARDS = [
+    { id: 1, title: 'UGX 5.00 Off Delivery', desc: 'Valid on any order above UGX 20.00', cost: 500, icon: '🛵', status: 'active' },
+    { id: 2, title: '10% Off Food Order', desc: 'Max discount UGX 15.00', cost: 1000, icon: '🍔', status: 'active' },
+    { id: 3, title: 'Free Drink', desc: 'Participating stores only', cost: 750, icon: '🥤', status: 'active' }
+];
+let adminRewardsList = [...MOCK_ADMIN_REWARDS];
+
+const MOCK_ADMIN_REFERRALS = [
+    { id: 1, referrer: 'John Doe', referred: 'Sarah Smith', reward: 5000, date: '2024-01-14', status: 'completed' },
+    { id: 2, referrer: 'John Doe', referred: 'Mike Jones', reward: 5000, date: '2024-01-15', status: 'pending' }
+];
+let adminReferralsList = [...MOCK_ADMIN_REFERRALS];
+
+const MOCK_ADMIN_WALLETS = [
+    { id: 1, name: 'John Doe', balance: 15000, points: 1250, lastTx: 'Yesterday' },
+    { id: 2, name: 'Sarah Ahmed', balance: 4500, points: 800, lastTx: 'Today' }
+];
+let adminWalletsList = [...MOCK_ADMIN_WALLETS];
+
+const MOCK_ADMIN_NOTIFS = [
+    { id: 1, type: 'info', title: 'Weekend Promo', body: 'Get 20% off this Sunday!', target: 'All Users', date: '2024-01-12' },
+    { id: 2, type: 'update', title: 'System Maintenance', body: 'Scheduled for 2AM Monday.', target: 'Riders', date: '2024-01-14' }
+];
+let adminGlobalNotifs = [...MOCK_ADMIN_NOTIFS];
 
 // --- SYNC LOGIC START ---
 // Initialize from LocalStorage or use Mock Data
@@ -7488,6 +7574,33 @@ function renderAdminTabContent(tabName) {
         case 'analytics':
             renderAdminAnalytics();
             break;
+        case 'categories':
+            renderAdminCategories();
+            break;
+        case 'banners':
+            renderAdminBanners();
+            break;
+        case 'filters':
+            renderAdminFilters();
+            break;
+        case 'brands':
+            renderAdminBrands();
+            break;
+        case 'discovery':
+            renderAdminDiscovery();
+            break;
+        case 'rewards':
+            renderAdminRewards();
+            break;
+        case 'referrals':
+            renderAdminReferrals();
+            break;
+        case 'wallet':
+            renderAdminWallet();
+            break;
+        case 'notifications':
+            renderAdminNotificationsTab();
+            break;
         case 'config':
             renderAdminConfig();
             break;
@@ -7588,6 +7701,166 @@ function renderAdminDashboard() {
     } catch(e) {
         console.error("Dashboard Render Error:", e);
     }
+}
+
+function renderAdminCategories() {
+    const tbody = document.getElementById('adminCategoriesListTable');
+    if (!tbody) return;
+    
+    tbody.innerHTML = adminCategories.map(cat => `
+        <tr>
+            <td>
+                <div style="width:40px; height:40px; background:#f0f0f0; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.5em; border:1px solid #eee; overflow:hidden;">
+                    ${window.getImageHtml(cat.icon, '📁')}
+                </div>
+            </td>
+            <td><div style="font-weight:bold; font-size:1.1em;">${cat.name}</div></td>
+            <td><span style="background:${cat.status === 'active' ? '#4caf50' : '#f44336'}; color:#fff; padding:4px 10px; border-radius:12px; font-size:0.75em; font-weight:600;">${cat.status.toUpperCase()}</span></td>
+            <td>
+                <button onclick="toggleAdminCategoryStatus(${cat.id})" class="action-btn-table" style="background:#2196f3; color:#fff;">${cat.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                <button onclick="openAdminModal('category', ${cat.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
+                <button onclick="deleteAdminCategory(${cat.id})" class="action-btn-table" style="background:#f44336; color:#fff;">Delete</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderAdminBanners() {
+    const tbody = document.getElementById('adminBannersListTable');
+    if (!tbody) return;
+    tbody.innerHTML = adminBanners.map(b => `
+        <tr>
+            <td><div style="width:60px; height:35px; background:#f0f0f0; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:1.2em; border:1px solid #eee;">${window.getImageHtml(b.image, '🖼️')}</div></td>
+            <td><div style="font-weight:bold;">${b.headline}</div></td>
+            <td style="font-size:0.85em; color:#666;">${b.sub}</td>
+            <td><span style="background:${b.status === 'active' ? '#4caf50' : '#f44336'}; color:#fff; padding:4px 10px; border-radius:12px; font-size:0.75em; font-weight:600;">${b.status.toUpperCase()}</span></td>
+            <td>
+                <button onclick="toggleAdminBannerStatus(${b.id})" class="action-btn-table" style="background:#2196f3; color:#fff;">${b.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                <button onclick="openAdminModal('banner', ${b.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
+                <button onclick="deleteAdminBanner(${b.id})" class="action-btn-table" style="background:#f44336; color:#fff;">Delete</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderAdminFilters() {
+    const tbody = document.getElementById('adminFiltersListTable');
+    if (!tbody) return;
+    tbody.innerHTML = adminFiltersList.map(f => `
+        <tr>
+            <td><div style="font-size:1.5em;">${f.icon}</div></td>
+            <td><div style="font-weight:bold;">${f.name}</div></td>
+            <td><span style="background:${f.status === 'active' ? '#4caf50' : '#f44336'}; color:#fff; padding:4px 10px; border-radius:12px; font-size:0.75em; font-weight:600;">${f.status.toUpperCase()}</span></td>
+            <td>
+                <button onclick="toggleAdminFilterStatus(${f.id})" class="action-btn-table" style="background:#2196f3; color:#fff;">${f.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                <button onclick="openAdminModal('filter', ${f.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
+                <button onclick="deleteAdminFilter(${f.id})" class="action-btn-table" style="background:#f44336; color:#fff;">Delete</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderAdminBrands() {
+    const tbody = document.getElementById('adminBrandsListTable');
+    if (!tbody) return;
+    tbody.innerHTML = adminBrands.map(b => `
+        <tr>
+            <td><div style="width:40px; height:40px; background:#f0f0f0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2em; border:1px solid #eee; overflow:hidden;">${window.getImageHtml(b.icon, '🌟')}</div></td>
+            <td><div style="font-weight:bold;">${b.name}</div></td>
+            <td style="font-size:0.85em; color:#666;">${b.deliveryInfo}</td>
+            <td><span style="background:${b.status === 'active' ? '#4caf50' : '#f44336'}; color:#fff; padding:4px 10px; border-radius:12px; font-size:0.75em; font-weight:600;">${b.status.toUpperCase()}</span></td>
+            <td>
+                <button onclick="toggleAdminBrandStatus(${b.id})" class="action-btn-table" style="background:#2196f3; color:#fff;">${b.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                <button onclick="openAdminModal('brand', ${b.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
+                <button onclick="deleteAdminBrand(${b.id})" class="action-btn-table" style="background:#f44336; color:#fff;">Delete</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderAdminDiscovery() {
+    const tbody = document.getElementById('adminDiscoveryListTable');
+    if (!tbody) return;
+    tbody.innerHTML = adminDiscovery.map(d => `
+        <tr>
+            <td><div style="font-weight:bold;">${d.title}</div></td>
+            <td style="font-size:0.85em; color:#666;">${d.sub}</td>
+            <td><span style="background:#eee; padding:4px 8px; border-radius:4px; font-size:0.8em;">${d.type}</span></td>
+            <td><span style="background:${d.status === 'active' ? '#4caf50' : '#f44336'}; color:#fff; padding:4px 10px; border-radius:12px; font-size:0.75em; font-weight:600;">${d.status.toUpperCase()}</span></td>
+            <td>
+                <button onclick="toggleAdminDiscoveryStatus(${d.id})" class="action-btn-table" style="background:#2196f3; color:#fff;">${d.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                <button onclick="openAdminModal('discovery', ${d.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
+                <button onclick="deleteAdminDiscovery(${d.id})" class="action-btn-table" style="background:#f44336; color:#fff;">Delete</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderAdminRewards() {
+    const tbody = document.getElementById('adminRewardsListTable');
+    if (!tbody) return;
+    tbody.innerHTML = adminRewardsList.map(r => `
+        <tr>
+            <td><div style="font-size:1.5em;">${r.icon}</div></td>
+            <td><div style="font-weight:bold;">${r.title}</div></td>
+            <td style="font-size:0.85em; color:#666;">${r.desc}</td>
+            <td><div style="font-weight:bold; color:#019E81;">${r.cost} Pts</div></td>
+            <td><span style="background:${r.status === 'active' ? '#4caf50' : '#f44336'}; color:#fff; padding:4px 10px; border-radius:12px; font-size:0.75em; font-weight:600;">${r.status.toUpperCase()}</span></td>
+            <td>
+                <button onclick="toggleAdminRewardStatus(${r.id})" class="action-btn-table" style="background:#2196f3; color:#fff;">${r.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                <button onclick="openAdminModal('reward', ${r.id})" class="action-btn-table" style="background:#ff9800; color:#fff;">Edit</button>
+                <button onclick="deleteAdminReward(${r.id})" class="action-btn-table" style="background:#f44336; color:#fff;">Delete</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderAdminReferrals() {
+    const tbody = document.getElementById('adminReferralsListTable');
+    if (!tbody) return;
+    tbody.innerHTML = adminReferralsList.map(r => `
+        <tr>
+            <td><div style="font-weight:bold;">${r.referrer}</div></td>
+            <td>${r.referred}</td>
+            <td><div style="font-weight:bold; color:#019E81;">UGX ${r.reward.toLocaleString()}</div></td>
+            <td style="font-size:0.85em; color:#666;">${r.date}</td>
+            <td><span style="background:${r.status === 'completed' ? '#4caf50' : '#ff9800'}; color:#fff; padding:4px 10px; border-radius:12px; font-size:0.75em; font-weight:600;">${r.status.toUpperCase()}</span></td>
+        </tr>
+    `).join('');
+}
+
+function renderAdminWallet() {
+    const tbody = document.getElementById('adminWalletListTable');
+    if (!tbody) return;
+    tbody.innerHTML = adminWalletsList.map(w => `
+        <tr>
+            <td><div style="font-weight:bold;">${w.name}</div></td>
+            <td><div style="font-weight:bold; color:#019E81;">UGX ${w.balance.toLocaleString()}</div></td>
+            <td><div style="font-weight:bold;">${w.points.toLocaleString()} ⭐</div></td>
+            <td style="font-size:0.85em; color:#666;">${w.lastTx}</td>
+            <td>
+                <button onclick="openAdminModal('wallet_adjustment', ${w.id})" class="action-btn-table" style="background:#019E81; color:#fff;">Adjust</button>
+                <button onclick="showToast('History for ${w.name} coming soon')" class="action-btn-table" style="background:#607d8b; color:#fff;">History</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderAdminNotificationsTab() {
+    const tbody = document.getElementById('adminNotifsListTable');
+    if (!tbody) return;
+    tbody.innerHTML = adminGlobalNotifs.map(n => `
+        <tr>
+            <td><span style="background:#eee; padding:4px 8px; border-radius:4px; font-size:0.75em; font-weight:bold;">${n.type.toUpperCase()}</span></td>
+            <td><div style="font-weight:bold;">${n.title}</div></td>
+            <td style="font-size:0.85em; color:#666; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${n.body}</td>
+            <td><div style="font-size:0.85em;">${n.target}</div></td>
+            <td style="font-size:0.85em; color:#666;">${n.date}</td>
+            <td>
+                <button onclick="deleteAdminGlobalNotif(${n.id})" class="action-btn-table" style="background:#f44336; color:#fff;">Delete</button>
+            </td>
+        </tr>
+    `).join('');
 }
 
 function renderAdminOrders() {
@@ -7869,6 +8142,13 @@ async function deleteAdminItem(type, id) {
         restaurant: { data: adminRestaurants, name: 'Restaurant', render: renderAdminRestaurants, storageKey: 'kirya_restaurants' },
         rider: { data: adminRiders, name: 'Rider', render: renderAdminRiders, storageKey: 'kirya_riders' },
         customer: { data: adminCustomers, name: 'Customer', render: renderAdminCustomers },
+        category: { data: adminCategories, name: 'Category', render: renderAdminCategories },
+        banner: { data: adminBanners, name: 'Ads Banner', render: renderAdminBanners },
+        filter: { data: adminFiltersList, name: 'Home Filter', render: renderAdminFilters },
+        brand: { data: adminBrands, name: 'Popular Brand', render: renderAdminBrands },
+        discovery: { data: adminDiscovery, name: 'Discovery Section', render: renderAdminDiscovery },
+        reward: { data: adminRewardsList, name: 'Reward Coupon', render: renderAdminRewards },
+        global_notif: { data: adminGlobalNotifs, name: 'Global Notification', render: renderAdminNotificationsTab },
         account: { data: adminAccounts, name: 'Admin Account', render: renderAdminAccounts }
     };
     const itemConfig = typeMap[type];
@@ -8262,7 +8542,14 @@ function toggleAdminItemStatus(type, id, activeStatus = 'active', inactiveStatus
     const typeMap = {
         restaurant: { data: adminRestaurants, render: renderAdminRestaurants, storageKey: 'kirya_restaurants' },
         customer: { data: adminCustomers, render: renderAdminCustomers },
-        account: { data: adminAccounts, render: renderAdminAccounts }
+        account: { data: adminAccounts, render: renderAdminAccounts },
+        category: { data: adminCategories, render: renderAdminCategories },
+        banner: { data: adminBanners, render: renderAdminBanners },
+        filter: { data: adminFiltersList, render: renderAdminFilters },
+        brand: { data: adminBrands, render: renderAdminBrands },
+        discovery: { data: adminDiscovery, render: renderAdminDiscovery },
+        reward: { data: adminRewardsList, render: renderAdminRewards },
+        global_notif: { data: adminGlobalNotifs, render: renderAdminNotificationsTab }
     };
     const itemConfig = typeMap[type];
     if (!itemConfig) return;
@@ -10250,6 +10537,132 @@ function openAdminModal(type, id = null) {
         setTimeout(() => {
             setupPreview(['addAccountProfileURL', 'addAccountProfilePhoto'], 'addAccountProfilePreview', '🔐');
         }, 0);
+    } else if (type === 'category') {
+        const cat = id ? adminCategories.find(i => i.id == id) : {};
+        title.textContent = id ? 'Edit Category' : 'Add New Category';
+        formHtml = `
+            <label for="addCategoryName" class="admin-form-label">Category Name</label>
+            <input type="text" id="addCategoryName" placeholder="e.g., Food" class="admin-form-input" value="${cat.name || ''}">
+            
+            <div style="background:#f9f9f9; padding:15px; border-radius:12px; margin-top:15px; border:1px solid #eee;">
+                <label class="admin-form-label" style="margin-top:0;">Category Icon (Emoji or URL)</label>
+                <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+                    <input type="text" id="addCategoryIconURL" placeholder="Click folder to pick or enter URL..." class="admin-form-input" style="margin-bottom:0;" value="${cat.icon || ''}">
+                    <button onclick="openImagePicker('addCategoryIconURL')" style="padding:10px; background:#fff; border:1px solid #ddd; border-radius:8px; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.05);">📂</button>
+                    <div id="addCategoryIconPreview" style="width:45px; height:45px; background:#fff; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid #ddd; flex-shrink:0;"></div>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center; margin-top:10px;">
+                    <div style="flex:1;">
+                        <label class="admin-form-label">Or Upload Custom Icon</label>
+                        <input type="file" id="addCategoryIconPhoto" class="admin-form-input" accept="image/*" style="background:#fff;">
+                    </div>
+                    <button id="addCategoryIconPreviewRemove" style="padding:8px 12px; background:#f0f0f0; border:1px solid #ddd; border-radius:8px; font-size:0.85em; cursor:pointer; display:none; margin-top:10px;">Remove</button>
+                </div>
+            </div>
+        `;
+        saveBtn.onclick = () => saveAdminData('category');
+        setTimeout(() => {
+            setupPreview(['addCategoryIconURL', 'addCategoryIconPhoto'], 'addCategoryIconPreview', '📁');
+        }, 0);
+    } else if (type === 'banner') {
+        const b = id ? adminBanners.find(i => i.id == id) : {};
+        title.textContent = id ? 'Edit Banner' : 'Add New Banner';
+        formHtml = `
+            <label for="addBannerHeadline" class="admin-form-label">Headline</label>
+            <input type="text" id="addBannerHeadline" class="admin-form-input" value="${b.headline || ''}">
+            <label for="addBannerSub" class="admin-form-label">Subtext</label>
+            <input type="text" id="addBannerSub" class="admin-form-input" value="${b.sub || ''}">
+            <label class="admin-form-label">Banner Image (Emoji or URL)</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <input type="text" id="addBannerImageURL" class="admin-form-input" style="margin-bottom:0;" value="${b.image || ''}">
+                <div id="addBannerImagePreview" style="width:45px; height:45px; background:#eee; border-radius:8px; display:flex; align-items:center; justify-content:center; border:1px solid #ddd; flex-shrink:0;"></div>
+            </div>
+            <input type="file" id="addBannerImagePhoto" class="admin-form-input" accept="image/*" style="margin-top:10px;">
+        `;
+        saveBtn.onclick = () => saveAdminData('banner');
+        setTimeout(() => setupPreview(['addBannerImageURL', 'addBannerImagePhoto'], 'addBannerImagePreview', '🖼️'), 0);
+    } else if (type === 'filter') {
+        const f = id ? adminFiltersList.find(i => i.id == id) : {};
+        title.textContent = id ? 'Edit Filter' : 'Add New Filter';
+        formHtml = `
+            <label for="addFilterName" class="admin-form-label">Filter Name</label>
+            <input type="text" id="addFilterName" class="admin-form-input" value="${f.name || ''}">
+            <label for="addFilterIcon" class="admin-form-label">Icon (Emoji)</label>
+            <input type="text" id="addFilterIcon" class="admin-form-input" value="${f.icon || ''}">
+        `;
+        saveBtn.onclick = () => saveAdminData('filter');
+    } else if (type === 'brand') {
+        const b = id ? adminBrands.find(i => i.id == id) : {};
+        title.textContent = id ? 'Edit Brand' : 'Add New Brand';
+        formHtml = `
+            <label for="addBrandName" class="admin-form-label">Brand Name</label>
+            <input type="text" id="addBrandName" class="admin-form-input" value="${b.name || ''}">
+            <label for="addBrandInfo" class="admin-form-label">Delivery Info</label>
+            <input type="text" id="addBrandInfo" class="admin-form-input" value="${b.deliveryInfo || 'Free delivery'}">
+            <label class="admin-form-label">Brand Logo (Emoji or URL)</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <input type="text" id="addBrandIconURL" class="admin-form-input" style="margin-bottom:0;" value="${b.icon || ''}">
+                <div id="addBrandIconPreview" style="width:45px; height:45px; background:#eee; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid #ddd; flex-shrink:0; overflow:hidden;"></div>
+            </div>
+            <input type="file" id="addBrandIconPhoto" class="admin-form-input" accept="image/*" style="margin-top:10px;">
+        `;
+        saveBtn.onclick = () => saveAdminData('brand');
+        setTimeout(() => setupPreview(['addBrandIconURL', 'addBrandIconPhoto'], 'addBrandIconPreview', '🌟'), 0);
+    } else if (type === 'discovery') {
+        const d = id ? adminDiscovery.find(i => i.id == id) : {};
+        title.textContent = id ? 'Edit Discovery Section' : 'Add Discovery Section';
+        formHtml = `
+            <label for="addDiscoveryTitle" class="admin-form-label">Section Title</label>
+            <input type="text" id="addDiscoveryTitle" class="admin-form-input" value="${d.title || ''}">
+            <label for="addDiscoverySub" class="admin-form-label">Subtitle / Logic Description</label>
+            <input type="text" id="addDiscoverySub" class="admin-form-input" value="${d.sub || ''}">
+            <label for="addDiscoveryType" class="admin-form-label">Layout Type</label>
+            <select id="addDiscoveryType" class="admin-form-input">
+                <option value="Horizontal Scroll" ${d.type === 'Horizontal Scroll' ? 'selected' : ''}>Horizontal Scroll</option>
+                <option value="Grid" ${d.type === 'Grid' ? 'selected' : ''}>Grid</option>
+            </select>
+        `;
+        saveBtn.onclick = () => saveAdminData('discovery');
+    } else if (type === 'reward') {
+        const r = id ? adminRewardsList.find(i => i.id == id) : {};
+        title.textContent = id ? 'Edit Reward Coupon' : 'Add New Coupon';
+        formHtml = `
+            <label for="addRewardTitle" class="admin-form-label">Coupon Title</label>
+            <input type="text" id="addRewardTitle" class="admin-form-input" value="${r.title || ''}">
+            <label for="addRewardDesc" class="admin-form-label">Description</label>
+            <input type="text" id="addRewardDesc" class="admin-form-input" value="${r.desc || ''}">
+            <label for="addRewardCost" class="admin-form-label">Cost (Points)</label>
+            <input type="number" id="addRewardCost" class="admin-form-input" value="${r.cost || 500}">
+            <label for="addRewardIcon" class="admin-form-label">Icon (Emoji)</label>
+            <input type="text" id="addRewardIcon" class="admin-form-input" value="${r.icon || '⭐'}">
+        `;
+        saveBtn.onclick = () => saveAdminData('reward');
+    } else if (type === 'global_notif') {
+        title.textContent = 'Send Global Broadcast';
+        formHtml = `
+            <label for="addNotifType" class="admin-form-label">Notification Type</label>
+            <select id="addNotifType" class="admin-form-input">
+                <option value="info">Information</option>
+                <option value="update">Update</option>
+                <option value="promo">Promotion</option>
+            </select>
+            <label for="addNotifTarget" class="admin-form-label">Target Audience</label>
+            <select id="addNotifTarget" class="admin-form-input">
+                <option value="All Users">All Users</option>
+                <option value="Active Users">Active Users Only</option>
+                <option value="Riders Only">Riders Only</option>
+                <option value="Vendors Only">Vendors Only</option>
+            </select>
+            <label for="addNotifTitle" class="admin-form-label">Title</label>
+            <input type="text" id="addNotifTitle" class="admin-form-input" placeholder="e.g., Weekend Special!">
+            <label for="addNotifBody" class="admin-form-label">Message Body</label>
+            <textarea id="addNotifBody" class="admin-form-input" style="height:80px;"></textarea>
+        `;
+        saveBtn.onclick = () => saveAdminData('global_notif');
+    } else if (type === 'wallet_adjustment') {
+        title.textContent = 'Adjust User Balance';
+        formHtml = `<p>Coming soon: Form to Top up or Deduct from User Balance.</p>`;
+        saveBtn.style.display = 'none';
     }
 
     form.innerHTML = formHtml;
@@ -10560,6 +10973,116 @@ async function saveAdminData(type) {
             adminAccounts.push({ ...data, id: Date.now() });
         }
         renderAdminAccounts();
+    } else if (type === 'category') {
+        const data = {
+            id: editingAdminId || Date.now(),
+            name: document.getElementById('addCategoryName').value.trim(),
+            icon: document.getElementById('addCategoryIconURL').value.trim(),
+            status: 'active'
+        };
+
+        const photoFile = document.getElementById('addCategoryIconPhoto').files[0];
+        if (photoFile) {
+            try {
+                const blob = await compressImage(photoFile);
+                data.icon = await uploadImageToStorage(blob, `categories/${Date.now()}_icon.jpg`);
+                addToRecentUploads(data.icon);
+            } catch (err) {
+                showToast("Failed to upload icon."); 
+                if (window.hideLoading) window.hideLoading(); return;
+            }
+        }
+
+        if (!data.name || !data.icon) { showToast('Name and Icon are required.'); if (window.hideLoading) window.hideLoading(); return; }
+
+        if (editingAdminId) {
+            const index = adminCategories.findIndex(c => c.id == editingAdminId);
+            if (index > -1) adminCategories[index] = { ...adminCategories[index], ...data };
+        } else {
+            adminCategories.push(data);
+        }
+        renderAdminCategories();
+    } else if (type === 'banner') {
+        const data = {
+            id: editingAdminId || Date.now(),
+            headline: document.getElementById('addBannerHeadline').value,
+            sub: document.getElementById('addBannerSub').value,
+            image: document.getElementById('addBannerImageURL').value,
+            status: 'active'
+        };
+        if (editingAdminId) {
+            const index = adminBanners.findIndex(b => b.id == editingAdminId);
+            if (index > -1) adminBanners[index] = { ...adminBanners[index], ...data };
+        } else adminBanners.push(data);
+        renderAdminBanners();
+    } else if (type === 'filter') {
+        const data = {
+            id: editingAdminId || Date.now(),
+            name: document.getElementById('addFilterName').value,
+            icon: document.getElementById('addFilterIcon').value,
+            status: 'active'
+        };
+        if (editingAdminId) {
+            const index = adminFiltersList.findIndex(f => f.id == editingAdminId);
+            if (index > -1) adminFiltersList[index] = { ...adminFiltersList[index], ...data };
+        } else adminFiltersList.push(data);
+        renderAdminFilters();
+    } else if (type === 'brand') {
+        const data = {
+            id: editingAdminId || Date.now(),
+            name: document.getElementById('addBrandName').value,
+            deliveryInfo: document.getElementById('addBrandInfo').value,
+            icon: document.getElementById('addBrandIconURL').value,
+            status: 'active'
+        };
+        if (editingAdminId) {
+            const index = adminBrands.findIndex(b => b.id == editingAdminId);
+            if (index > -1) adminBrands[index] = { ...adminBrands[index], ...data };
+        } else adminBrands.push(data);
+        renderAdminBrands();
+    } else if (type === 'discovery') {
+        const data = {
+            id: editingAdminId || Date.now(),
+            title: document.getElementById('addDiscoveryTitle').value,
+            sub: document.getElementById('addDiscoverySub').value,
+            type: document.getElementById('addDiscoveryType').value,
+            status: 'active'
+        };
+        if (editingAdminId) {
+            const index = adminDiscovery.findIndex(d => d.id == editingAdminId);
+            if (index > -1) adminDiscovery[index] = { ...adminDiscovery[index], ...data };
+        } else adminDiscovery.push(data);
+        renderAdminDiscovery();
+    } else if (type === 'reward') {
+        const data = {
+            id: editingAdminId || Date.now(),
+            title: document.getElementById('addRewardTitle').value,
+            desc: document.getElementById('addRewardDesc').value,
+            cost: parseInt(document.getElementById('addRewardCost').value),
+            icon: document.getElementById('addRewardIcon').value,
+            status: 'active'
+        };
+        if (editingAdminId) {
+            const index = adminRewardsList.findIndex(r => r.id == editingAdminId);
+            if (index > -1) adminRewardsList[index] = { ...adminRewardsList[index], ...data };
+        } else adminRewardsList.push(data);
+        renderAdminRewards();
+    } else if (type === 'global_notif') {
+        const data = {
+            id: Date.now(),
+            type: document.getElementById('addNotifType').value,
+            title: document.getElementById('addNotifTitle').value,
+            body: document.getElementById('addNotifBody').value,
+            target: document.getElementById('addNotifTarget').value,
+            date: new Date().toISOString().slice(0, 10)
+        };
+        adminGlobalNotifs.unshift(data);
+        renderAdminNotificationsTab();
+        showToast(`Broadcast sent to ${data.target}`);
+        // Also trigger the existing broadcast logic if desired
+        closeAdminAddModal();
+        if (window.hideLoading) window.hideLoading();
+        return;
     }
 
     // Request Auth User Creation (Requires Cloud Function)

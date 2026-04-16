@@ -1347,12 +1347,28 @@
       <div class="sidebar-section">
         <div class="sidebar-section-title">Management</div>
         <div class="sidebar-item" onclick="switchAdminTab('promotions')">
-          <span class="sidebar-item-icon">🎁</span>
+          <span class="sidebar-item-icon">🏷️</span>
           <span>Promotions</span>
+        </div>
+        <div class="sidebar-item" onclick="switchAdminTab('rewards')">
+          <span class="sidebar-item-icon">⭐</span>
+          <span>Rewards</span>
+        </div>
+        <div class="sidebar-item" onclick="switchAdminTab('referrals')">
+          <span class="sidebar-item-icon">🎁</span>
+          <span>Referrals</span>
+        </div>
+        <div class="sidebar-item" onclick="switchAdminTab('wallet')">
+          <span class="sidebar-item-icon">💰</span>
+          <span>Wallet & Credits</span>
         </div>
         <div class="sidebar-item" onclick="switchAdminTab('payments')">
           <span class="sidebar-item-icon">💳</span>
           <span>Payments</span>
+        </div>
+        <div class="sidebar-item" onclick="switchAdminTab('notifications')">
+          <span class="sidebar-item-icon">🔔</span>
+          <span>Notifications</span>
         </div>
         <div class="sidebar-item" onclick="switchAdminTab('support')">
           <span class="sidebar-item-icon">🎧</span>
@@ -1366,10 +1382,38 @@
       </div>
 
       <div class="sidebar-section">
+        <div class="sidebar-section-title">App Customization</div>
+        <div class="sidebar-item" onclick="switchAdminTab('categories')">
+          <span class="sidebar-item-icon">🗂️</span>
+          <span>Categories Grid</span>
+        </div>
+        <div class="sidebar-item" onclick="switchAdminTab('banners')">
+          <span class="sidebar-item-icon">🖼️</span>
+          <span>Ads Banners</span>
+        </div>
+        <div class="sidebar-item" onclick="switchAdminTab('filters')">
+          <span class="sidebar-item-icon">🔍</span>
+          <span>Home Filters</span>
+        </div>
+        <div class="sidebar-item" onclick="switchAdminTab('brands')">
+          <span class="sidebar-item-icon">🌟</span>
+          <span>Popular Brands</span>
+        </div>
+        <div class="sidebar-item" onclick="switchAdminTab('discovery')">
+          <span class="sidebar-item-icon">✨</span>
+          <span>Discovery Sections</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
         <div class="sidebar-section-title">Settings</div>
         <div class="sidebar-item" onclick="switchAdminTab('config')">
           <span class="sidebar-item-icon">⚙️</span>
           <span>Configuration</span>
+        </div>
+        <div class="sidebar-item" onclick="switchAdminTab('terms')">
+          <span class="sidebar-item-icon">📜</span>
+          <span>Terms & Legal</span>
         </div>
         <div class="sidebar-item" onclick="switchAdminTab('accounts')">
           <span class="sidebar-item-icon">🔐</span>
@@ -1458,6 +1502,108 @@
           </div>
         </div>
 
+        <!-- Rewards Tab -->
+        <div id="admin-rewards" class="admin-tab-content" style="display:none;">
+          <div class="dashboard-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+              <h3 style="margin:0;">⭐ Rewards & Coupons</h3>
+              <button onclick="openAdminModal('reward')" class="add-more-items-btn" style="width:auto; margin:0;">+ Add New Coupon</button>
+            </div>
+            <p>Manage redeemable coupons and points requirements.</p>
+            <div style="overflow-x:auto; margin-top:15px;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Icon</th>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>Cost (Pts)</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminRewardsListTable"></tbody>
+                </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Referrals Tab -->
+        <div id="admin-referrals" class="admin-tab-content" style="display:none;">
+          <div class="dashboard-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+              <h3 style="margin:0;">🎁 Referral Program</h3>
+              <button onclick="openAdminModal('referral_config')" class="add-more-items-btn" style="width:auto; margin:0;">⚙️ Referral Settings</button>
+            </div>
+            <p>Track successful referrals and rewarded users.</p>
+            <div style="overflow-x:auto; margin-top:15px;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Referrer</th>
+                            <th>Referred User</th>
+                            <th>Reward (UGX)</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminReferralsListTable"></tbody>
+                </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wallet Management Tab -->
+        <div id="admin-wallet" class="admin-tab-content" style="display:none;">
+          <div class="dashboard-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+              <h3 style="margin:0;">💰 Wallet Management</h3>
+              <button onclick="openAdminModal('wallet_adjustment')" class="add-more-items-btn" style="width:auto; margin:0;">💸 Adjust Balance</button>
+            </div>
+            <p>Manage user balances and UGX credits.</p>
+            <div style="overflow-x:auto; margin-top:15px;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Balance (UGX)</th>
+                            <th>Points</th>
+                            <th>Last Transaction</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminWalletListTable"></tbody>
+                </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notifications Tab -->
+        <div id="admin-notifications" class="admin-tab-content" style="display:none;">
+          <div class="dashboard-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+              <h3 style="margin:0;">🔔 Broadcast Notifications</h3>
+              <button onclick="openAdminModal('global_notif')" class="add-more-items-btn" style="width:auto; margin:0;">📣 Send Broadcast</button>
+            </div>
+            <p>History of sent global app-wide messages.</p>
+            <div style="overflow-x:auto; margin-top:15px;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Title</th>
+                            <th>Message</th>
+                            <th>Target</th>
+                            <th>Sent Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminNotifsListTable"></tbody>
+                </table>
+            </div>
+          </div>
+        </div>
+
         <!-- Promotions Tab -->
         <div id="admin-promotions" class="admin-tab-content" style="display:none;">
           <div class="dashboard-card">
@@ -1490,6 +1636,136 @@
           </div>
         </div>
 
+        <!-- Categories Tab -->
+        <div id="admin-categories" class="admin-tab-content" style="display:none;">
+          <div class="dashboard-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+              <h3 style="margin:0;">🗂️ Home Categories Management</h3>
+              <button onclick="openAdminModal('category')" class="add-more-items-btn" style="width:auto; margin:0;">+ Add New Category</button>
+            </div>
+            <p>Manage the top grid: <b>Food, Groceries, Shops, Pharmacies, Packages, Drinks</b>.</p>
+            
+            <div style="overflow-x:auto; margin-top:15px;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Icon / Photo</th>
+                            <th>Category Name</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminCategoriesListTable">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Banners Tab -->
+        <div id="admin-banners" class="admin-tab-content" style="display:none;">
+          <div class="dashboard-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+              <h3 style="margin:0;">🖼️ Ads Banners</h3>
+              <button onclick="openAdminModal('banner')" class="add-more-items-btn" style="width:auto; margin:0;">+ Add New Banner</button>
+            </div>
+            <p>Manage carousel banners like: <i>"Free Delivery"</i> or <i>"20% Off Pizzas"</i>.</p>
+            
+            <div style="overflow-x:auto; margin-top:15px;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Preview</th>
+                            <th>Headline</th>
+                            <th>Subtext</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminBannersListTable"></tbody>
+                </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters Tab -->
+        <div id="admin-filters" class="admin-tab-content" style="display:none;">
+          <div class="dashboard-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+              <h3 style="margin:0;">🔍 Home Content Filters</h3>
+              <button onclick="openAdminModal('filter')" class="add-more-items-btn" style="width:auto; margin:0;">+ Add New Filter</button>
+            </div>
+            <p>Manage filters: <b>Promotions, Fast Food, Chicken, Burgers, Halal, Snacks, Grill, Pizza...</b></p>
+            
+            <div style="overflow-x:auto; margin-top:15px;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Icon</th>
+                            <th>Filter Name</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminFiltersListTable"></tbody>
+                </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Brands Tab -->
+        <div id="admin-brands" class="admin-tab-content" style="display:none;">
+          <div class="dashboard-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+              <h3 style="margin:0;">🌟 Popular Brands</h3>
+              <button onclick="openAdminModal('brand')" class="add-more-items-btn" style="width:auto; margin:0;">+ Add New Brand</button>
+            </div>
+            <p>Manage brands: <b>McDonald's, KFC, Pizza Hut, Starbucks, Subway</b>.</p>
+            
+            <div style="overflow-x:auto; margin-top:15px;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Logo</th>
+                            <th>Brand Name</th>
+                            <th>Delivery Info</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminBrandsListTable"></tbody>
+                </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Discovery Tab -->
+        <div id="admin-discovery" class="admin-tab-content" style="display:none;">
+          <div class="dashboard-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+              <h3 style="margin:0;">✨ Discovery Sections</h3>
+              <button onclick="openAdminModal('discovery')" class="add-more-items-btn" style="width:auto; margin:0;">+ Add Section</button>
+            </div>
+            <p>Control the <b>"These Are For You"</b> horizontal scroll and <b>"For You"</b> grid.</p>
+            
+            <div style="overflow-x:auto; margin-top:15px;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Subtitle / Description</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminDiscoveryListTable"></tbody>
+                </table>
+            </div>
+          </div>
+        </div>
+
         <!-- Configuration Tab -->
         <div id="admin-config" class="admin-tab-content" style="display:none;">
             <div class="dashboard-card">
@@ -1516,6 +1792,14 @@
                     <button onclick="seedDatabase()" style="padding:12px 20px; background:#FFBF42; color:#333; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">⬆️ Upload Sample Data to Firebase</button>
                 </div>
             </div>
+        </div>
+
+        <!-- Terms & Legal Tab -->
+        <div id="admin-terms" class="admin-tab-content" style="display:none;">
+          <div class="dashboard-card">
+            <h3 style="margin-bottom:15px;">📜 Terms of Service & Legal</h3>
+            <p>Update the app's Terms of Service, Privacy Policy, and other legal content.</p>
+          </div>
         </div>
 
         <!-- Accounts Tab -->
