@@ -594,15 +594,15 @@ let merchantMenuItems = [
     {
         name: "Main Courses",
         items: [
-            { id: 1, name: "Double Cheese Burger", price: 25.00, img: "🍔", active: true },
-            { id: 2, name: "Spicy Chicken Wings", price: 30.00, img: "🍗", active: true },
+            { id: 1, name: "Double Cheese Burger", price: 25.00, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=400&auto=format&fit=crop", active: true },
+            { id: 2, name: "Spicy Chicken Wings", price: 30.00, img: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?q=80&w=400&auto=format&fit=crop", active: true },
         ]
     },
     {
         name: "Sides & Drinks",
         items: [
-            { id: 3, name: "Coca Cola", price: 5.00, img: "🥤", active: true },
-            { id: 4, name: "French Fries", price: 15.00, img: "🍟", active: false }
+            { id: 3, name: "Coca Cola", price: 5.00, img: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=400&auto=format&fit=crop", active: true },
+            { id: 4, name: "French Fries", price: 15.00, img: "https://images.unsplash.com/photo-1573082882294-063f2f908863?q=80&w=400&auto=format&fit=crop", active: false }
         ]
     }
 ];
@@ -1552,38 +1552,38 @@ const MOCK_RESTAURANTS = [
         { id: 302, name: "9pc Bucket", price: 75.00, img: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 303, name: "Fries", price: 8.00, img: "https://images.unsplash.com/photo-1573082882294-063f2f908863?q=80&w=400&auto=format&fit=crop", active: true },
     ] },
-    { id: 4, name: 'Starbucks', category: 'Drinks', rating: 4.8, status: 'active', orders: 156, revenue: 12480.00, phone: '+971 4 456 7890', address: 'Dubai Mall', owner: 'Starbucks UAE', commission: 10, menu: [
+    { id: 4, name: 'Starbucks', category: 'Drinks', rating: 4.8, status: 'active', orders: 156, revenue: 12480.00, phone: '+971 4 456 7890', address: 'Dubai Mall', owner: 'Starbucks UAE', commission: 10, profilePhoto: 'https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1501339819302-eeefefafa4a2?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 401, name: "Caramel Macchiato", price: 21.00, img: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 402, name: "Cheese Croissant", price: 15.00, img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=400&auto=format&fit=crop", active: true },
     ] },
-    { id: 5, name: 'McDonald\'s', category: 'Restaurants', rating: 4.4, status: 'active', orders: 278, revenue: 13900.00, phone: '+971 4 567 8901', address: 'Deira City Centre', owner: 'McD UAE', commission: 16, menu: [
+    { id: 5, name: 'McDonald\'s', category: 'Restaurants', rating: 4.4, status: 'active', orders: 278, revenue: 13900.00, phone: '+971 4 567 8901', address: 'Deira City Centre', owner: 'McD UAE', commission: 16, profilePhoto: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 501, name: "Big Mac", price: 20.00, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 502, name: "McNuggets (9pc)", price: 22.00, img: "https://images.unsplash.com/photo-1562607348-97bbca24cd3f?q=80&w=400&auto=format&fit=crop", active: true },
     ] },
-    { id: 6, name: 'Subway', category: 'Restaurants', rating: 4.3, status: 'inactive', orders: 98, revenue: 4900.00, phone: '+971 4 678 9012', address: 'Al Barsha Mall', owner: 'Subway UAE', commission: 14, menu: [
+    { id: 6, name: 'Subway', category: 'Restaurants', rating: 4.3, status: 'inactive', orders: 98, revenue: 4900.00, phone: '+971 4 678 9012', address: 'Al Barsha Mall', owner: 'Subway UAE', commission: 14, profilePhoto: 'https://images.unsplash.com/photo-1553909489-cd47e0907980?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 601, name: "Chicken Teriyaki Sub", price: 25.00, img: "https://images.unsplash.com/photo-1553909489-cd47e0907980?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 602, name: "Cookies (3pc)", price: 10.00, img: "https://images.unsplash.com/photo-1499636136210-65422ff04a52?q=80&w=400&auto=format&fit=crop", active: true },
     ] },
-    { id: 7, name: 'Domino\'s Pizza', category: 'Restaurants', rating: 4.5, status: 'active', orders: 203, revenue: 20300.00, phone: '+971 4 789 0123', address: 'Dubai Marina', owner: 'Domino\'s UAE', commission: 13, menu: [
+    { id: 7, name: 'Domino\'s Pizza', category: 'Restaurants', rating: 4.5, status: 'active', orders: 203, revenue: 20300.00, phone: '+971 4 789 0123', address: 'Dubai Marina', owner: 'Domino\'s UAE', commission: 13, profilePhoto: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 701, name: "ExtravaganZZa Pizza", price: 55.00, img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 702, name: "Cheesy Bread", price: 18.00, img: "https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?q=80&w=400&auto=format&fit=crop", active: true },
     ] },
-    { id: 8, name: 'Costa Coffee', category: 'Drinks', rating: 4.6, status: 'active', orders: 134, revenue: 10720.00, phone: '+971 4 890 1234', address: 'Dubai Marina Walk', owner: 'Costa UAE', commission: 11, menu: [
+    { id: 8, name: 'Costa Coffee', category: 'Drinks', rating: 4.6, status: 'active', orders: 134, revenue: 10720.00, phone: '+971 4 890 1234', address: 'Dubai Marina Walk', owner: 'Costa UAE', commission: 11, profilePhoto: 'https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 801, name: "Flat White", price: 18.00, img: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 802, name: "Blueberry Muffin", price: 14.00, img: "https://images.unsplash.com/photo-1558303420-f814d8a590f5?q=80&w=400&auto=format&fit=crop", active: true },
     ] },
-    { id: 9, name: 'Life Pharmacy', category: 'Pharmacies', rating: 4.9, status: 'active', orders: 450, revenue: 22500.00, phone: '+971 4 999 8888', address: 'Dubai Marina', owner: 'Life Healthcare', commission: 8, menu: [
+    { id: 9, name: 'Life Pharmacy', category: 'Pharmacies', rating: 4.9, status: 'active', orders: 450, revenue: 22500.00, phone: '+971 4 999 8888', address: 'Dubai Marina', owner: 'Life Healthcare', commission: 8, profilePhoto: 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 901, name: "Panadol", price: 12.00, img: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 902, name: "Vitamin C", price: 25.00, img: "https://images.unsplash.com/photo-1616671285442-9907106a7509?q=80&w=400&auto=format&fit=crop", active: true }
     ] },
-    { id: 10, name: 'Carrefour City', category: 'Groceries', rating: 4.8, status: 'active', orders: 1200, revenue: 45000.00, phone: '+971 4 777 6666', address: 'Business Bay', owner: 'Majid Al Futtaim', commission: 5, menu: [
+    { id: 10, name: 'Carrefour City', category: 'Groceries', rating: 4.8, status: 'active', orders: 1200, revenue: 45000.00, phone: '+971 4 777 6666', address: 'Business Bay', owner: 'Majid Al Futtaim', commission: 5, profilePhoto: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 1001, name: "Fresh Milk", price: 6.50, img: "https://images.unsplash.com/photo-1550583724-125581cc254b?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 1002, name: "Bread", price: 5.00, img: "https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop", active: true }
     ] },
-    { id: 11, name: 'Zara', category: 'Shops', rating: 4.7, status: 'active', orders: 150, revenue: 35000.00, phone: '+971 4 555 4444', address: 'Dubai Mall', owner: 'Inditex', commission: 12, menu: [
+    { id: 11, name: 'Zara', category: 'Shops', rating: 4.7, status: 'active', orders: 150, revenue: 35000.00, phone: '+971 4 555 4444', address: 'Dubai Mall', owner: 'Inditex', commission: 12, profilePhoto: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 1101, name: "Cotton T-Shirt", price: 45.00, img: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=400&auto=format&fit=crop", active: true }
     ] },
-    { id: 12, name: 'Juice World', category: 'Drinks', rating: 4.6, status: 'active', orders: 320, revenue: 8500.00, phone: '+971 4 333 2222', address: 'Al Rigga', owner: 'Juice World LLC', commission: 15, menu: [
+    { id: 12, name: 'Juice World', category: 'Drinks', rating: 4.6, status: 'active', orders: 320, revenue: 8500.00, phone: '+971 4 333 2222', address: 'Al Rigga', owner: 'Juice World LLC', commission: 15, profilePhoto: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1497515114629-f71d768fd07c?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 1201, name: "Mango Smoothie", price: 22.00, img: "https://images.unsplash.com/photo-1553279768-865429fa0078?q=80&w=400&auto=format&fit=crop", active: true }
     ] }
 ];
@@ -1607,14 +1607,14 @@ try {
 } catch(e) { console.error(e); }
 
 const MOCK_CUSTOMERS = [
-    { id: 1, name: 'John Doe', phone: '+971 50 123 4567', email: 'john.doe@email.com', orders: 24, totalSpent: 1240.00, status: 'active', joined: '2023-01-15', lastOrder: 'Today', address: 'Dubai Marina' },
-    { id: 2, name: 'Sarah Ahmed', phone: '+971 55 987 6543', email: 'sarah.ahmed@email.com', orders: 18, totalSpent: 890.00, status: 'active', joined: '2023-02-20', lastOrder: 'Yesterday', address: 'Jumeirah Beach' },
-    { id: 3, name: 'Mike Johnson', phone: '+971 52 456 7890', email: 'mike.johnson@email.com', orders: 31, totalSpent: 1560.00, status: 'active', joined: '2022-12-05', lastOrder: '2 days ago', address: 'Business Bay' },
-    { id: 4, name: 'Emma Wilson', phone: '+971 56 789 0123', email: 'emma.wilson@email.com', orders: 15, totalSpent: 720.00, status: 'active', joined: '2023-03-12', lastOrder: '1 week ago', address: 'Dubai Mall' },
-    { id: 5, name: 'David Chen', phone: '+971 58 321 6547', email: 'david.chen@email.com', orders: 42, totalSpent: 2100.00, status: 'active', joined: '2022-10-30', lastOrder: '3 days ago', address: 'Dubai Festival City' },
-    { id: 6, name: 'Anna Rodriguez', phone: '+971 50 654 3210', email: 'anna.rodriguez@email.com', orders: 8, totalSpent: 380.00, status: 'inactive', joined: '2023-04-18', lastOrder: '2 weeks ago', address: 'Al Barsha' },
-    { id: 7, name: 'Robert Kim', phone: '+971 55 147 2589', email: 'robert.kim@email.com', orders: 27, totalSpent: 1350.00, status: 'active', joined: '2023-01-08', lastOrder: 'Today', address: 'Jumeirah' },
-    { id: 8, name: 'Lisa Thompson', phone: '+971 52 369 8520', email: 'lisa.thompson@email.com', orders: 19, totalSpent: 950.00, status: 'active', joined: '2023-02-14', lastOrder: '4 days ago', address: 'Dubai Marina Walk' }
+    { id: 1, name: 'John Doe', phone: '+971 50 123 4567', email: 'john.doe@email.com', orders: 24, totalSpent: 1240.00, status: 'active', joined: '2023-01-15', lastOrder: 'Today', address: 'Dubai Marina', profilePhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop' },
+    { id: 2, name: 'Sarah Ahmed', phone: '+971 55 987 6543', email: 'sarah.ahmed@email.com', orders: 18, totalSpent: 890.00, status: 'active', joined: '2023-02-20', lastOrder: 'Yesterday', address: 'Jumeirah Beach', profilePhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop' },
+    { id: 3, name: 'Mike Johnson', phone: '+971 52 456 7890', email: 'mike.johnson@email.com', orders: 31, totalSpent: 1560.00, status: 'active', joined: '2022-12-05', lastOrder: '2 days ago', address: 'Business Bay', profilePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop' },
+    { id: 4, name: 'Emma Wilson', phone: '+971 56 789 0123', email: 'emma.wilson@email.com', orders: 15, totalSpent: 720.00, status: 'active', joined: '2023-03-12', lastOrder: '1 week ago', address: 'Dubai Mall', profilePhoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop' },
+    { id: 5, name: 'David Chen', phone: '+971 58 321 6547', email: 'david.chen@email.com', orders: 42, totalSpent: 2100.00, status: 'active', joined: '2022-10-30', lastOrder: '3 days ago', address: 'Dubai Festival City', profilePhoto: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=200&auto=format&fit=crop' },
+    { id: 6, name: 'Anna Rodriguez', phone: '+971 50 654 3210', email: 'anna.rodriguez@email.com', orders: 8, totalSpent: 380.00, status: 'inactive', joined: '2023-04-18', lastOrder: '2 weeks ago', address: 'Al Barsha', profilePhoto: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200&auto=format&fit=crop' },
+    { id: 7, name: 'Robert Kim', phone: '+971 55 147 2589', email: 'robert.kim@email.com', orders: 27, totalSpent: 1350.00, status: 'active', joined: '2023-01-08', lastOrder: 'Today', address: 'Jumeirah', profilePhoto: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=200&auto=format&fit=crop' },
+    { id: 8, name: 'Lisa Thompson', phone: '+971 52 369 8520', email: 'lisa.thompson@email.com', orders: 19, totalSpent: 950.00, status: 'active', joined: '2023-02-14', lastOrder: '4 days ago', address: 'Dubai Marina Walk', profilePhoto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop' }
 ];
 let adminCustomers = [...MOCK_CUSTOMERS];
 window.adminCustomers = [...MOCK_CUSTOMERS];
@@ -1733,8 +1733,8 @@ const MOCK_BRANDS = [
 let adminBrands = [...MOCK_BRANDS];
 
 const MOCK_DISCOVERY = [
-    { id: 1, title: 'These Are For You', sub: 'Personalized shop recommendations', type: 'Horizontal Scroll', status: 'active' },
-    { id: 2, title: 'For You', sub: 'Handpicked restaurant grid', type: 'Grid', status: 'active' }
+    { id: 1, title: 'These Are For You', sub: 'Personalized shop recommendations', type: 'Horizontal Scroll', status: 'active', image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400&auto=format&fit=crop' },
+    { id: 2, title: 'For You', sub: 'Handpicked restaurant grid', type: 'Grid', status: 'active', image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=400&auto=format&fit=crop' }
 ];
 let adminDiscovery = [...MOCK_DISCOVERY];
 
@@ -2872,11 +2872,11 @@ const catBackBtn = document.getElementById('catBackBtn');
 const categoryConfig = {
   "Food": {
     filters: [
-      {icon: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=100&auto=format&fit=crop", name: "Promotions"},
+      {icon: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=100&auto=format&fit=crop", name: "Promotions"},
       {icon: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=100&auto=format&fit=crop", name: "Fast Food"},
       {icon: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?q=80&w=100&auto=format&fit=crop", name: "Chicken"},
       {icon: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=100&auto=format&fit=crop", name: "Burgers"},
-      {icon: "https://images.unsplash.com/photo-1585325706926-8397c7446470?q=80&w=100&auto=format&fit=crop", name: "Halal"},
+      {icon: "https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?q=80&w=100&auto=format&fit=crop", name: "Halal"},
       {icon: "https://images.unsplash.com/photo-1628840042765-356cda07504e?q=80&w=100&auto=format&fit=crop", name: "Pizza"},
       {icon: "https://images.unsplash.com/photo-1541518763669-27f704525cc0?q=80&w=100&auto=format&fit=crop", name: "Local"},
       {icon: "https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=100&auto=format&fit=crop", name: "Desserts"}
@@ -2911,7 +2911,7 @@ const categoryConfig = {
         name: "Drinks",
         items: [
           { title: "Cola", desc: "Regular Ice Cold", price: "5.00", image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=400&auto=format&fit=crop" },
-          { title: "Orange Juice", desc: "Freshly squeezed", price: "12.00", image: "https://images.unsplash.com/photo-1616671285442-9907106a7509?q=80&w=400&auto=format&fit=crop" }
+          { title: "Orange Juice", desc: "Freshly squeezed", price: "12.00", image: "https://images.unsplash.com/photo-1547514701-42782101795e?q=80&w=400&auto=format&fit=crop" }
         ]
       }
     ]
@@ -2939,9 +2939,9 @@ const categoryConfig = {
       {
         name: "Fresh Produce",
         items: [
-          { title: "Bananas (1kg)", desc: "Fresh Ecuador Bananas", price: "6.00", image: "🍌" },
-          { title: "Red Apples (1kg)", desc: "Sweet Royal Gala Apples", price: "8.50", image: "🍎" },
-          { title: "Tomatoes (1kg)", desc: "Local Fresh Tomatoes", price: "4.00", image: "🍅" }
+          { title: "Bananas (1kg)", desc: "Fresh Ecuador Bananas", price: "6.00", image: "https://images.unsplash.com/photo-1571771894821-ad9b5886479b?q=80&w=400&auto=format&fit=crop" },
+          { title: "Red Apples (1kg)", desc: "Sweet Royal Gala Apples", price: "8.50", image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6bcd6?q=80&w=400&auto=format&fit=crop" },
+          { title: "Tomatoes (1kg)", desc: "Local Fresh Tomatoes", price: "4.00", image: "https://images.unsplash.com/photo-1597362925123-77861d3fbac7?q=80&w=400&auto=format&fit=crop" }
         ]
       },
       {
@@ -2963,7 +2963,7 @@ const categoryConfig = {
   },
   "Shops": {
     filters: [
-      {icon: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=100&auto=format&fit=crop", name: "Clothes"}, {icon: "https://images.unsplash.com/photo-1549298916-b41d501d3772?q=80&w=100&auto=format&fit=crop", name: "Shoes"}, {icon: "https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=100&auto=format&fit=crop", name: "Electronics"},
+      {icon: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=100&auto=format&fit=crop", name: "Clothes"}, {icon: "https://images.unsplash.com/photo-1549298916-b41d501d3772?q=80&w=100&auto=format&fit=crop", name: "Shoes"}, {icon: "https://images.unsplash.com/photo-1550009158-9ebf69173e03?q=80&w=100&auto=format&fit=crop", name: "Electronics"},
       {icon: "https://images.unsplash.com/photo-1522335789203-aef163bb293e?q=80&w=100&auto=format&fit=crop", name: "Beauty"}, {icon: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=100&auto=format&fit=crop", name: "Gifts"}, {icon: "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=100&auto=format&fit=crop", name: "Sports"}
     ],
     brands: [
@@ -3029,26 +3029,26 @@ const categoryConfig = {
   },
   "Packages": {
     filters: [
-      {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "Send"}, {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "Receive"}, {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "Local"},
-      {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "International"}, {icon: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=100&auto=format&fit=crop", name: "Moving"}
+      {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "Send"}, {icon: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=100&auto=format&fit=crop", name: "Receive"}, {icon: "https://images.unsplash.com/photo-1512909196096-7c0a58ef941b?q=80&w=100&auto=format&fit=crop", name: "Local"},
+      {icon: "https://images.unsplash.com/photo-1596750014482-814ab7148f1d?q=80&w=100&auto=format&fit=crop", name: "International"}, {icon: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=100&auto=format&fit=crop", name: "Moving"}
     ],
     brands: [
-      {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "DHL"}, {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "FedEx"}, {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "Aramex"},
-      {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "UPS"}, {icon: "https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=100&auto=format&fit=crop", name: "Careem Box"}
+      {icon: "https://images.unsplash.com/photo-1620455805861-79b0fdbe051d?q=80&w=100&auto=format&fit=crop", name: "DHL"}, {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "FedEx"}, {icon: "https://images.unsplash.com/photo-1512909196096-7c0a58ef941b?q=80&w=100&auto=format&fit=crop", name: "Aramex"},
+      {icon: "https://images.unsplash.com/photo-1596750014482-814ab7148f1d?q=80&w=100&auto=format&fit=crop", name: "UPS"}, {icon: "https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=100&auto=format&fit=crop", name: "Careem Box"}
     ],
     items: [
       {name: "DHL Express", image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=200&auto=format&fit=crop", rating: "4.9", time: "Pickup: 15m", delivery: "Var"},
       {name: "Local Courier", image: "https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=200&auto=format&fit=crop", rating: "4.5", time: "Pickup: 10m", delivery: "5000"},
-      {name: "Aramex", image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=200&auto=format&fit=crop", rating: "4.7", time: "Pickup: 20m", delivery: "Var"},
-      {name: "Fetchr", image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=200&auto=format&fit=crop", rating: "4.4", time: "Pickup: 30m", delivery: "3000"}
+      {name: "Aramex", image: "https://images.unsplash.com/photo-1596750014482-814ab7148f1d?q=80&w=200&auto=format&fit=crop", rating: "4.7", time: "Pickup: 20m", delivery: "Var"},
+      {name: "Fetchr", image: "https://images.unsplash.com/photo-1620455805861-79b0fdbe051d?q=80&w=200&auto=format&fit=crop", rating: "4.4", time: "Pickup: 30m", delivery: "3000"}
     ],
     menu: [
       {
         name: "Delivery Services",
         items: [
           { title: "Standard Delivery", desc: "Within City (Same Day)", price: "15.00", image: "https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=400&auto=format&fit=crop" },
-          { title: "Express Delivery", desc: "Within City (2 Hours)", price: "30.00", image: "https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=400&auto=format&fit=crop" },
-          { title: "Document Service", desc: "Secure document handling", price: "20.00", image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=400&auto=format&fit=crop" }
+          { title: "Express Delivery", desc: "Within City (2 Hours)", price: "30.00", image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=400&auto=format&fit=crop" },
+          { title: "Document Service", desc: "Secure document handling", price: "20.00", image: "https://images.unsplash.com/photo-1512909196096-7c0a58ef941b?q=80&w=400&auto=format&fit=crop" }
         ]
       }
     ]
@@ -3080,7 +3080,7 @@ const categoryConfig = {
       {
         name: "Cold Drinks",
         items: [
-          { title: "Fresh Orange Juice", desc: "No sugar added", price: "20.00", image: "https://images.unsplash.com/photo-1616671285442-9907106a7509?q=80&w=400&auto=format&fit=crop" },
+          { title: "Fresh Orange Juice", desc: "No sugar added", price: "20.00", image: "https://images.unsplash.com/photo-1547514701-42782101795e?q=80&w=400&auto=format&fit=crop" },
           { title: "Mineral Water", desc: "6 x 1.5L Case", price: "12.00", image: "https://images.unsplash.com/photo-1548964856-ac52129e478d?q=80&w=400&auto=format&fit=crop" },
           { title: "Mango Smoothie", desc: "Thick & Sweet", price: "22.00", image: "https://images.unsplash.com/photo-1553279768-865429fa0078?q=80&w=400&auto=format&fit=crop" }
         ]
@@ -3116,7 +3116,7 @@ function renderCategoryContent(category) {
       container.className = 'brand-container';
       container.innerHTML = `
           <div class="brand-item">
-            <div class="brand-image"><span>${b.icon}</span></div>
+            <div class="brand-image">${window.getImageHtml(b.icon, '🌟')}</div>
           </div>
           <div class="brand-name">${b.name}</div>
           <div class="brand-delivery-info"><span class="bike-icon">🚴‍♂️</span><span>Free delivery</span></div>
@@ -3331,8 +3331,25 @@ const resShareBtn = document.getElementById('resShareBtn');
 function openRestaurant(name, menuData) {
   document.getElementById('resScreenName').textContent = name;
   
-  const restaurant = adminRestaurants.find(r => r.name === name);
-  if (restaurant) document.getElementById('merchantMenuScreen').dataset.restaurantId = restaurant.id;
+  // Normalize name for lookup (e.g., "Burger King 2" -> "Burger King")
+  let restaurant = adminRestaurants.find(r => r.name === name);
+  if (!restaurant) {
+      const baseName = name.replace(/\s\d+$/, '');
+      restaurant = adminRestaurants.find(r => r.name === baseName);
+  }
+
+  if (restaurant) {
+      document.getElementById('merchantMenuScreen').dataset.restaurantId = restaurant.id;
+      // Update Cover and Profile Photos if available
+      const coverBg = document.querySelector('.res-cover-bg');
+      if (coverBg) {
+          coverBg.innerHTML = window.getImageHtml(restaurant.coverPhoto, '🖼️');
+      }
+      const profilePicEl = document.getElementById('resProfilePic'); 
+      if (profilePicEl) {
+          profilePicEl.innerHTML = window.getImageHtml(restaurant.profilePhoto, '🏪');
+      }
+  }
 
   // Display Rating
   const ratingEl = document.getElementById('resRating');
@@ -3929,7 +3946,7 @@ function openCart() {
             itemEl.className = 'suggested-item';
             itemEl.innerHTML = `
                 <div class="suggested-img-box">
-                    ${sItem.emoji}
+                    ${window.getImageHtml(sItem.emoji, '🍽️')}
                     <div class="suggested-add-btn">+</div>
                 </div>
                 <div class="suggested-name">${sItem.title}</div>
@@ -5062,15 +5079,15 @@ function renderFavorites() {
         container.innerHTML = '<div style="text-align:center; padding:40px; color:#999;">No favorites added yet. <br>Tap the ♡ on restaurants to save them!</div>';
         return;
     }
-    // In a real app, you would fetch full objects. Here we find matches from the existing list logic or recreate basic cards.
-    // For visual consistency, we will clone valid cards from the main list if possible, or recreate dummy cards for the demo.
-    // Since cards are dummy generated:
     favorites.forEach((resName) => {
+        const liveRes = adminRestaurants.find(r => r.name === resName);
+        const img = liveRes ? liveRes.profilePhoto : '';
+        
         const card = document.createElement('div');
         card.className = 'res-card animate-entry';
         card.innerHTML = `
           <div class="res-image">
-            🍽️
+            ${window.getImageHtml(img, '🍽️')}
             <button class="heart-btn liked">♥</button>
           </div>
           <div class="res-name">${resName}</div>
@@ -8860,7 +8877,7 @@ function setupPreview(inputIds, previewId, fallback = '🖼️') {
             
             const val = input.value.trim();
             if (val) {
-            const hasExt = /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(val);
+            const hasExt = /\.(jpg|jpeg|png|webp|gif|svg)/i.test(val);
             const isUrl = val.startsWith('data:image/') || val.includes('://') || (val.includes('assets/') && hasExt);
                 if (isUrl) {
                     preview.innerHTML = `<div class="preview-spinner" style="width:20px; height:20px; border:2px solid #f3f3f3; border-top:2px solid #019E81; border-radius:50%; animation:spin 1s linear infinite;"></div>`;
