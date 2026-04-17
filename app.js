@@ -1733,8 +1733,9 @@ const MOCK_BRANDS = [
 let adminBrands = [...MOCK_BRANDS];
 
 const MOCK_DISCOVERY = [
-    { id: 1, title: 'These Are For You', sub: 'Personalized shop recommendations', type: 'Horizontal Scroll', status: 'active', image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400&auto=format&fit=crop' },
-    { id: 2, title: 'For You', sub: 'Handpicked restaurant grid', type: 'Grid', status: 'active', image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=400&auto=format&fit=crop' }
+    { id: 1, title: 'Daily Specials', sub: 'Fresh deals from top vendors', type: 'Daily Specials', status: 'active' },
+    { id: 2, title: 'These Are For You', sub: 'Personalized shop recommendations', type: 'Horizontal Scroll', status: 'active', image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=400&auto=format&fit=crop' },
+    { id: 3, title: 'For You', sub: 'Handpicked restaurant grid', type: 'Grid', status: 'active', image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=400&auto=format&fit=crop' }
 ];
 let adminDiscovery = [...MOCK_DISCOVERY];
 
@@ -3055,7 +3056,7 @@ const categoryConfig = {
   },
   "Drinks": {
     filters: [
-      {icon: "https://images.unsplash.com/photo-1548964856-ac52129e478d?q=80&w=100&auto=format&fit=crop", name: "Water"}, {icon: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=100&auto=format&fit=crop", name: "Juices"}, {icon: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=100&auto=format&fit=crop", name: "Coffee"},
+      {icon: "https://images.unsplash.com/photo-1548964856-ac52129e478d?q=80&w=100&auto=format&fit=crop", name: "Water"}, {icon: "https://images.unsplash.com/photo-1547514701-42782101795e?q=80&w=100&auto=format&fit=crop", name: "Juices"}, {icon: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=100&auto=format&fit=crop", name: "Coffee"},
       {icon: "https://images.unsplash.com/photo-1544787210-2213d2424031?q=80&w=100&auto=format&fit=crop", name: "Tea"}, {icon: "https://images.unsplash.com/photo-1550583724-125581cc254b?q=80&w=100&auto=format&fit=crop", name: "Milkshakes"}, {icon: "https://images.unsplash.com/photo-1553279768-865429fa0078?q=80&w=100&auto=format&fit=crop", name: "Smoothies"}
     ],
     brands: [
@@ -3089,10 +3090,42 @@ const categoryConfig = {
   }
 };
 
+/**
+ * Helper to check if a restaurant is currently open based on openingHours string
+ */
+window.isRestaurantOpen = function(openingHours) {
+    if (!openingHours || !openingHours.includes('-')) return true;
+    const now = new Date();
+    const currentTime = now.getHours() * 100 + now.getMinutes();
+    try {
+        const parts = openingHours.split('-').map(p => p.trim());
+        const parseTime = (t) => {
+            const [h, m] = t.split(':').map(Number);
+            return h * 100 + m;
+        };
+        const openTime = parseTime(parts[0]);
+        const closeTime = parseTime(parts[1]);
+        return currentTime >= openTime && currentTime <= closeTime;
+    } catch(e) { return true; }
+};
+
 function renderCategoryContent(category) {
   const config = categoryConfig[category] || categoryConfig["Food"]; 
   // Store current category for use in opening restaurants
   window.currentCategoryConfig = config;
+
+  // UI Refinement: Add Title above Filters
+  const filterWrapper = document.querySelector('.filter-scroll')?.parentElement;
+  if (filterWrapper) {
+      let existingTitle = filterWrapper.querySelector('.section-header-title');
+      if (!existingTitle) {
+          existingTitle = document.createElement('div');
+          existingTitle.className = 'section-header-title';
+          existingTitle.style.cssText = 'margin: 20px 0 10px 20px; font-weight: 800; font-size: 1.1em; color: #333;';
+          existingTitle.textContent = 'Browse by Category';
+          filterWrapper.insertBefore(existingTitle, filterWrapper.querySelector('.filter-scroll'));
+      }
+  }
 
   // Render Filters
   const filterScroll = document.querySelector('.filter-scroll');
@@ -3101,17 +3134,40 @@ function renderCategoryContent(category) {
     config.filters.forEach(f => {
       const item = document.createElement('div');
       item.className = 'filter-item';
-      item.innerHTML = `<div class="filter-box">${window.getImageHtml(f.icon, '📁')}</div><div class="filter-name">${f.name}</div>`;
+      item.innerHTML = `<div class="filter-box" style="border-radius: 50%; overflow: hidden; background: #f9f9f9; border: 1px solid #eee;">${window.getImageHtml(f.icon, '📁')}</div><div class="filter-name">${f.name}</div>`;
       item.addEventListener('click', () => showDetailScreen(f.name)); 
       filterScroll.appendChild(item);
     });
   }
 
   // Render Brands
-  const brandsScroll = document.getElementById('brandsScroll');
-  if(brandsScroll) {
+  const brandsContainer = document.getElementById('brandsScroll')?.parentElement;
+  if(brandsContainer) {
+    // Add Toggle for Open/Closed
+    let toggleRow = brandsContainer.querySelector('.brands-filter-row');
+    if (!toggleRow) {
+        toggleRow = document.createElement('div');
+        toggleRow.className = 'brands-filter-row';
+        toggleRow.style.cssText = 'display:flex; justify-content:flex-end; padding:0 20px; margin-bottom:10px;';
+        toggleRow.innerHTML = `
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.85em; font-weight:bold; color:#666; cursor:pointer;">
+                <input type="checkbox" id="openOnlyToggle" style="accent-color:#019E81;"> Show Open Only
+            </label>
+        `;
+        brandsContainer.insertBefore(toggleRow, document.getElementById('brandsScroll'));
+        toggleRow.querySelector('#openOnlyToggle').addEventListener('change', () => renderCategoryContent(category));
+    }
+
+    const openOnly = toggleRow.querySelector('#openOnlyToggle').checked;
+    const brandsScroll = document.getElementById('brandsScroll');
     brandsScroll.innerHTML = '';
+    
     config.brands.forEach(b => {
+      const liveRes = adminRestaurants.find(r => r.name === b.name);
+      const isOpen = liveRes ? window.isRestaurantOpen(liveRes.openingHours) : true;
+
+      if (openOnly && !isOpen) return;
+
       const container = document.createElement('div');
       container.className = 'brand-container';
       container.innerHTML = `
@@ -3119,11 +3175,61 @@ function renderCategoryContent(category) {
             <div class="brand-image">${window.getImageHtml(b.icon, '🌟')}</div>
           </div>
           <div class="brand-name">${b.name}</div>
-          <div class="brand-delivery-info"><span class="bike-icon">🚴‍♂️</span><span>Free delivery</span></div>
+          <div class="brand-delivery-info">
+            ${isOpen ? '<span style="color:#019E81; font-weight:bold;">● Open</span>' : '<span style="color:#ff4757; font-weight:bold;">○ Closed</span>'}
+            <span class="bike-icon" style="margin-left:5px;">🚴‍♂️</span><span>Free</span>
+          </div>
       `;
       container.addEventListener('click', () => openRestaurant(b.name, config.menu));
       brandsScroll.appendChild(container);
     });
+  }
+
+  // Render Discovery Sections (including new Daily Specials)
+  const discoveryContainer = document.getElementById('discoveryContainer');
+  if (discoveryContainer) {
+      discoveryContainer.innerHTML = '';
+      adminDiscovery.forEach(disco => {
+          if (disco.status !== 'active') return;
+          
+          const section = document.createElement('div');
+          section.className = 'discovery-section';
+          
+          if (disco.type === 'Daily Specials') {
+              // Pick a vendor from this category that has a menu
+              const vendor = adminRestaurants.find(r => r.category.includes(category) && r.menu && r.menu.length > 0);
+              if (vendor) {
+                  const specialItem = vendor.menu[0].items[0];
+                  section.innerHTML = `
+                      <div class="section-header" style="padding: 0 20px;">
+                        <h3 style="margin:0; font-weight:800; font-size:1.2em;">🔥 ${disco.title}</h3>
+                        <p style="margin:5px 0 15px 0; color:#666; font-size:0.85em;">${disco.sub} at ${vendor.name}</p>
+                      </div>
+                      <div style="margin: 0 20px; background:#fff; border-radius:16px; overflow:hidden; border:1px solid #eee; display:flex; cursor:pointer;" onclick="openRestaurant('${vendor.name}')">
+                        <div style="width:40%; height:120px;">${window.getImageHtml(specialItem.img)}</div>
+                        <div style="flex:1; padding:15px; display:flex; flex-direction:column; justify-content:center;">
+                            <div style="font-weight:bold; font-size:1em; color:#333;">${specialItem.name}</div>
+                            <div style="font-size:1.1em; font-weight:900; color:#019E81; margin-top:5px;">UGX ${specialItem.price.toFixed(2)}</div>
+                            <div style="margin-top:10px; font-size:0.75em; background:#e0f2f1; color:#019E81; padding:4px 8px; border-radius:4px; width:fit-content; font-weight:bold;">VIEW MENU</div>
+                        </div>
+                      </div>
+                  `;
+                  discoveryContainer.appendChild(section);
+              }
+          } else {
+              // Traditional discovery sections
+              section.innerHTML = `
+                <div class="section-header" style="padding: 0 20px;">
+                    <h3 style="margin:0; font-weight:800; font-size:1.2em;">${disco.title}</h3>
+                    <p style="margin:5px 0 15px 0; color:#666; font-size:0.85em;">${disco.sub}</p>
+                </div>
+                <div class="discovery-banner" style="margin:0 20px; border-radius:16px; overflow:hidden; height:150px; background:#eee;">
+                    ${window.getImageHtml(disco.image)}
+                </div>
+              `;
+              discoveryContainer.appendChild(section);
+          }
+      });
   }
 
   // Render Restaurants / Items
