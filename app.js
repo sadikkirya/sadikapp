@@ -1540,51 +1540,51 @@ const MOCK_RESTAURANTS = [
     { id: 1, name: 'Burger King', category: 'Restaurants', rating: 4.5, status: 'active', orders: 245, revenue: 12500.00, phone: '+971 4 123 4567', address: 'Dubai Mall', owner: 'BK UAE LLC', commission: 15, profilePhoto: 'https://images.unsplash.com/photo-1626229650236-737940449a58?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 101, name: "Whopper", price: 22.00, img: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 102, name: "Chicken Royale", price: 20.00, img: "assets/chicken_royale.jpg", active: true },
-        { id: 103, name: "Onion Rings", price: 10.00, img: "🧅", active: true },
+        { id: 103, name: "Onion Rings", price: 10.00, img: "https://images.unsplash.com/photo-1639024471283-035188835118?q=80&w=400&auto=format&fit=crop", active: true },
     ] },
     { id: 2, name: 'Pizza Hut', category: 'Restaurants', rating: 4.7, status: 'active', orders: 189, revenue: 18900.00, phone: '+971 4 234 5678', address: 'Mall of Emirates', owner: 'PH Middle East', commission: 12, profilePhoto: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 201, name: "Pepperoni Pizza", price: 45.00, img: "https://images.unsplash.com/photo-1628840042765-356cda07504e?q=80&w=400&auto=format&fit=crop", active: true },
-        { id: 202, name: "Veggie Supreme", price: 42.00, img: "🍕", active: true },
-        { id: 203, name: "Garlic Bread", price: 15.00, img: "🥖", active: false },
+        { id: 202, name: "Veggie Supreme", price: 42.00, img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=400&auto=format&fit=crop", active: true },
+        { id: 203, name: "Garlic Bread", price: 15.00, img: "https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?q=80&w=400&auto=format&fit=crop", active: false },
     ] },
     { id: 3, name: 'KFC', category: 'Restaurants', rating: 4.6, status: 'active', orders: 312, revenue: 15600.00, phone: '+971 4 345 6789', address: 'Dubai Festival City', owner: 'KFC UAE', commission: 18, profilePhoto: 'https://images.unsplash.com/photo-1513639776629-7b61b0ac49cb?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?q=80&w=800&auto=format&fit=crop', menu: [
-        { id: 301, name: "Zinger Burger", price: 18.00, img: "🍔", active: true },
+        { id: 301, name: "Zinger Burger", price: 18.00, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 302, name: "9pc Bucket", price: 75.00, img: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?q=80&w=400&auto=format&fit=crop", active: true },
-        { id: 303, name: "Fries", price: 8.00, img: "🍟", active: true },
+        { id: 303, name: "Fries", price: 8.00, img: "https://images.unsplash.com/photo-1573082882294-063f2f908863?q=80&w=400&auto=format&fit=crop", active: true },
     ] },
     { id: 4, name: 'Starbucks', category: 'Drinks', rating: 4.8, status: 'active', orders: 156, revenue: 12480.00, phone: '+971 4 456 7890', address: 'Dubai Mall', owner: 'Starbucks UAE', commission: 10, menu: [
-        { id: 401, name: "Caramel Macchiato", price: 21.00, img: "☕", active: true },
-        { id: 402, name: "Cheese Croissant", price: 15.00, img: "🥐", active: true },
+        { id: 401, name: "Caramel Macchiato", price: 21.00, img: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=400&auto=format&fit=crop", active: true },
+        { id: 402, name: "Cheese Croissant", price: 15.00, img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=400&auto=format&fit=crop", active: true },
     ] },
     { id: 5, name: 'McDonald\'s', category: 'Restaurants', rating: 4.4, status: 'active', orders: 278, revenue: 13900.00, phone: '+971 4 567 8901', address: 'Deira City Centre', owner: 'McD UAE', commission: 16, menu: [
-        { id: 501, name: "Big Mac", price: 20.00, img: "🍔", active: true },
-        { id: 502, name: "McNuggets (9pc)", price: 22.00, img: "🍗", active: true },
+        { id: 501, name: "Big Mac", price: 20.00, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=400&auto=format&fit=crop", active: true },
+        { id: 502, name: "McNuggets (9pc)", price: 22.00, img: "https://images.unsplash.com/photo-1562607348-97bbca24cd3f?q=80&w=400&auto=format&fit=crop", active: true },
     ] },
     { id: 6, name: 'Subway', category: 'Restaurants', rating: 4.3, status: 'inactive', orders: 98, revenue: 4900.00, phone: '+971 4 678 9012', address: 'Al Barsha Mall', owner: 'Subway UAE', commission: 14, menu: [
-        { id: 601, name: "Chicken Teriyaki Sub", price: 25.00, img: "🥪", active: true },
-        { id: 602, name: "Cookies (3pc)", price: 10.00, img: "🍪", active: true },
+        { id: 601, name: "Chicken Teriyaki Sub", price: 25.00, img: "https://images.unsplash.com/photo-1553909489-cd47e0907980?q=80&w=400&auto=format&fit=crop", active: true },
+        { id: 602, name: "Cookies (3pc)", price: 10.00, img: "https://images.unsplash.com/photo-1499636136210-65422ff04a52?q=80&w=400&auto=format&fit=crop", active: true },
     ] },
     { id: 7, name: 'Domino\'s Pizza', category: 'Restaurants', rating: 4.5, status: 'active', orders: 203, revenue: 20300.00, phone: '+971 4 789 0123', address: 'Dubai Marina', owner: 'Domino\'s UAE', commission: 13, menu: [
-        { id: 701, name: "ExtravaganZZa Pizza", price: 55.00, img: "🍕", active: true },
-        { id: 702, name: "Cheesy Bread", price: 18.00, img: "🥖", active: true },
+        { id: 701, name: "ExtravaganZZa Pizza", price: 55.00, img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=400&auto=format&fit=crop", active: true },
+        { id: 702, name: "Cheesy Bread", price: 18.00, img: "https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?q=80&w=400&auto=format&fit=crop", active: true },
     ] },
     { id: 8, name: 'Costa Coffee', category: 'Drinks', rating: 4.6, status: 'active', orders: 134, revenue: 10720.00, phone: '+971 4 890 1234', address: 'Dubai Marina Walk', owner: 'Costa UAE', commission: 11, menu: [
-        { id: 801, name: "Flat White", price: 18.00, img: "☕", active: true },
-        { id: 802, name: "Blueberry Muffin", price: 14.00, img: "🧁", active: true },
+        { id: 801, name: "Flat White", price: 18.00, img: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=400&auto=format&fit=crop", active: true },
+        { id: 802, name: "Blueberry Muffin", price: 14.00, img: "https://images.unsplash.com/photo-1558303420-f814d8a590f5?q=80&w=400&auto=format&fit=crop", active: true },
     ] },
     { id: 9, name: 'Life Pharmacy', category: 'Pharmacies', rating: 4.9, status: 'active', orders: 450, revenue: 22500.00, phone: '+971 4 999 8888', address: 'Dubai Marina', owner: 'Life Healthcare', commission: 8, menu: [
-        { id: 901, name: "Panadol", price: 12.00, img: "💊", active: true },
-        { id: 902, name: "Vitamin C", price: 25.00, img: "🍊", active: true }
+        { id: 901, name: "Panadol", price: 12.00, img: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=400&auto=format&fit=crop", active: true },
+        { id: 902, name: "Vitamin C", price: 25.00, img: "https://images.unsplash.com/photo-1616671285442-9907106a7509?q=80&w=400&auto=format&fit=crop", active: true }
     ] },
     { id: 10, name: 'Carrefour City', category: 'Groceries', rating: 4.8, status: 'active', orders: 1200, revenue: 45000.00, phone: '+971 4 777 6666', address: 'Business Bay', owner: 'Majid Al Futtaim', commission: 5, menu: [
-        { id: 1001, name: "Fresh Milk", price: 6.50, img: "🥛", active: true },
-        { id: 1002, name: "Bread", price: 5.00, img: "🍞", active: true }
+        { id: 1001, name: "Fresh Milk", price: 6.50, img: "https://images.unsplash.com/photo-1550583724-125581cc254b?q=80&w=400&auto=format&fit=crop", active: true },
+        { id: 1002, name: "Bread", price: 5.00, img: "https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop", active: true }
     ] },
     { id: 11, name: 'Zara', category: 'Shops', rating: 4.7, status: 'active', orders: 150, revenue: 35000.00, phone: '+971 4 555 4444', address: 'Dubai Mall', owner: 'Inditex', commission: 12, menu: [
-        { id: 1101, name: "Cotton T-Shirt", price: 45.00, img: "👕", active: true }
+        { id: 1101, name: "Cotton T-Shirt", price: 45.00, img: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=400&auto=format&fit=crop", active: true }
     ] },
     { id: 12, name: 'Juice World', category: 'Drinks', rating: 4.6, status: 'active', orders: 320, revenue: 8500.00, phone: '+971 4 333 2222', address: 'Al Rigga', owner: 'Juice World LLC', commission: 15, menu: [
-        { id: 1201, name: "Mango Smoothie", price: 22.00, img: "🥭", active: true }
+        { id: 1201, name: "Mango Smoothie", price: 22.00, img: "https://images.unsplash.com/photo-1553279768-865429fa0078?q=80&w=400&auto=format&fit=crop", active: true }
     ] }
 ];
 let adminRestaurants = [...MOCK_RESTAURANTS];
@@ -1700,35 +1700,35 @@ let adminAnalytics = {...MOCK_ANALYTICS};
 window.adminAnalytics = {...MOCK_ANALYTICS};
 
 const MOCK_CATEGORIES = [
-    { id: 1, name: 'Food', icon: '🍕', status: 'active' },
-    { id: 2, name: 'Groceries', icon: '🛒', status: 'active' },
-    { id: 3, name: 'Shops', icon: '🛍️', status: 'active' },
-    { id: 4, name: 'Pharmacies', icon: '💊', status: 'active' },
-    { id: 5, name: 'Packages', icon: '📦', status: 'active' },
-    { id: 6, name: 'Drinks', icon: '🥤', status: 'active' }
+    { id: 1, name: 'Food', icon: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=200&auto=format&fit=crop', status: 'active' },
+    { id: 2, name: 'Groceries', icon: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop', status: 'active' },
+    { id: 3, name: 'Shops', icon: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=200&auto=format&fit=crop', status: 'active' },
+    { id: 4, name: 'Pharmacies', icon: 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=200&auto=format&fit=crop', status: 'active' },
+    { id: 5, name: 'Packages', icon: 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=200&auto=format&fit=crop', status: 'active' },
+    { id: 6, name: 'Drinks', icon: 'https://images.unsplash.com/photo-1544145945-f904253d0c7b?q=80&w=200&auto=format&fit=crop', status: 'active' }
 ];
 let adminCategories = [...MOCK_CATEGORIES];
 window.adminCategories = [...MOCK_CATEGORIES];
 
 const MOCK_BANNERS = [
-    { id: 1, headline: 'FreeDelivery on Your First order', sub: 'Treat yourself, we got it!', image: '🚴‍♂️', status: 'active' },
-    { id: 2, headline: '20% Off All Pizzas!', sub: 'This weekend only.', image: '🍕', status: 'active' },
-    { id: 3, headline: 'Fresh Groceries Delivered', sub: 'From farm to your table.', image: '🛒', status: 'active' }
+    { id: 1, headline: 'FreeDelivery on Your First order', sub: 'Treat yourself, we got it!', image: 'https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=400&auto=format&fit=crop', status: 'active' },
+    { id: 2, headline: '20% Off All Pizzas!', sub: 'This weekend only.', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=400&auto=format&fit=crop', status: 'active' },
+    { id: 3, headline: 'Fresh Groceries Delivered', sub: 'From farm to your table.', image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=400&auto=format&fit=crop', status: 'active' }
 ];
 let adminBanners = [...MOCK_BANNERS];
 
 const MOCK_FILTERS = [
-    { id: 1, name: 'Promotions', icon: '🏷️', status: 'active' },
-    { id: 2, name: 'Fast Food', icon: '🍟', status: 'active' },
-    { id: 3, name: 'Chicken', icon: '🍗', status: 'active' },
-    { id: 4, name: 'Burgers', icon: '🍔', status: 'active' }
+    { id: 1, name: 'Promotions', icon: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=100&auto=format&fit=crop', status: 'active' },
+    { id: 2, name: 'Fast Food', icon: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=100&auto=format&fit=crop', status: 'active' },
+    { id: 3, name: 'Chicken', icon: 'https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?q=80&w=100&auto=format&fit=crop', status: 'active' },
+    { id: 4, name: 'Burgers', icon: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=100&auto=format&fit=crop', status: 'active' }
 ];
 let adminFiltersList = [...MOCK_FILTERS];
 
 const MOCK_BRANDS = [
-    { id: 1, name: "McDonald's", icon: '🍔', deliveryInfo: 'Free delivery', status: 'active' },
-    { id: 2, name: 'KFC', icon: '🍗', deliveryInfo: 'Free delivery', status: 'active' },
-    { id: 3, name: 'Pizza Hut', icon: '🍕', deliveryInfo: 'Free delivery', status: 'active' }
+    { id: 1, name: "McDonald's", icon: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=100&auto=format&fit=crop', deliveryInfo: 'Free delivery', status: 'active' },
+    { id: 2, name: 'KFC', icon: 'https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?q=80&w=100&auto=format&fit=crop', deliveryInfo: 'Free delivery', status: 'active' },
+    { id: 3, name: 'Pizza Hut', icon: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=100&auto=format&fit=crop', deliveryInfo: 'Free delivery', status: 'active' }
 ];
 let adminBrands = [...MOCK_BRANDS];
 
@@ -1739,9 +1739,9 @@ const MOCK_DISCOVERY = [
 let adminDiscovery = [...MOCK_DISCOVERY];
 
 const MOCK_ADMIN_REWARDS = [
-    { id: 1, title: 'UGX 5.00 Off Delivery', desc: 'Valid on any order above UGX 20.00', cost: 500, icon: '🛵', status: 'active' },
-    { id: 2, title: '10% Off Food Order', desc: 'Max discount UGX 15.00', cost: 1000, icon: '🍔', status: 'active' },
-    { id: 3, title: 'Free Drink', desc: 'Participating stores only', cost: 750, icon: '🥤', status: 'active' }
+    { id: 1, title: 'UGX 5.00 Off Delivery', desc: 'Valid on any order above UGX 20.00', cost: 500, icon: 'https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=100&auto=format&fit=crop', status: 'active' },
+    { id: 2, title: '10% Off Food Order', desc: 'Max discount UGX 15.00', cost: 1000, icon: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=100&auto=format&fit=crop', status: 'active' },
+    { id: 3, title: 'Free Drink', desc: 'Participating stores only', cost: 750, icon: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=100&auto=format&fit=crop', status: 'active' }
 ];
 let adminRewardsList = [...MOCK_ADMIN_REWARDS];
 
@@ -2813,25 +2813,25 @@ function populateSearchAllItems() {
         {
             title: "Trending Dishes 🔥",
             items: [
-                { name: "Double Cheese Burger", price: 25.00, emoji: "🍔", res: "Burger King" },
-                { name: "Pepperoni Pizza", price: 45.00, emoji: "🍕", res: "Pizza Hut" },
-                { name: "Spicy Chicken Wings", price: 30.00, emoji: "🍗", res: "KFC" }
+                { name: "Double Cheese Burger", price: 25.00, emoji: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=400&auto=format&fit=crop", res: "Burger King" },
+                { name: "Pepperoni Pizza", price: 45.00, emoji: "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=400&auto=format&fit=crop", res: "Pizza Hut" },
+                { name: "Spicy Chicken Wings", price: 30.00, emoji: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?q=80&w=400&auto=format&fit=crop", res: "KFC" }
             ]
         },
         {
             title: "Healthy Options 🥗",
             items: [
-                { name: "Caesar Salad", price: 22.00, emoji: "🥗", res: "Healthy Bites" },
-                { name: "Grilled Chicken", price: 35.00, emoji: "🍖", res: "Grill House" },
-                { name: "Fresh Fruit Bowl", price: 15.00, emoji: "🍇", res: "Fresh & Co" }
+                { name: "Caesar Salad", price: 22.00, emoji: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=400&auto=format&fit=crop", res: "Healthy Bites" },
+                { name: "Grilled Chicken", price: 35.00, emoji: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?q=80&w=400&auto=format&fit=crop", res: "Grill House" },
+                { name: "Fresh Fruit Bowl", price: 15.00, emoji: "https://images.unsplash.com/photo-1553279768-865429fa0078?q=80&w=400&auto=format&fit=crop", res: "Fresh & Co" }
             ]
         },
         {
             title: "Sweet Cravings 🍩",
             items: [
-                { name: "Choco Glazed Donut", price: 8.00, emoji: "🍩", res: "Dunkin" },
-                { name: "Strawberry Cheesecake", price: 18.00, emoji: "🍰", res: "Bakery One" },
-                { name: "Vanilla Ice Cream", price: 10.00, emoji: "🍦", res: "Cold Stone" }
+                { name: "Choco Glazed Donut", price: 8.00, emoji: "https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=400&auto=format&fit=crop", res: "Dunkin" },
+                { name: "Strawberry Cheesecake", price: 18.00, emoji: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?q=80&w=400&auto=format&fit=crop", res: "Bakery One" },
+                { name: "Vanilla Ice Cream", price: 10.00, emoji: "https://images.unsplash.com/photo-1501443762994-82bd5dace89a?q=80&w=400&auto=format&fit=crop", res: "Cold Stone" }
             ]
         }
     ];
@@ -2872,19 +2872,24 @@ const catBackBtn = document.getElementById('catBackBtn');
 const categoryConfig = {
   "Food": {
     filters: [
-      {icon: "🏷️", name: "Promotions"}, {icon: "🍟", name: "Fast Food"}, {icon: "🍗", name: "Chicken"},
-      {icon: "🍔", name: "Burgers"}, {icon: "🥩", name: "Halal"}, {icon: "🍕", name: "Pizza"},
-      {icon: "🥘", name: "Local"}, {icon: "🍰", name: "Desserts"}
+      {icon: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=100&auto=format&fit=crop", name: "Promotions"},
+      {icon: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=100&auto=format&fit=crop", name: "Fast Food"},
+      {icon: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?q=80&w=100&auto=format&fit=crop", name: "Chicken"},
+      {icon: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=100&auto=format&fit=crop", name: "Burgers"},
+      {icon: "https://images.unsplash.com/photo-1585325706926-8397c7446470?q=80&w=100&auto=format&fit=crop", name: "Halal"},
+      {icon: "https://images.unsplash.com/photo-1628840042765-356cda07504e?q=80&w=100&auto=format&fit=crop", name: "Pizza"},
+      {icon: "https://images.unsplash.com/photo-1541518763669-27f704525cc0?q=80&w=100&auto=format&fit=crop", name: "Local"},
+      {icon: "https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=100&auto=format&fit=crop", name: "Desserts"}
     ],
     brands: [
-      {icon: "🍔", name: "McDonald's"}, {icon: "🍗", name: "KFC"}, {icon: "🍕", name: "Pizza Hut"},
-      {icon: "☕", name: "Starbucks"}, {icon: "🥪", name: "Subway"}
+      {icon: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=100&auto=format&fit=crop", name: "McDonald's"}, {icon: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?q=80&w=100&auto=format&fit=crop", name: "KFC"}, {icon: "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=100&auto=format&fit=crop", name: "Pizza Hut"},
+      {icon: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=100&auto=format&fit=crop", name: "Starbucks"}, {icon: "https://images.unsplash.com/photo-1553909489-cd47e0907980?q=80&w=100&auto=format&fit=crop", name: "Subway"}
     ],
     items: [
-      {name: "Tasty Restaurant", image: "🍽️", rating: "4.8", time: "20-30 Mins", delivery: "Free"},
-      {name: "Burger King", image: "🍔", rating: "4.5", time: "25-35 Mins", delivery: "500"},
-      {name: "Pizza Hut", image: "🍕", rating: "4.7", time: "30-40 Mins", delivery: "Free"},
-      {name: "KFC", image: "🍗", rating: "4.6", time: "20-30 Mins", delivery: "Free"}
+      {name: "Tasty Restaurant", image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=200&auto=format&fit=crop", rating: "4.8", time: "20-30 Mins", delivery: "Free"},
+      {name: "Burger King", image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=200&auto=format&fit=crop", rating: "4.5", time: "25-35 Mins", delivery: "500"},
+      {name: "Pizza Hut", image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=200&auto=format&fit=crop", rating: "4.7", time: "30-40 Mins", delivery: "Free"},
+      {name: "KFC", image: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?q=80&w=200&auto=format&fit=crop", rating: "4.6", time: "20-30 Mins", delivery: "Free"}
     ],
     menu: [
       {
@@ -2905,26 +2910,30 @@ const categoryConfig = {
       {
         name: "Drinks",
         items: [
-          { title: "Cola", desc: "Regular Ice Cold", price: "5.00", image: "🥤" },
-          { title: "Orange Juice", desc: "Freshly squeezed", price: "12.00", image: "🍊" }
+          { title: "Cola", desc: "Regular Ice Cold", price: "5.00", image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=400&auto=format&fit=crop" },
+          { title: "Orange Juice", desc: "Freshly squeezed", price: "12.00", image: "https://images.unsplash.com/photo-1616671285442-9907106a7509?q=80&w=400&auto=format&fit=crop" }
         ]
       }
     ]
   },
   "Groceries": {
     filters: [
-      {icon: "🥬", name: "Vegetables"}, {icon: "🍎", name: "Fruits"}, {icon: "🥛", name: "Dairy"},
-      {icon: "🥩", name: "Meat"}, {icon: "🥖", name: "Bakery"}, {icon: "🥫", name: "Pantry"}
+      {icon: "https://images.unsplash.com/photo-1540420773420-3366772f4999?q=80&w=100&auto=format&fit=crop", name: "Vegetables"},
+      {icon: "https://images.unsplash.com/photo-1619566636858-adb3ef261462?q=80&w=100&auto=format&fit=crop", name: "Fruits"},
+      {icon: "https://images.unsplash.com/photo-1550583724-125581cc254b?q=80&w=100&auto=format&fit=crop", name: "Dairy"},
+      {icon: "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?q=80&w=100&auto=format&fit=crop", name: "Meat"},
+      {icon: "https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=100&auto=format&fit=crop", name: "Bakery"},
+      {icon: "https://images.unsplash.com/photo-1584263347416-85a18a440d99?q=80&w=100&auto=format&fit=crop", name: "Pantry"}
     ],
     brands: [
-      {icon: "🛒", name: "Carrefour"}, {icon: "🛍️", name: "Lulu"}, {icon: "🏪", name: "Spinneys"},
-      {icon: "🍏", name: "Viva"}, {icon: "🧺", name: "Choithrams"}
+      {icon: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=100&auto=format&fit=crop", name: "Carrefour"}, {icon: "https://images.unsplash.com/photo-1516594798141-f735d510d90c?q=80&w=100&auto=format&fit=crop", name: "Lulu"}, {icon: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=100&auto=format&fit=crop", name: "Spinneys"},
+      {icon: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?q=80&w=100&auto=format&fit=crop", name: "Viva"}, {icon: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=100&auto=format&fit=crop", name: "Choithrams"}
     ],
     items: [
-      {name: "Carrefour City", image: "🛒", rating: "4.8", time: "30-60 Mins", delivery: "1500"},
-      {name: "Lulu Hypermarket", image: "🛍️", rating: "4.7", time: "45-90 Mins", delivery: "2000"},
-      {name: "Spinneys", image: "🏪", rating: "4.9", time: "30-60 Mins", delivery: "Free"},
-      {name: "Local Grocery", image: "🧺", rating: "4.5", time: "15-30 Mins", delivery: "Free"}
+      {name: "Carrefour City", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop", rating: "4.8", time: "30-60 Mins", delivery: "1500"},
+      {name: "Lulu Hypermarket", image: "https://images.unsplash.com/photo-1516594798141-f735d510d90c?q=80&w=200&auto=format&fit=crop", rating: "4.7", time: "45-90 Mins", delivery: "2000"},
+      {name: "Spinneys", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop", rating: "4.9", time: "30-60 Mins", delivery: "Free"},
+      {name: "Local Grocery", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop", rating: "4.5", time: "15-30 Mins", delivery: "Free"}
     ],
     menu: [
       {
@@ -2938,142 +2947,142 @@ const categoryConfig = {
       {
         name: "Dairy & Eggs",
         items: [
-          { title: "Fresh Milk (1L)", desc: "Full Cream Milk", price: "6.50", image: "🥛" },
-          { title: "Eggs (30pcs)", desc: "Large White Eggs", price: "22.00", image: "🥚" },
-          { title: "Cheddar Cheese", desc: "Block 200g", price: "15.00", image: "🧀" }
+          { title: "Fresh Milk (1L)", desc: "Full Cream Milk", price: "6.50", image: "https://images.unsplash.com/photo-1550583724-125581cc254b?q=80&w=400&auto=format&fit=crop" },
+          { title: "Eggs (30pcs)", desc: "Large White Eggs", price: "22.00", image: "https://images.unsplash.com/photo-1506976785307-8732e854ad03?q=80&w=400&auto=format&fit=crop" },
+          { title: "Cheddar Cheese", desc: "Block 200g", price: "15.00", image: "https://images.unsplash.com/photo-1618164435735-413d3b066c9a?q=80&w=400&auto=format&fit=crop" }
         ]
       },
       {
         name: "Bakery",
         items: [
-          { title: "Sliced Bread", desc: "White Toast Bread", price: "5.00", image: "🍞" },
-          { title: "Croissants (4pcs)", desc: "Butter Croissants", price: "12.00", image: "🥐" }
+          { title: "Sliced Bread", desc: "White Toast Bread", price: "5.00", image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop" },
+          { title: "Croissants (4pcs)", desc: "Butter Croissants", price: "12.00", image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=400&auto=format&fit=crop" }
         ]
       }
     ]
   },
   "Shops": {
     filters: [
-      {icon: "👗", name: "Clothes"}, {icon: "👠", name: "Shoes"}, {icon: "📱", name: "Electronics"},
-      {icon: "💄", name: "Beauty"}, {icon: "🎁", name: "Gifts"}, {icon: "⚽", name: "Sports"}
+      {icon: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=100&auto=format&fit=crop", name: "Clothes"}, {icon: "https://images.unsplash.com/photo-1549298916-b41d501d3772?q=80&w=100&auto=format&fit=crop", name: "Shoes"}, {icon: "https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=100&auto=format&fit=crop", name: "Electronics"},
+      {icon: "https://images.unsplash.com/photo-1522335789203-aef163bb293e?q=80&w=100&auto=format&fit=crop", name: "Beauty"}, {icon: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=100&auto=format&fit=crop", name: "Gifts"}, {icon: "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=100&auto=format&fit=crop", name: "Sports"}
     ],
     brands: [
-      {icon: "🏬", name: "H&M"}, {icon: "👟", name: "Nike"}, {icon: "💄", name: "Sephora"},
-      {icon: "📱", name: "Sharaf DG"}, {icon: "🧸", name: "Toys R Us"}
+      {icon: "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?q=80&w=100&auto=format&fit=crop", name: "H&M"}, {icon: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=100&auto=format&fit=crop", name: "Nike"}, {icon: "https://images.unsplash.com/photo-1522335789203-aef163bb293e?q=80&w=100&auto=format&fit=crop", name: "Sephora"},
+      {icon: "https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=100&auto=format&fit=crop", name: "Sharaf DG"}, {icon: "https://images.unsplash.com/photo-1558060308-d1a24d553817?q=80&w=100&auto=format&fit=crop", name: "Toys R Us"}
     ],
     items: [
-      {name: "Zara", image: "👗", rating: "4.8", time: "60-90 Mins", delivery: "5000"},
-      {name: "Sharaf DG", image: "📱", rating: "4.7", time: "60-120 Mins", delivery: "Free"},
-      {name: "Sephora", image: "💄", rating: "4.9", time: "45-60 Mins", delivery: "2500"},
-      {name: "Virgin Megastore", image: "💿", rating: "4.8", time: "60-90 Mins", delivery: "3000"}
+      {name: "Zara", image: "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?q=80&w=200&auto=format&fit=crop", rating: "4.8", time: "60-90 Mins", delivery: "5000"},
+      {name: "Sharaf DG", image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=200&auto=format&fit=crop", rating: "4.7", time: "60-120 Mins", delivery: "Free"},
+      {name: "Sephora", image: "https://images.unsplash.com/photo-1522335789203-aef163bb293e?q=80&w=200&auto=format&fit=crop", rating: "4.9", time: "45-60 Mins", delivery: "2500"},
+      {name: "Virgin Megastore", image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=200&auto=format&fit=crop", rating: "4.8", time: "60-90 Mins", delivery: "3000"}
     ],
     menu: [
       {
         name: "Clothing",
         items: [
-          { title: "Cotton T-Shirt", desc: "100% Cotton Basic Tee", price: "45.00", image: "👕" },
-          { title: "Denim Jeans", desc: "Slim Fit Blue Jeans", price: "120.00", image: "👖" },
-          { title: "Running Shoes", desc: "Sports Sneakers", price: "250.00", image: "👟" }
+          { title: "Cotton T-Shirt", desc: "100% Cotton Basic Tee", price: "45.00", image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=400&auto=format&fit=crop" },
+          { title: "Denim Jeans", desc: "Slim Fit Blue Jeans", price: "120.00", image: "https://images.unsplash.com/photo-1542272604-787c3835535d?q=80&w=400&auto=format&fit=crop" },
+          { title: "Running Shoes", desc: "Sports Sneakers", price: "250.00", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=400&auto=format&fit=crop" }
         ]
       },
       {
         name: "Electronics",
         items: [
-          { title: "Wireless Earbuds", desc: "Bluetooth 5.0 with Case", price: "150.00", image: "🎧" },
-          { title: "USB-C Cable", desc: "Fast Charging 1m", price: "35.00", image: "🔌" }
+          { title: "Wireless Earbuds", desc: "Bluetooth 5.0 with Case", price: "150.00", image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?q=80&w=400&auto=format&fit=crop" },
+          { title: "USB-C Cable", desc: "Fast Charging 1m", price: "35.00", image: "https://images.unsplash.com/photo-1589492477829-5e65395b66cc?q=80&w=400&auto=format&fit=crop" }
         ]
       }
     ]
   },
   "Pharmacies": {
     filters: [
-      {icon: "💊", name: "Medicine"}, {icon: "🧴", name: "Skincare"}, {icon: "🩹", name: "First Aid"},
-      {icon: "💪", name: "Vitamins"}, {icon: "👶", name: "Baby Care"}, {icon: "🧼", name: "Hygiene"}
+      {icon: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=100&auto=format&fit=crop", name: "Medicine"}, {icon: "https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=100&auto=format&fit=crop", name: "Skincare"}, {icon: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=100&auto=format&fit=crop", name: "First Aid"},
+      {icon: "https://images.unsplash.com/photo-1584017911766-d451b3d0e8af?q=80&w=100&auto=format&fit=crop", name: "Vitamins"}, {icon: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?q=80&w=100&auto=format&fit=crop", name: "Baby Care"}, {icon: "https://images.unsplash.com/photo-1559599101-f09722fb4948?q=80&w=100&auto=format&fit=crop", name: "Hygiene"}
     ],
     brands: [
-      {icon: "⚕️", name: "Life Pharmacy"}, {icon: "🏥", name: "Aster"}, {icon: "💊", name: "Boots"},
-      {icon: "🩺", name: "Supercare"}, {icon: "🌿", name: "Bin Sina"}
+      {icon: "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=100&auto=format&fit=crop", name: "Life Pharmacy"}, {icon: "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=100&auto=format&fit=crop", name: "Aster"}, {icon: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=100&auto=format&fit=crop", name: "Boots"},
+      {icon: "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=100&auto=format&fit=crop", name: "Supercare"}, {icon: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=100&auto=format&fit=crop", name: "Bin Sina"}
     ],
     items: [
-      {name: "Life Pharmacy", image: "⚕️", rating: "4.9", time: "30-45 Mins", delivery: "Free"},
-      {name: "Aster Pharmacy", image: "🏥", rating: "4.8", time: "30-45 Mins", delivery: "Free"},
-      {name: "Boots", image: "💊", rating: "4.7", time: "45-60 Mins", delivery: "1000"},
-      {name: "Supercare", image: "🩺", rating: "4.6", time: "20-40 Mins", delivery: "500"}
+      {name: "Life Pharmacy", image: "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=200&auto=format&fit=crop", rating: "4.9", time: "30-45 Mins", delivery: "Free"},
+      {name: "Aster Pharmacy", image: "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=200&auto=format&fit=crop", rating: "4.8", time: "30-45 Mins", delivery: "Free"},
+      {name: "Boots", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=200&auto=format&fit=crop", rating: "4.7", time: "45-60 Mins", delivery: "1000"},
+      {name: "Supercare", image: "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=200&auto=format&fit=crop", rating: "4.6", time: "20-40 Mins", delivery: "500"}
     ],
     menu: [
       {
         name: "Medicines",
         items: [
-          { title: "Panadol Extra", desc: "Pain Relief 24 Tablets", price: "12.00", image: "💊" },
-          { title: "Vitamin C", desc: "Effervescent 20 Tabs", price: "25.00", image: "🍊" },
-          { title: "Cough Syrup", desc: "Herbal Relief 100ml", price: "18.00", image: "🥄" }
+          { title: "Panadol Extra", desc: "Pain Relief 24 Tablets", price: "12.00", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=400&auto=format&fit=crop" },
+          { title: "Vitamin C", desc: "Effervescent 20 Tabs", price: "25.00", image: "https://images.unsplash.com/photo-1616671285442-9907106a7509?q=80&w=400&auto=format&fit=crop" },
+          { title: "Cough Syrup", desc: "Herbal Relief 100ml", price: "18.00", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=400&auto=format&fit=crop" }
         ]
       },
       {
         name: "Personal Care",
         items: [
-          { title: "Face Mask", desc: "Surgical Masks 50pcs", price: "15.00", image: "😷" },
-          { title: "Hand Sanitizer", desc: "Gel 500ml", price: "20.00", image: "🧴" }
+          { title: "Face Mask", desc: "Surgical Masks 50pcs", price: "15.00", image: "https://images.unsplash.com/photo-1584467541268-b040f83be3fd?q=80&w=400&auto=format&fit=crop" },
+          { title: "Hand Sanitizer", desc: "Gel 500ml", price: "20.00", image: "https://images.unsplash.com/photo-1584622781564-1d987f7333c1?q=80&w=400&auto=format&fit=crop" }
         ]
       }
     ]
   },
   "Packages": {
     filters: [
-      {icon: "📦", name: "Send"}, {icon: "📬", name: "Receive"}, {icon: "🏙️", name: "Local"},
-      {icon: "✈️", name: "International"}, {icon: "🚚", name: "Moving"}
+      {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "Send"}, {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "Receive"}, {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "Local"},
+      {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "International"}, {icon: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=100&auto=format&fit=crop", name: "Moving"}
     ],
     brands: [
-      {icon: "🟨", name: "DHL"}, {icon: "🟧", name: "FedEx"}, {icon: "🟥", name: "Aramex"},
-      {icon: "🟦", name: "UPS"}, {icon: "🛵", name: "Careem Box"}
+      {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "DHL"}, {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "FedEx"}, {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "Aramex"},
+      {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "UPS"}, {icon: "https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=100&auto=format&fit=crop", name: "Careem Box"}
     ],
     items: [
-      {name: "DHL Express", image: "🟨", rating: "4.9", time: "Pickup: 15m", delivery: "Var"},
-      {name: "Local Courier", image: "🛵", rating: "4.5", time: "Pickup: 10m", delivery: "5000"},
-      {name: "Aramex", image: "🟥", rating: "4.7", time: "Pickup: 20m", delivery: "Var"},
-      {name: "Fetchr", image: "📦", rating: "4.4", time: "Pickup: 30m", delivery: "3000"}
+      {name: "DHL Express", image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=200&auto=format&fit=crop", rating: "4.9", time: "Pickup: 15m", delivery: "Var"},
+      {name: "Local Courier", image: "https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=200&auto=format&fit=crop", rating: "4.5", time: "Pickup: 10m", delivery: "5000"},
+      {name: "Aramex", image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=200&auto=format&fit=crop", rating: "4.7", time: "Pickup: 20m", delivery: "Var"},
+      {name: "Fetchr", image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=200&auto=format&fit=crop", rating: "4.4", time: "Pickup: 30m", delivery: "3000"}
     ],
     menu: [
       {
         name: "Delivery Services",
         items: [
-          { title: "Standard Delivery", desc: "Within City (Same Day)", price: "15.00", image: "🛵" },
-          { title: "Express Delivery", desc: "Within City (2 Hours)", price: "30.00", image: "🚀" },
-          { title: "Document Service", desc: "Secure document handling", price: "20.00", image: "📄" }
+          { title: "Standard Delivery", desc: "Within City (Same Day)", price: "15.00", image: "https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=400&auto=format&fit=crop" },
+          { title: "Express Delivery", desc: "Within City (2 Hours)", price: "30.00", image: "https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=400&auto=format&fit=crop" },
+          { title: "Document Service", desc: "Secure document handling", price: "20.00", image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=400&auto=format&fit=crop" }
         ]
       }
     ]
   },
   "Drinks": {
     filters: [
-      {icon: "💧", name: "Water"}, {icon: "🥤", name: "Juices"}, {icon: "☕", name: "Coffee"},
-      {icon: "🍵", name: "Tea"}, {icon: "🥛", name: "Milkshakes"}, {icon: "🧉", name: "Smoothies"}
+      {icon: "https://images.unsplash.com/photo-1548964856-ac52129e478d?q=80&w=100&auto=format&fit=crop", name: "Water"}, {icon: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=100&auto=format&fit=crop", name: "Juices"}, {icon: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=100&auto=format&fit=crop", name: "Coffee"},
+      {icon: "https://images.unsplash.com/photo-1544787210-2213d2424031?q=80&w=100&auto=format&fit=crop", name: "Tea"}, {icon: "https://images.unsplash.com/photo-1550583724-125581cc254b?q=80&w=100&auto=format&fit=crop", name: "Milkshakes"}, {icon: "https://images.unsplash.com/photo-1553279768-865429fa0078?q=80&w=100&auto=format&fit=crop", name: "Smoothies"}
     ],
     brands: [
-      {icon: "🧜‍♀️", name: "Starbucks"}, {icon: "☕", name: "Costa"}, {icon: "🍩", name: "Tim Hortons"},
-      {icon: "🥤", name: "Juice Time"}, {icon: "💧", name: "Mai Dubai"}
+      {icon: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=100&auto=format&fit=crop", name: "Starbucks"}, {icon: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=100&auto=format&fit=crop", name: "Costa"}, {icon: "https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=100&auto=format&fit=crop", name: "Tim Hortons"},
+      {icon: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=100&auto=format&fit=crop", name: "Juice Time"}, {icon: "https://images.unsplash.com/photo-1548964856-ac52129e478d?q=80&w=100&auto=format&fit=crop", name: "Mai Dubai"}
     ],
     items: [
-      {name: "Starbucks", image: "☕", rating: "4.8", time: "20-30 Mins", delivery: "Free"},
-      {name: "Mai Dubai Water", image: "💧", rating: "4.9", time: "60-120 Mins", delivery: "Free"},
-      {name: "Juice World", image: "🥤", rating: "4.6", time: "25-35 Mins", delivery: "1500"},
-      {name: "Tea Corner", image: "🍵", rating: "4.5", time: "15-25 Mins", delivery: "500"}
+      {name: "Starbucks", image: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=200&auto=format&fit=crop", rating: "4.8", time: "20-30 Mins", delivery: "Free"},
+      {name: "Mai Dubai Water", image: "https://images.unsplash.com/photo-1548964856-ac52129e478d?q=80&w=200&auto=format&fit=crop", rating: "4.9", time: "60-120 Mins", delivery: "Free"},
+      {name: "Juice World", image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=200&auto=format&fit=crop", rating: "4.6", time: "25-35 Mins", delivery: "1500"},
+      {name: "Tea Corner", image: "https://images.unsplash.com/photo-1544787210-2213d2424031?q=80&w=200&auto=format&fit=crop", rating: "4.5", time: "15-25 Mins", delivery: "500"}
     ],
     menu: [
       {
         name: "Coffee & Tea",
         items: [
-          { title: "Iced Latte", desc: "Espresso with milk & ice", price: "18.00", image: "🥤" },
-          { title: "Hot Cappuccino", desc: "Frothy milk coffee", price: "16.00", image: "☕" },
-          { title: "Green Tea", desc: "Hot brewed tea", price: "10.00", image: "🍵" }
+          { title: "Iced Latte", desc: "Espresso with milk & ice", price: "18.00", image: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=400&auto=format&fit=crop" },
+          { title: "Hot Cappuccino", desc: "Frothy milk coffee", price: "16.00", image: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=400&auto=format&fit=crop" },
+          { title: "Green Tea", desc: "Hot brewed tea", price: "10.00", image: "https://images.unsplash.com/photo-1544787210-2213d2424031?q=80&w=400&auto=format&fit=crop" }
         ]
       },
       {
         name: "Cold Drinks",
         items: [
-          { title: "Fresh Orange Juice", desc: "No sugar added", price: "20.00", image: "🍊" },
-          { title: "Mineral Water", desc: "6 x 1.5L Case", price: "12.00", image: "💧" },
-          { title: "Mango Smoothie", desc: "Thick & Sweet", price: "22.00", image: "🥭" }
+          { title: "Fresh Orange Juice", desc: "No sugar added", price: "20.00", image: "https://images.unsplash.com/photo-1616671285442-9907106a7509?q=80&w=400&auto=format&fit=crop" },
+          { title: "Mineral Water", desc: "6 x 1.5L Case", price: "12.00", image: "https://images.unsplash.com/photo-1548964856-ac52129e478d?q=80&w=400&auto=format&fit=crop" },
+          { title: "Mango Smoothie", desc: "Thick & Sweet", price: "22.00", image: "https://images.unsplash.com/photo-1553279768-865429fa0078?q=80&w=400&auto=format&fit=crop" }
         ]
       }
     ]
@@ -3092,7 +3101,7 @@ function renderCategoryContent(category) {
     config.filters.forEach(f => {
       const item = document.createElement('div');
       item.className = 'filter-item';
-      item.innerHTML = `<div class="filter-box">${f.icon}</div><div class="filter-name">${f.name}</div>`;
+      item.innerHTML = `<div class="filter-box">${window.getImageHtml(f.icon, '📁')}</div><div class="filter-name">${f.name}</div>`;
       item.addEventListener('click', () => showDetailScreen(f.name)); 
       filterScroll.appendChild(item);
     });
@@ -3908,11 +3917,11 @@ function openCart() {
         suggestedScroll.className = 'suggested-scroll';
         
         const suggestedItems = [
-            { title: 'French Fries', price: 15.00, emoji: '🍟' },
-            { title: 'Coca Cola', price: 5.00, emoji: '🥤' },
-            { title: 'Choco Ice Cream', price: 12.00, emoji: '🍦' },
-            { title: 'Fresh Salad', price: 20.00, emoji: '🥗' },
-            { title: 'Onion Rings', price: 18.00, emoji: '🧅' }
+            { title: 'French Fries', price: 15.00, emoji: 'https://images.unsplash.com/photo-1573082882294-063f2f908863?q=80&w=100&auto=format&fit=crop' },
+            { title: 'Coca Cola', price: 5.00, emoji: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=100&auto=format&fit=crop' },
+            { title: 'Choco Ice Cream', price: 12.00, emoji: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=100&auto=format&fit=crop' },
+            { title: 'Fresh Salad', price: 20.00, emoji: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=100&auto=format&fit=crop' },
+            { title: 'Onion Rings', price: 18.00, emoji: 'https://images.unsplash.com/photo-1639024471283-035188835118?q=80&w=100&auto=format&fit=crop' }
         ];
 
         suggestedItems.forEach(sItem => {
