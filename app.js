@@ -856,7 +856,7 @@ function proceedToHome(skipSave = false) {
                     if(typeof showMap === 'function') showMap();
                 } else {
                     screen.classList.add('active');
-                    if(lastScreenId === 'adminScreen') setTimeout(() => switchAdminTab('dashboard'), 100);
+                    if(lastScreenId === 'adminScreen') switchAdminTab('dashboard');
                     if(lastScreenId === 'riderScreen') setTimeout(initRiderMap, 300);
                     if(lastScreenId === 'shopPortalScreen') setTimeout(initMerchantCharts, 300);
                 }
@@ -2804,6 +2804,13 @@ function openContentSearch() {
         
         populateSearchAllItems();
     }
+
+    // UI Refinement: Hide "Sort by" on search screen
+    screen.querySelectorAll('.text-filter-btn, button').forEach(btn => {
+        if (btn.textContent.trim().toLowerCase().includes('sort by')) btn.style.display = 'none';
+        btn.style.flex = '0 0 calc((100% - 70px) / 4)';
+        btn.style.fontSize = '0.75em';
+    });
 }
 
 function populateSearchAllItems() {
@@ -3114,6 +3121,18 @@ function renderCategoryContent(category) {
   // Store current category for use in opening restaurants
   window.currentCategoryConfig = config;
 
+  // UI Refinement: Hide "Sort by" and set filter layout to horizontal scroll
+  document.querySelectorAll('.text-filter-btn').forEach(btn => {
+      if (btn.textContent.trim().toLowerCase().includes('sort by')) btn.style.display = 'none';
+      btn.style.flex = '0 0 calc((100% - 70px) / 4)';
+      btn.style.scrollSnapAlign = 'start';
+      btn.style.fontSize = '0.75em';
+  });
+  const tfScroll = document.querySelector('.text-filter-scroll');
+  if (tfScroll) {
+      tfScroll.style.cssText = 'display:flex; overflow-x:auto; gap:10px; padding:0 20px; margin-bottom:15px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;';
+  }
+
   // UI Refinement: Add Title above Filters
   const filterWrapper = document.querySelector('.filter-scroll')?.parentElement;
   if (filterWrapper) {
@@ -3130,10 +3149,12 @@ function renderCategoryContent(category) {
   // Render Filters
   const filterScroll = document.querySelector('.filter-scroll');
   if(filterScroll) {
+    filterScroll.style.cssText = 'display:flex; overflow-x:auto; gap:10px; padding:0 20px 15px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;';
     filterScroll.innerHTML = '';
     config.filters.forEach(f => {
       const item = document.createElement('div');
       item.className = 'filter-item';
+      item.style.cssText = 'flex: 0 0 calc((100% - 70px) / 4); scroll-snap-align: start;';
       item.innerHTML = `<div class="filter-box" style="border-radius: 50%; overflow: hidden; background: #f9f9f9; border: 1px solid #eee;">${window.getImageHtml(f.icon, '📁')}</div><div class="filter-name">${f.name}</div>`;
       item.addEventListener('click', () => showDetailScreen(f.name)); 
       filterScroll.appendChild(item);
@@ -3143,42 +3164,26 @@ function renderCategoryContent(category) {
   // Render Brands
   const brandsContainer = document.getElementById('brandsScroll')?.parentElement;
   if(brandsContainer) {
-    // Add Toggle for Open/Closed
-    let toggleRow = brandsContainer.querySelector('.brands-filter-row');
-    if (!toggleRow) {
-        toggleRow = document.createElement('div');
-        toggleRow.className = 'brands-filter-row';
-        toggleRow.style.cssText = 'display:flex; justify-content:flex-end; padding:0 20px; margin-bottom:10px;';
-        toggleRow.innerHTML = `
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.85em; font-weight:bold; color:#666; cursor:pointer;">
-                <input type="checkbox" id="openOnlyToggle" style="accent-color:#019E81;"> Show Open Only
-            </label>
-        `;
-        brandsContainer.insertBefore(toggleRow, document.getElementById('brandsScroll'));
-        toggleRow.querySelector('#openOnlyToggle').addEventListener('change', () => renderCategoryContent(category));
-    }
+    // Remove legacy toggle row if it exists
+    const existingToggle = brandsContainer.querySelector('.brands-filter-row');
+    if (existingToggle) existingToggle.remove();
 
-    const openOnly = toggleRow.querySelector('#openOnlyToggle').checked;
     const brandsScroll = document.getElementById('brandsScroll');
+    brandsScroll.style.cssText = 'display:flex; overflow-x:auto; gap:10px; padding:0 20px 15px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;';
     brandsScroll.innerHTML = '';
     
     config.brands.forEach(b => {
       const liveRes = adminRestaurants.find(r => r.name === b.name);
       const isOpen = liveRes ? window.isRestaurantOpen(liveRes.openingHours) : true;
 
-      if (openOnly && !isOpen) return;
-
       const container = document.createElement('div');
       container.className = 'brand-container';
+      container.style.cssText = 'flex: 0 0 calc((100% - 70px) / 4); scroll-snap-align: start;';
       container.innerHTML = `
-          <div class="brand-item">
-            <div class="brand-image">${window.getImageHtml(b.icon, '🌟')}</div>
+          <div class="brand-item" style="width: 100%; aspect-ratio: 1/1; border-radius: 50%; overflow: hidden; background: #fff; border: 1px solid #eee; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 8px;">
+            <div class="brand-image" style="width: 100%; height: 100%;">${window.getImageHtml(b.icon, '🌟')}</div>
           </div>
-          <div class="brand-name">${b.name}</div>
-          <div class="brand-delivery-info">
-            ${isOpen ? '<span style="color:#019E81; font-weight:bold;">● Open</span>' : '<span style="color:#ff4757; font-weight:bold;">○ Closed</span>'}
-            <span class="bike-icon" style="margin-left:5px;">🚴‍♂️</span><span>Free</span>
-          </div>
+          <div class="brand-name" style="text-align: center; font-size: 0.72em; font-weight: 700; color: #333;">${b.name}</div>
       `;
       container.addEventListener('click', () => openRestaurant(b.name, config.menu));
       brandsScroll.appendChild(container);
@@ -3246,7 +3251,6 @@ function renderCategoryContent(category) {
       <div class="res-name">${item.name}</div>
       <div class="pref-info">
         <span class="pref-stat"><span>⭐</span>(${displayRating})</span>
-        <span class="pref-stat"><span style="display:inline-block; transform:scaleX(-1);">🚴‍♂️</span>${item.delivery}</span>
         <span class="pref-stat">${item.time}</span>
       </div>
   `;
@@ -3552,7 +3556,15 @@ if (resCloseBtn) {
 
 if (resShareBtn) {
   resShareBtn.addEventListener('click', () => {
-    customPopup({ title: 'Coming Soon', message: 'Share functionality is under development.' });
+    if (navigator.share) {
+        navigator.share({
+            title: document.getElementById('resScreenName').textContent,
+            text: 'Check out this restaurant on Kirya!',
+            url: window.location.href
+        }).catch(() => {});
+    } else {
+        showToast('Sharing not supported on this browser');
+    }
   });
 }
 
@@ -5538,11 +5550,15 @@ function openAdmin() {
     document.getElementById('riderScreen').classList.remove('active');
     document.getElementById('shopPortalScreen').classList.remove('active');
     document.getElementById('home').style.display = 'none';
+    
+    // Ensure all tab contents are hidden before showing the screen to prevent flickering
+    document.querySelectorAll('.admin-tab-content').forEach(tab => tab.style.display = 'none');
+    
     document.getElementById('adminScreen').classList.add('active');
     document.getElementById('adminScreen').style.display = 'flex';
+
     // Initialize admin dashboard
     closeAdminSidebar();
-    renderAdminTabContent(getCurrentAdminTab());
     
     // Inject Re-sync Button into Sidebar if not present
     const sidebar = document.getElementById('adminSidebar');
@@ -5557,9 +5573,8 @@ function openAdmin() {
         sidebar.appendChild(resyncItem);
     }
 
-    setTimeout(() => {
-        switchAdminTab('dashboard');
-    }, 100);
+    // Call switchAdminTab immediately to render the default view and highlight sidebar correctly
+    switchAdminTab('dashboard');
 }
 
 function openShopPortal() {
@@ -6200,8 +6215,8 @@ function renderWallet() {
         <div class="wallet-balance-label">Total Balance</div>
         <div class="wallet-balance-amount">UGX ${userWalletBalance.toLocaleString()}</div>
         <div class="wallet-btn-row">
-            <div class="wallet-action-btn" onclick="showToast('Top Up feature coming soon')"><span>➕</span> Top Up</div>
-            <div class="wallet-action-btn" onclick="showToast('Withdraw feature coming soon')"><span>↘️</span> Withdraw</div>
+            <div class="wallet-action-btn" onclick="showToast('Top Up feature coming soon')"><span>➕</span> Add Funds</div>
+            <div class="wallet-action-btn" onclick="showToast('Withdraw feature coming soon')"><span>↘️</span> Cash Out</div>
         </div>
     `;
     content.appendChild(card);
@@ -10793,8 +10808,22 @@ function openAdminModal(type, id = null) {
         saveBtn.onclick = () => saveAdminData('global_notif');
     } else if (type === 'wallet_adjustment') {
         title.textContent = 'Adjust User Balance';
-        formHtml = `<p>Coming soon: Form to Top up or Deduct from User Balance.</p>`;
-        saveBtn.style.display = 'none';
+        const user = id ? adminWalletsList.find(w => w.id == id) : {};
+        formHtml = `
+            <div style="text-align:left; margin-bottom:15px;">
+                <div style="font-weight:bold; margin-bottom:5px;">User: ${user.name || 'Unknown'}</div>
+                <div style="color:#666;">Current Balance: UGX ${(user.balance || 0).toLocaleString()}</div>
+            </div>
+            <label for="adjAmount" class="admin-form-label">Adjustment Amount (UGX)</label>
+            <input type="number" id="adjAmount" class="admin-form-input" placeholder="e.g. 5000 or -5000">
+            <label for="adjReason" class="admin-form-label">Reason for Adjustment</label>
+            <select id="adjReason" class="admin-form-input">
+                <option value="Refund">Refund</option>
+                <option value="Bonus">Bonus</option>
+                <option value="Correction">Correction</option>
+            </select>
+        `;
+        saveBtn.style.display = 'block';
     }
 
     form.innerHTML = formHtml;
