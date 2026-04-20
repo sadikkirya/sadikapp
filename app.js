@@ -10515,7 +10515,7 @@ function openAdminModal(type, id = null) {
     if (type === 'vendor') {
         const r = id ? adminRestaurants.find(i => i.id === id) : {};
         title.textContent = id ? 'Edit Vendor' : 'Add New Vendor';
-        const vendorCategories = ['Restaurant', 'Pharmacy', 'Grocery Shop', 'Electronics', 'Clothing', 'Drinks', 'Other'];
+        const vendorCategories = ['Restaurants', 'Pharmacies', 'Groceries', 'Shops', 'Drinks', 'Packages'];
         const categoryOptions = vendorCategories.map(cat => `<option value="${cat}" ${r.category === cat ? 'selected' : ''}>${cat}</option>`).join('');
 
         formHtml = `
@@ -10564,7 +10564,7 @@ function openAdminModal(type, id = null) {
                 <input type="file" id="addRestaurantCoverPhoto" class="admin-form-input" accept="image/*" style="background:#fff;">
             </div>
         `;
-        saveBtn.onclick = () => saveAdminData('restaurant');
+        saveBtn.onclick = () => saveAdminData('vendor');
         setTimeout(() => {
             setupPreview(['addRestaurantProfileURL', 'addRestaurantProfilePhoto'], 'addRestaurantProfilePreview', '🏪');
             setupPreview(['addRestaurantCoverURL', 'addRestaurantCoverPhoto'], 'addRestaurantCoverPreview', '🖼️');
@@ -11273,6 +11273,7 @@ async function saveAdminData(type) {
 
     if (window.hideLoading) window.hideLoading();
     showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} saved successfully!`);
+    editingAdminId = null; // Reset the editing state after saving
     closeAdminAddModal();
 }
 
