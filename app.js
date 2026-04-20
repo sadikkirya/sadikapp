@@ -933,7 +933,7 @@ function proceedToHome(skipSave = false) {
             // Logged in with a saved address: Show Home with Categories
             if(home) home.style.display = 'none';
             document.getElementById('newHomeScreen').classList.add('active');
-            if(typeof renderCategoryContent === 'function') renderCategoryContent('Food');
+            if(typeof renderCategoryContent === 'function') renderCategoryContent('Restaurants');
         } else {
             // Guest or Logged in without address: Start at Address Selection
             if (home) home.style.display = 'block';
@@ -1748,7 +1748,7 @@ let adminAnalytics = {...MOCK_ANALYTICS};
 window.adminAnalytics = {...MOCK_ANALYTICS};
 
 const MOCK_CATEGORIES = [
-    { id: 1, name: 'Food', icon: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=200&auto=format&fit=crop', status: 'active' },
+    { id: 1, name: 'Restaurants', icon: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=200&auto=format&fit=crop', status: 'active' },
     { id: 2, name: 'Groceries', icon: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop', status: 'active' },
     { id: 3, name: 'Shops', icon: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=200&auto=format&fit=crop', status: 'active' },
     { id: 4, name: 'Pharmacies', icon: 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=200&auto=format&fit=crop', status: 'active' },
@@ -2926,7 +2926,7 @@ const catBackBtn = document.getElementById('catBackBtn');
 
 /* Category Configuration */
 const categoryConfig = {
-  "Food": {
+  "Restaurants": {
     filters: [
       {icon: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=100&auto=format&fit=crop", name: "Promotions"},
       {icon: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=100&auto=format&fit=crop", name: "Fast Food"},
@@ -3129,7 +3129,7 @@ window.isRestaurantOpen = function(openingHours) {
 };
 
 function renderCategoryContent(category) {
-  const config = categoryConfig[category] || categoryConfig["Food"]; 
+  const config = categoryConfig[category] || categoryConfig["Restaurants"]; 
   // Store current category for use in opening restaurants
   window.currentCategoryConfig = config;
 
@@ -3270,12 +3270,22 @@ function renderCategoryContent(category) {
 
   const restaurantList = document.getElementById('restaurantList');
   if(restaurantList) {
+    // Add Vendor Title on top of the main vendor list
+    let vendorTitle = restaurantList.parentElement.querySelector('.vendor-section-title');
+    if (!vendorTitle) {
+        vendorTitle = document.createElement('div');
+        vendorTitle.className = 'section-header-title vendor-section-title';
+        vendorTitle.style.cssText = 'margin: 25px 0 15px 20px; font-weight: 800; font-size: 1.2em; color: #333;';
+        restaurantList.parentElement.insertBefore(vendorTitle, restaurantList);
+    }
+    vendorTitle.textContent = `${category} Vendors`;
+
     restaurantList.innerHTML = '';
     
     // DYNAMIC SYNC: Fetch restaurants from adminRestaurants instead of hardcoded config.items
     const categoryRestaurants = adminRestaurants.filter(r => 
         r.category === category || 
-        (category === 'Food' && r.category === 'Restaurants')
+        (category === 'Restaurants' && r.category === 'Restaurants')
     );
 
     categoryRestaurants.forEach((res, i) => {
@@ -3304,7 +3314,7 @@ function renderCategoryContent(category) {
     prefScroll.innerHTML = '';
     
     const prefRestaurants = adminRestaurants.filter(r => 
-        r.category === category || (category === 'Food' && r.category === 'Restaurants')
+        r.category === category || (category === 'Restaurants' && r.category === 'Restaurants')
     ).slice(0, 5);
 
     prefRestaurants.forEach((res, i) => {
@@ -3492,7 +3502,7 @@ function openRestaurant(name, menuData) {
   }
   
   // Default to Food menu if no menuData provided
-  const menu = menuData || categoryConfig["Food"].menu;
+  const menu = menuData || categoryConfig["Restaurants"].menu;
   
   // Render Menu Nav and Content
   const navContainer = document.getElementById('resMenuNav');
