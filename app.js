@@ -151,6 +151,24 @@ function closeAllScreens() {
     if (loginScreen) loginScreen.style.display = '';
 }
 
+/**
+ * Resets the entire application state to its initial mock defaults.
+ */
+window.restoreDefaults = async function() {
+    const confirmed = await window.customPopup({ 
+        title: 'Restore Defaults', 
+        message: 'This will delete all local changes (restaurants, riders, users, and orders) and reset the app to factory defaults. Are you sure?', 
+        type: 'confirm' 
+    });
+    
+    if (confirmed) {
+        localStorage.clear();
+        sessionStorage.clear();
+        showToast("System reset. Reloading...");
+        setTimeout(() => location.reload(), 1000);
+    }
+};
+
 // Initialize critical global state if not already present
 if (!window.currentUser) {
     window.currentUser = { name: '', phone: '', points: 500, isApproved: false, walletBalance: 0, isGuest: true };
@@ -8158,7 +8176,7 @@ function renderAdminRestaurants() {
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
                 <h3 style="margin:0;">🏪 Vendors Management</h3>
                 <div style="display:flex; gap:10px;">
-                    <button onclick="openAdminModal('restaurant')" style="padding:8px 12px; background:#019E81; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:0.9em; display:flex; align-items:center; gap:5px;">➕ Add Restaurant</button>
+                    <button onclick="openAdminModal('vendor')" style="padding:8px 12px; background:#019E81; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:0.9em; display:flex; align-items:center; gap:5px;">➕ Add Vendor</button>
                     <button onclick="triggerRestaurantImport()" style="padding:8px 12px; background:#2196f3; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:0.9em; display:flex; align-items:center; gap:5px;">📂 Import CSV</button>
                     <button onclick="exportVendorsPDF()" style="padding:8px 12px; background:#e91e63; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:0.9em; display:flex; align-items:center; gap:5px;">📄 Export PDF</button>
                     <button onclick="exportAdminData('restaurants')" style="padding:8px 12px; background:#333; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:0.9em; display:flex; align-items:center; gap:5px;">📥 Export CSV</button>
@@ -9348,6 +9366,11 @@ function renderAdminConfig() {
                 <p style="font-size:0.9em; color:#666; margin-bottom:10px;">Upload current local sample data (Orders, Riders, Restaurants) to Firebase Firestore.</p>
                 <button onclick="seedDatabase()" style="padding:12px 20px; background:#FFBF42; color:#333; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">⬆️ Upload Sample Data to Firebase</button>
             </div>
+            <div class="dashboard-card" style="border-top: 5px solid #ff4757;">
+                <h4 style="margin-bottom:10px; color:#ff4757;">⚠️ Danger Zone</h4>
+                <p style="font-size:0.9em; color:#666; margin-bottom:10px;">Reset the entire app to its original mock state. This will clear your local storage.</p>
+                <button onclick="window.restoreDefaults()" style="padding:12px 20px; background:#ff4757; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">♻️ Restore System Defaults</button>
+            </div>
         </div>
     `;
 }
@@ -10512,10 +10535,10 @@ function openAdminModal(type, id = null) {
     let formHtml = '';
     editingAdminId = id;
 
-    if (type === 'vendor') {
+    if (type === 'vendor' || type === 'restaurant') {
         const r = id ? adminRestaurants.find(i => i.id === id) : {};
         title.textContent = id ? 'Edit Vendor' : 'Add New Vendor';
-        const vendorCategories = ['Restaurants', 'Pharmacies', 'Groceries', 'Shops', 'Drinks', 'Packages'];
+        const vendorCategories = adminCategories.map(cat => cat.name);
         const categoryOptions = vendorCategories.map(cat => `<option value="${cat}" ${r.category === cat ? 'selected' : ''}>${cat}</option>`).join('');
 
         formHtml = `
