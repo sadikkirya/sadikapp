@@ -34,6 +34,10 @@ window.toggleConnectionBanner = function(show) {
     if (show) banner.style.animation = 'slideDownBanner 0.3s ease';
 };
 
+// Automatically toggle connection banner based on browser network state
+window.addEventListener('offline', () => window.toggleConnectionBanner(true));
+window.addEventListener('online', () => window.toggleConnectionBanner(false));
+
 window.toggleTablePassword = function(id, actualPassword) {
     const el = document.getElementById(`pass-${id}`);
     if (!el) return;
@@ -643,12 +647,22 @@ function updateProfileUI() {
     const pointsStat = document.querySelector('#profileScreen .stat-item:nth-child(3) .stat-value');
     const ordersStat = document.querySelector('#profileScreen .stat-item:nth-child(1) .stat-value');
 
-    if(walletStat) walletStat.textContent = `UGX ${(currentUser.walletBalance || 0).toLocaleString()}`;
-    if(pointsStat) pointsStat.textContent = (currentUser.points || 0).toLocaleString();
-    if(ordersStat) ordersStat.textContent = (currentUser.orders?.length || 0);
+    if (walletStat) walletStat.textContent = `UGX ${(currentUser.walletBalance || 0).toLocaleString()}`;
+    if (pointsStat) pointsStat.textContent = (currentUser.points || 0).toLocaleString();
+    if (ordersStat) ordersStat.textContent = (currentUser.orders?.length || 0);
 
-    // Update profile picture if available
-    // ... (logic for profile pic can be added here) ...
+    // INSTANT IMAGE UPDATE: Reflect uploaded profile photo immediately in the UI
+    const profilePicEl = document.getElementById('profilePic');
+    if (profilePicEl) {
+        const photo = currentUser.profilePhoto || currentUser.photoURL;
+        if (photo) {
+            profilePicEl.style.backgroundImage = `url(${photo})`;
+            profilePicEl.textContent = '';
+        } else {
+            profilePicEl.style.backgroundImage = '';
+            profilePicEl.textContent = '👤';
+        }
+    }
 }
 
 // Initialize User
@@ -1539,7 +1553,7 @@ window.adminOrders = [...MOCK_ORDERS];
 const MOCK_RESTAURANTS = [
     { id: 1, name: 'Burger King', category: 'Restaurants', rating: 4.5, status: 'active', orders: 245, revenue: 12500.00, phone: '+971 4 123 4567', address: 'Dubai Mall', owner: 'BK UAE LLC', commission: 15, profilePhoto: 'https://images.unsplash.com/photo-1626229650236-737940449a58?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 101, name: "Whopper", price: 22.00, img: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=400&auto=format&fit=crop", active: true },
-        { id: 102, name: "Chicken Royale", price: 20.00, img: "assets/chicken_royale.jpg", active: true },
+        { id: 102, name: "Chicken Royale", price: 20.00, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 103, name: "Onion Rings", price: 10.00, img: "https://images.unsplash.com/photo-1639024471283-035188835118?q=80&w=400&auto=format&fit=crop", active: true },
     ] },
     { id: 2, name: 'Pizza Hut', category: 'Restaurants', rating: 4.7, status: 'active', orders: 189, revenue: 18900.00, phone: '+971 4 234 5678', address: 'Mall of Emirates', owner: 'PH Middle East', commission: 12, profilePhoto: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?q=80&w=800&auto=format&fit=crop', menu: [
@@ -1572,11 +1586,11 @@ const MOCK_RESTAURANTS = [
         { id: 801, name: "Flat White", price: 18.00, img: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 802, name: "Blueberry Muffin", price: 14.00, img: "https://images.unsplash.com/photo-1558303420-f814d8a590f5?q=80&w=400&auto=format&fit=crop", active: true },
     ] },
-    { id: 9, name: 'Life Pharmacy', category: 'Pharmacies', rating: 4.9, status: 'active', orders: 450, revenue: 22500.00, phone: '+971 4 999 8888', address: 'Dubai Marina', owner: 'Life Healthcare', commission: 8, profilePhoto: 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?q=80&w=800&auto=format&fit=crop', menu: [
+    { id: 9, name: 'Life Pharmacy', category: 'Pharmacies', rating: 4.9, status: 'active', orders: 450, revenue: 22500.00, phone: '+971 4 999 8888', address: 'Dubai Marina', owner: 'Life Healthcare', commission: 8, profilePhoto: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 901, name: "Panadol", price: 12.00, img: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 902, name: "Vitamin C", price: 25.00, img: "https://images.unsplash.com/photo-1616671285442-9907106a7509?q=80&w=400&auto=format&fit=crop", active: true }
     ] },
-    { id: 10, name: 'Carrefour City', category: 'Groceries', rating: 4.8, status: 'active', orders: 1200, revenue: 45000.00, phone: '+971 4 777 6666', address: 'Business Bay', owner: 'Majid Al Futtaim', commission: 5, profilePhoto: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?q=80&w=800&auto=format&fit=crop', menu: [
+    { id: 10, name: 'Carrefour City', category: 'Groceries', rating: 4.8, status: 'active', orders: 1200, revenue: 45000.00, phone: '+971 4 777 6666', address: 'Business Bay', owner: 'Majid Al Futtaim', commission: 5, profilePhoto: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 1001, name: "Fresh Milk", price: 6.50, img: "https://images.unsplash.com/photo-1550583724-125581cc254b?q=80&w=400&auto=format&fit=crop", active: true },
         { id: 1002, name: "Bread", price: 5.00, img: "https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop", active: true }
     ] },
@@ -1585,7 +1599,23 @@ const MOCK_RESTAURANTS = [
     ] },
     { id: 12, name: 'Juice World', category: 'Drinks', rating: 4.6, status: 'active', orders: 320, revenue: 8500.00, phone: '+971 4 333 2222', address: 'Al Rigga', owner: 'Juice World LLC', commission: 15, profilePhoto: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1497515114629-f71d768fd07c?q=80&w=800&auto=format&fit=crop', menu: [
         { id: 1201, name: "Mango Smoothie", price: 22.00, img: "https://images.unsplash.com/photo-1553279768-865429fa0078?q=80&w=400&auto=format&fit=crop", active: true }
-    ] }
+    ] },
+    { id: 13, name: 'Tasty Restaurant', category: 'Restaurants', rating: 4.8, status: 'active', orders: 120, revenue: 5000.00, phone: '+971 4 000 1111', address: 'Downtown', owner: 'Tasty Group', commission: 15, profilePhoto: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800&auto=format&fit=crop', menu: [] },
+    { id: 14, name: 'Lulu Hypermarket', category: 'Groceries', rating: 4.7, status: 'active', orders: 800, revenue: 30000.00, phone: '+971 4 222 3333', address: 'Al Qusais', owner: 'Lulu Group', commission: 5, profilePhoto: 'https://images.unsplash.com/photo-1516594798141-f735d510d90c?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1516594798141-f735d510d90c?q=80&w=800&auto=format&fit=crop', menu: [] },
+    { id: 15, name: 'Spinneys', category: 'Groceries', rating: 4.9, status: 'active', orders: 600, revenue: 25000.00, phone: '+971 4 444 5555', address: 'Jumeirah', owner: 'Spinneys LLC', commission: 5, profilePhoto: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=800&auto=format&fit=crop', menu: [] },
+    { id: 16, name: 'Local Grocery', category: 'Groceries', rating: 4.5, status: 'active', orders: 300, revenue: 10000.00, phone: '+971 4 666 7777', address: 'Satwa', owner: 'Local Partners', commission: 5, profilePhoto: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=800&auto=format&fit=crop', menu: [] },
+    { id: 17, name: 'Sharaf DG', category: 'Shops', rating: 4.7, status: 'active', orders: 200, revenue: 15000.00, phone: '+971 4 888 9999', address: 'Times Square', owner: 'Sharaf Group', commission: 10, profilePhoto: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=800&auto=format&fit=crop', menu: [] },
+    { id: 18, name: 'Sephora', category: 'Shops', rating: 4.9, status: 'active', orders: 400, revenue: 20000.00, phone: '+971 4 111 2222', address: 'Dubai Mall', owner: 'LVMH', commission: 12, profilePhoto: 'https://images.unsplash.com/photo-1522335789203-aef163bb293e?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1522335789203-aef163bb293e?q=80&w=800&auto=format&fit=crop', menu: [] },
+    { id: 19, name: 'Virgin Megastore', category: 'Shops', rating: 4.8, status: 'active', orders: 150, revenue: 12000.00, phone: '+971 4 333 4444', address: 'Mall of Emirates', owner: 'Azadea', commission: 10, profilePhoto: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=800&auto=format&fit=crop', menu: [] },
+    { id: 20, name: 'Aster Pharmacy', category: 'Pharmacies', rating: 4.8, status: 'active', orders: 350, revenue: 18000.00, phone: '+971 4 555 6666', address: 'Bur Dubai', owner: 'Aster DM', commission: 8, profilePhoto: 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=800&auto=format&fit=crop', menu: [] },
+    { id: 21, name: 'Boots', category: 'Pharmacies', rating: 4.7, status: 'active', orders: 280, revenue: 14000.00, phone: '+971 4 777 8888', address: 'Marina Mall', owner: 'Alshaya', commission: 8, profilePhoto: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=800&auto=format&fit=crop', menu: [] },
+    { id: 22, name: 'Supercare', category: 'Pharmacies', rating: 4.6, status: 'active', orders: 190, revenue: 9500.00, phone: '+971 4 999 0000', address: 'Ibn Battuta', owner: 'Supercare Pharmacy', commission: 8, profilePhoto: 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=800&auto=format&fit=crop', menu: [] },
+    { id: 23, name: 'DHL Express', category: 'Packages', rating: 4.9, status: 'active', orders: 500, revenue: 25000.00, phone: '+971 4 123 4567', address: 'Business Bay', owner: 'DP DHL', commission: 15, profilePhoto: 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=800&auto=format&fit=crop', menu: [] },
+    { id: 24, name: 'Local Courier', category: 'Packages', rating: 4.5, status: 'active', orders: 150, revenue: 8000.00, phone: '+971 4 234 5678', address: 'Al Quoz', owner: 'Local Partners', commission: 12, profilePhoto: 'https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=800&auto=format&fit=crop', menu: [] },
+    { id: 25, name: 'Aramex', category: 'Packages', rating: 4.7, status: 'active', orders: 420, revenue: 22000.00, phone: '+971 4 345 6789', address: 'Airport Freezone', owner: 'Aramex International', commission: 14, profilePhoto: 'https://images.unsplash.com/photo-1596750014482-814ab7148f1d?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1596750014482-814ab7148f1d?q=80&w=800&auto=format&fit=crop', menu: [] },
+    { id: 26, name: 'Fetchr', category: 'Packages', rating: 4.4, status: 'active', orders: 130, revenue: 6500.00, phone: '+971 4 456 7890', address: 'DIFC', owner: 'Fetchr LLC', commission: 15, profilePhoto: 'https://images.unsplash.com/photo-1620455805861-79b0fdbe051d?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1620455805861-79b0fdbe051d?q=80&w=800&auto=format&fit=crop', menu: [] },
+    { id: 27, name: 'Mai Dubai Water', category: 'Drinks', rating: 4.9, status: 'active', orders: 900, revenue: 15000.00, phone: '+971 4 555 1111', address: 'Al Yalayis', owner: 'DEWA', commission: 5, profilePhoto: 'https://images.unsplash.com/photo-1548964856-ac52129e478d?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1548964856-ac52129e478d?q=80&w=800&auto=format&fit=crop', menu: [] },
+    { id: 28, name: 'Tea Corner', category: 'Drinks', rating: 4.5, status: 'active', orders: 180, revenue: 5400.00, phone: '+971 4 666 2222', address: 'Al Karama', owner: 'Tea Group', commission: 15, profilePhoto: 'https://images.unsplash.com/photo-1544787210-2213d2424031?q=80&w=200&auto=format&fit=crop', coverPhoto: 'https://images.unsplash.com/photo-1544787210-2213d2424031?q=80&w=800&auto=format&fit=crop', menu: [] }
 ];
 let adminRestaurants = [...MOCK_RESTAURANTS];
 window.adminRestaurants = [...MOCK_RESTAURANTS];
@@ -2893,12 +2923,6 @@ const categoryConfig = {
       {icon: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=100&auto=format&fit=crop", name: "McDonald's"}, {icon: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?q=80&w=100&auto=format&fit=crop", name: "KFC"}, {icon: "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=100&auto=format&fit=crop", name: "Pizza Hut"},
       {icon: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=100&auto=format&fit=crop", name: "Starbucks"}, {icon: "https://images.unsplash.com/photo-1553909489-cd47e0907980?q=80&w=100&auto=format&fit=crop", name: "Subway"}
     ],
-    items: [
-      {name: "Tasty Restaurant", image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=200&auto=format&fit=crop", rating: "4.8", time: "20-30 Mins", delivery: "Free"},
-      {name: "Burger King", image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=200&auto=format&fit=crop", rating: "4.5", time: "25-35 Mins", delivery: "500"},
-      {name: "Pizza Hut", image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=200&auto=format&fit=crop", rating: "4.7", time: "30-40 Mins", delivery: "Free"},
-      {name: "KFC", image: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?q=80&w=200&auto=format&fit=crop", rating: "4.6", time: "20-30 Mins", delivery: "Free"}
-    ],
     menu: [
       {
         name: "Promotions",
@@ -2937,12 +2961,6 @@ const categoryConfig = {
       {icon: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=100&auto=format&fit=crop", name: "Carrefour"}, {icon: "https://images.unsplash.com/photo-1516594798141-f735d510d90c?q=80&w=100&auto=format&fit=crop", name: "Lulu"}, {icon: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=100&auto=format&fit=crop", name: "Spinneys"},
       {icon: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?q=80&w=100&auto=format&fit=crop", name: "Viva"}, {icon: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=100&auto=format&fit=crop", name: "Choithrams"}
     ],
-    items: [
-      {name: "Carrefour City", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop", rating: "4.8", time: "30-60 Mins", delivery: "1500"},
-      {name: "Lulu Hypermarket", image: "https://images.unsplash.com/photo-1516594798141-f735d510d90c?q=80&w=200&auto=format&fit=crop", rating: "4.7", time: "45-90 Mins", delivery: "2000"},
-      {name: "Spinneys", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop", rating: "4.9", time: "30-60 Mins", delivery: "Free"},
-      {name: "Local Grocery", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop", rating: "4.5", time: "15-30 Mins", delivery: "Free"}
-    ],
     menu: [
       {
         name: "Fresh Produce",
@@ -2978,12 +2996,6 @@ const categoryConfig = {
       {icon: "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?q=80&w=100&auto=format&fit=crop", name: "H&M"}, {icon: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=100&auto=format&fit=crop", name: "Nike"}, {icon: "https://images.unsplash.com/photo-1522335789203-aef163bb293e?q=80&w=100&auto=format&fit=crop", name: "Sephora"},
       {icon: "https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=100&auto=format&fit=crop", name: "Sharaf DG"}, {icon: "https://images.unsplash.com/photo-1558060308-d1a24d553817?q=80&w=100&auto=format&fit=crop", name: "Toys R Us"}
     ],
-    items: [
-      {name: "Zara", image: "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?q=80&w=200&auto=format&fit=crop", rating: "4.8", time: "60-90 Mins", delivery: "5000"},
-      {name: "Sharaf DG", image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=200&auto=format&fit=crop", rating: "4.7", time: "60-120 Mins", delivery: "Free"},
-      {name: "Sephora", image: "https://images.unsplash.com/photo-1522335789203-aef163bb293e?q=80&w=200&auto=format&fit=crop", rating: "4.9", time: "45-60 Mins", delivery: "2500"},
-      {name: "Virgin Megastore", image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=200&auto=format&fit=crop", rating: "4.8", time: "60-90 Mins", delivery: "3000"}
-    ],
     menu: [
       {
         name: "Clothing",
@@ -3011,19 +3023,13 @@ const categoryConfig = {
       {icon: "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=100&auto=format&fit=crop", name: "Life Pharmacy"}, {icon: "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=100&auto=format&fit=crop", name: "Aster"}, {icon: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=100&auto=format&fit=crop", name: "Boots"},
       {icon: "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=100&auto=format&fit=crop", name: "Supercare"}, {icon: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=100&auto=format&fit=crop", name: "Bin Sina"}
     ],
-    items: [
-      {name: "Life Pharmacy", image: "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=200&auto=format&fit=crop", rating: "4.9", time: "30-45 Mins", delivery: "Free"},
-      {name: "Aster Pharmacy", image: "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=200&auto=format&fit=crop", rating: "4.8", time: "30-45 Mins", delivery: "Free"},
-      {name: "Boots", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=200&auto=format&fit=crop", rating: "4.7", time: "45-60 Mins", delivery: "1000"},
-      {name: "Supercare", image: "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=200&auto=format&fit=crop", rating: "4.6", time: "20-40 Mins", delivery: "500"}
-    ],
     menu: [
       {
         name: "Medicines",
         items: [
           { title: "Panadol Extra", desc: "Pain Relief 24 Tablets", price: "12.00", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=400&auto=format&fit=crop" },
           { title: "Vitamin C", desc: "Effervescent 20 Tabs", price: "25.00", image: "https://images.unsplash.com/photo-1616671285442-9907106a7509?q=80&w=400&auto=format&fit=crop" },
-          { title: "Cough Syrup", desc: "Herbal Relief 100ml", price: "18.00", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=400&auto=format&fit=crop" }
+          { title: "Cough Syrup", desc: "Herbal Relief 100ml", price: "18.00", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=400&auto=format&fit=crop" }
         ]
       },
       {
@@ -3044,12 +3050,6 @@ const categoryConfig = {
       {icon: "https://images.unsplash.com/photo-1620455805861-79b0fdbe051d?q=80&w=100&auto=format&fit=crop", name: "DHL"}, {icon: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=100&auto=format&fit=crop", name: "FedEx"}, {icon: "https://images.unsplash.com/photo-1512909196096-7c0a58ef941b?q=80&w=100&auto=format&fit=crop", name: "Aramex"},
       {icon: "https://images.unsplash.com/photo-1596750014482-814ab7148f1d?q=80&w=100&auto=format&fit=crop", name: "UPS"}, {icon: "https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=100&auto=format&fit=crop", name: "Careem Box"}
     ],
-    items: [
-      {name: "DHL Express", image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=200&auto=format&fit=crop", rating: "4.9", time: "Pickup: 15m", delivery: "Var"},
-      {name: "Local Courier", image: "https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=200&auto=format&fit=crop", rating: "4.5", time: "Pickup: 10m", delivery: "5000"},
-      {name: "Aramex", image: "https://images.unsplash.com/photo-1596750014482-814ab7148f1d?q=80&w=200&auto=format&fit=crop", rating: "4.7", time: "Pickup: 20m", delivery: "Var"},
-      {name: "Fetchr", image: "https://images.unsplash.com/photo-1620455805861-79b0fdbe051d?q=80&w=200&auto=format&fit=crop", rating: "4.4", time: "Pickup: 30m", delivery: "3000"}
-    ],
     menu: [
       {
         name: "Delivery Services",
@@ -3069,12 +3069,6 @@ const categoryConfig = {
     brands: [
       {icon: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=100&auto=format&fit=crop", name: "Starbucks"}, {icon: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=100&auto=format&fit=crop", name: "Costa"}, {icon: "https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=100&auto=format&fit=crop", name: "Tim Hortons"},
       {icon: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=100&auto=format&fit=crop", name: "Juice Time"}, {icon: "https://images.unsplash.com/photo-1548964856-ac52129e478d?q=80&w=100&auto=format&fit=crop", name: "Mai Dubai"}
-    ],
-    items: [
-      {name: "Starbucks", image: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=200&auto=format&fit=crop", rating: "4.8", time: "20-30 Mins", delivery: "Free"},
-      {name: "Mai Dubai Water", image: "https://images.unsplash.com/photo-1548964856-ac52129e478d?q=80&w=200&auto=format&fit=crop", rating: "4.9", time: "60-120 Mins", delivery: "Free"},
-      {name: "Juice World", image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=200&auto=format&fit=crop", rating: "4.6", time: "25-35 Mins", delivery: "1500"},
-      {name: "Tea Corner", image: "https://images.unsplash.com/photo-1544787210-2213d2424031?q=80&w=200&auto=format&fit=crop", rating: "4.5", time: "15-25 Mins", delivery: "500"}
     ],
     menu: [
       {
@@ -3259,12 +3253,20 @@ function renderCategoryContent(category) {
   const restaurantList = document.getElementById('restaurantList');
   if(restaurantList) {
     restaurantList.innerHTML = '';
-    for(let i=0; i<10; i++) {
-        const item = config.items[i % config.items.length];
+    
+    // DYNAMIC SYNC: Fetch restaurants from adminRestaurants instead of hardcoded config.items
+    const categoryRestaurants = adminRestaurants.filter(r => 
+        r.category === category || 
+        (category === 'Food' && r.category === 'Restaurants')
+    );
+
+    categoryRestaurants.forEach((res, i) => {
         const card = document.createElement('div');
         card.className = 'res-card animate-entry';
         card.style.animationDelay = `${i * 0.05}s`;
-        card.innerHTML = generateCardHTML({...item, name: item.name + " " + (i+1)});
+        
+        const cardData = { name: res.name, image: res.profilePhoto, rating: res.rating.toFixed(1), time: "20-30 Mins", delivery: "Free" };
+        card.innerHTML = generateCardHTML(cardData);
         
         card.querySelector('.heart-btn').addEventListener('click', (e) => {
             e.stopPropagation();
@@ -3275,25 +3277,29 @@ function renderCategoryContent(category) {
              openRestaurant(card.querySelector('.res-name').textContent);
         });
         restaurantList.appendChild(card);
-    }
+    });
   }
 
   // Render "For You" Section
   const prefScroll = document.getElementById('prefScroll');
   if(prefScroll) {
     prefScroll.innerHTML = '';
-    for(let i=0; i<5; i++) {
-        const item = config.items[i % config.items.length];
+    
+    const prefRestaurants = adminRestaurants.filter(r => 
+        r.category === category || (category === 'Food' && r.category === 'Restaurants')
+    ).slice(0, 5);
+
+    prefRestaurants.forEach((res, i) => {
         const card = document.createElement('div');
         card.className = 'pref-card';
-        card.innerHTML = generateCardHTML({...item, name: item.name + (i>0 ? " " + (i+1) : "")}); 
+        card.innerHTML = generateCardHTML({ name: res.name, image: res.profilePhoto, rating: res.rating.toFixed(1), time: "20-30 Mins", delivery: "Free" }); 
         
         card.addEventListener('click', (e) => {
              if(e.target.classList.contains('heart-btn')) return;
              openRestaurant(card.querySelector('.res-name').textContent, config.menu);
         });
         prefScroll.appendChild(card);
-    }
+    });
     // Re-init pagination dots
     const prefPagination = document.getElementById('prefPagination');
     if(prefPagination) {
