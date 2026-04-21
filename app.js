@@ -1758,6 +1758,14 @@ const MOCK_CATEGORIES = [
 let adminCategories = [...MOCK_CATEGORIES];
 window.adminCategories = [...MOCK_CATEGORIES];
 
+try {
+    const savedCats = localStorage.getItem('kirya_categories');
+    if (savedCats) {
+        adminCategories = JSON.parse(savedCats);
+        window.adminCategories = adminCategories;
+    }
+} catch (e) { console.error("Categories sync error", e); }
+
 const MOCK_BANNERS = [
     { id: 1, headline: 'FreeDelivery on Your First order', sub: 'Treat yourself, we got it!', image: 'https://images.unsplash.com/photo-1449339090396-729901416cdb?q=80&w=400&auto=format&fit=crop', status: 'active' },
     { id: 2, headline: '20% Off All Pizzas!', sub: 'This weekend only.', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=400&auto=format&fit=crop', status: 'active' },
@@ -2275,6 +2283,11 @@ function startApp() {
     // initWebSocket(); // WebSocket disabled to prevent connection errors without backend
   } catch (error) {
     console.error('Error in updateAddAddressBtn:', error);
+  }
+
+  // Render dynamic categories from Admin Management
+  if (window.renderHomeCategories) {
+    window.renderHomeCategories();
   }
   
   // Splash screen transition
@@ -2813,24 +2826,39 @@ newHomeScreen.addEventListener('drop', (event) => {
   }
 });
 
-draggables.forEach((tile, index)=>{
-  tile.setAttribute('draggable','true');
-  tile.setAttribute('id', `grid-item-${index}`);
-  const initial = {x:0,y:0};
+/**
+ * Fetches categories from adminCategories and renders them on the home screen.
+ */
+window.renderHomeCategories = function() {
+    const grid = document.querySelector('#newHomeScreen .top-grid');
+    if (!grid) return;
 
-  tile.addEventListener('dragstart', (event)=>{
-    tile.classList.add('dragging');
-    initial.x = tile.offsetLeft;
-    initial.y = tile.offsetTop;
-    event.dataTransfer.setData('text/plain', tile.id);
-    event.dataTransfer.effectAllowed = 'move';
-  });
+    const activeCats = adminCategories.filter(cat => cat.status === 'active');
+    grid.innerHTML = activeCats.map((cat, index) => `
+        <div class="grid-item" id="grid-item-${index}" draggable="true" onclick="showDetailScreen('${cat.name}')">
+            <div class="grid-box">${window.getImageHtml(cat.icon, '📁')}</div>
+            <div class="grid-label">${cat.name}</div>
+        </div>
+    `).join('');
 
-  tile.addEventListener('dragend', ()=>{
-    tile.classList.remove('dragging');
-    tile.style.transform = `translate(0, 0)`;
-  });
-});
+    // Re-bind draggable listeners to the new dynamic items
+    const draggables = grid.querySelectorAll('.grid-item');
+    draggables.forEach((tile)=>{
+        const initial = {x:0,y:0};
+        tile.addEventListener('dragstart', (event)=>{
+            tile.classList.add('dragging');
+            initial.x = tile.offsetLeft;
+            initial.y = tile.offsetTop;
+            event.dataTransfer.setData('text/plain', tile.id);
+            event.dataTransfer.effectAllowed = 'move';
+        });
+
+        tile.addEventListener('dragend', ()=>{
+            tile.classList.remove('dragging');
+            tile.style.transform = `translate(0, 0)`;
+        });
+    });
+};
 
 function openContentSearch() {
     const screen = document.getElementById('contentSearchScreen');
@@ -3129,7 +3157,10 @@ window.isRestaurantOpen = function(openingHours) {
 };
 
 function renderCategoryContent(category) {
+  // Handle "Food" as a synonym for "Restaurants" to ensure consistent content delivery
+  const isFoodCategory = category === 'Restaurants' || category === 'Food';
   const config = categoryConfig[category] || categoryConfig["Restaurants"]; 
+  
   // Store current category for use in opening restaurants
   window.currentCategoryConfig = config;
 
@@ -3283,9 +3314,9 @@ function renderCategoryContent(category) {
     restaurantList.innerHTML = '';
     
     // DYNAMIC SYNC: Fetch restaurants from adminRestaurants instead of hardcoded config.items
+    // FIX: Match both "Food" and "Restaurants" labels to the base restaurant data pool
     const categoryRestaurants = adminRestaurants.filter(r => 
-        r.category === category || 
-        (category === 'Restaurants' && r.category === 'Restaurants')
+        isFoodCategory ? (r.category === 'Restaurants' || r.category === 'Food') : r.category === category
     );
 
     categoryRestaurants.forEach((res, i) => {
@@ -3314,7 +3345,7 @@ function renderCategoryContent(category) {
     prefScroll.innerHTML = '';
     
     const prefRestaurants = adminRestaurants.filter(r => 
-        r.category === category || (category === 'Restaurants' && r.category === 'Restaurants')
+        r.category === category || (isFoodCategory && (r.category === 'Restaurants' || r.category === 'Food'))
     ).slice(0, 5);
 
     prefRestaurants.forEach((res, i) => {
@@ -8323,7 +8354,7 @@ async function deleteAdminItem(type, id) {
         restaurant: { data: adminRestaurants, name: 'Restaurant', render: renderAdminRestaurants, storageKey: 'kirya_restaurants' },
         rider: { data: adminRiders, name: 'Rider', render: renderAdminRiders, storageKey: 'kirya_riders' },
         customer: { data: adminCustomers, name: 'Customer', render: renderAdminCustomers },
-        category: { data: adminCategories, name: 'Category', render: renderAdminCategories },
+        category: { data: adminCategories, name: 'Category', render: renderAdminCategories, storageKey: 'kirya_categories' },
         banner: { data: adminBanners, name: 'Ads Banner', render: renderAdminBanners },
         filter: { data: adminFiltersList, name: 'Home Filter', render: renderAdminFilters },
         brand: { data: adminBrands, name: 'Popular Brand', render: renderAdminBrands },
@@ -8346,12 +8377,17 @@ async function deleteAdminItem(type, id) {
             if (type === 'rider') adminRiders = dataArray;
             if (type === 'customer') adminCustomers = dataArray;
             if (type === 'account') adminAccounts = dataArray;
+            if (type === 'category') { 
+                adminCategories = dataArray; 
+                window.adminCategories = dataArray; 
+            }
 
             if (itemConfig.storageKey) {
                 localStorage.setItem(itemConfig.storageKey, JSON.stringify(dataArray));
             }
             showToast(`${itemConfig.name} deleted.`);
             itemConfig.render();
+            if (type === 'category' && window.renderHomeCategories) window.renderHomeCategories();
         }
     }
 }
@@ -8724,7 +8760,7 @@ function toggleAdminItemStatus(type, id, activeStatus = 'active', inactiveStatus
         restaurant: { data: adminRestaurants, render: renderAdminRestaurants, storageKey: 'kirya_restaurants' },
         customer: { data: adminCustomers, render: renderAdminCustomers },
         account: { data: adminAccounts, render: renderAdminAccounts },
-        category: { data: adminCategories, render: renderAdminCategories },
+        category: { data: adminCategories, render: renderAdminCategories, storageKey: 'kirya_categories' },
         banner: { data: adminBanners, render: renderAdminBanners },
         filter: { data: adminFiltersList, render: renderAdminFilters },
         brand: { data: adminBrands, render: renderAdminBrands },
@@ -8744,6 +8780,7 @@ function toggleAdminItemStatus(type, id, activeStatus = 'active', inactiveStatus
         }
         showToast(`Status changed to ${newStatus}.`);
         itemConfig.render();
+        if (type === 'category' && window.renderHomeCategories) window.renderHomeCategories();
     }
 }
 
@@ -11202,6 +11239,8 @@ async function saveAdminData(type) {
             adminCategories.push(data);
         }
         renderAdminCategories();
+        localStorage.setItem('kirya_categories', JSON.stringify(adminCategories));
+        if (window.renderHomeCategories) window.renderHomeCategories();
     } else if (type === 'banner') {
         const data = {
             id: editingAdminId || Date.now(),
