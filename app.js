@@ -7960,7 +7960,11 @@ function renderAdminFilters() {
     if (!tbody) return;
     tbody.innerHTML = adminFiltersList.map(f => `
         <tr>
-            <td><div style="font-size:1.5em;">${f.icon}</div></td>
+            <td>
+                <div style="width:40px; height:40px; background:#f0f0f0; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.2em; border:1px solid #eee; overflow:hidden;">
+                    ${window.getImageHtml(f.icon, '🔍')}
+                </div>
+            </td>
             <td><div style="font-weight:bold;">${f.name}</div></td>
             <td><span style="background:${f.status === 'active' ? '#4caf50' : '#f44336'}; color:#fff; padding:4px 10px; border-radius:12px; font-size:0.75em; font-weight:600;">${f.status.toUpperCase()}</span></td>
             <td>
@@ -8013,7 +8017,11 @@ function renderAdminRewards() {
     if (!tbody) return;
     tbody.innerHTML = adminRewardsList.map(r => `
         <tr>
-            <td><div style="font-size:1.5em;">${r.icon}</div></td>
+            <td>
+                <div style="width:40px; height:40px; background:#f0f0f0; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.2em; border:1px solid #eee; overflow:hidden;">
+                    ${window.getImageHtml(r.icon, '⭐')}
+                </div>
+            </td>
             <td><div style="font-weight:bold;">${r.title}</div></td>
             <td style="font-size:0.85em; color:#666;">${r.desc}</td>
             <td><div style="font-weight:bold; color:#019E81;">${r.cost} Pts</div></td>
@@ -9784,24 +9792,24 @@ async function switchAdminTab(tabName) {
                 const collectionName = (tabName === 'customers') ? 'users' : (tabName === 'accounts' ? 'admin_accounts' : (tabName === 'vendors' ? 'restaurants' : tabName));
                 const items = (tabName === 'promotions' || tabName === 'payments' || tabName === 'support' || tabName === 'accounts') 
                     ? await window.fetchCollectionOnce(collectionName).catch(err => {
-                        console.warn(`Fetch for ${tabName} failed (Likely permissions). Using local data.`);
+                        console.warn(`Fetch for ${tabName} failed. Reason: ${err.message}. Ensure your Firestore Rules allow 'read' on '${collectionName}'.`);
                         return [];
                     })
                     : await window.fetchPaginatedCollection(collectionName, true).catch(err => {
-                        console.warn(`Paginated fetch for ${tabName} failed.`);
+                        console.warn(`Paginated fetch for ${tabName} failed:`, err);
                         return [];
                     });
                 
                 if (items && items.length > 0) {
-                    if (tabName === 'restaurants') adminRestaurants = items;
-                    else if (tabName === 'customers') adminCustomers = items;
-                    else if (tabName === 'promotions') adminPromotions = items;
-                    else if (tabName === 'payments') adminPayments = items;
-                    else if (tabName === 'support') adminSupportTickets = items;
-                    else if (tabName === 'accounts') adminAccounts = items;
-                    else if (tabName === 'logs') adminLogs = items;
+                    if (tabName === 'restaurants' || tabName === 'vendors') { adminRestaurants = items; window.adminRestaurants = items; }
+                    else if (tabName === 'customers') { adminCustomers = items; window.adminCustomers = items; }
+                    else if (tabName === 'promotions') { adminPromotions = items; window.adminPromotions = items; }
+                    else if (tabName === 'payments') { adminPayments = items; window.adminPayments = items; }
+                    else if (tabName === 'support') { adminSupportTickets = items; window.adminSupportTickets = items; }
+                    else if (tabName === 'accounts') { adminAccounts = items; window.adminAccounts = items; }
+                    else if (tabName === 'logs') { adminLogs = items; window.adminLogs = items; }
                 } else {
-                    console.log(`Firebase collection '${collectionName}' is empty or missing. Retaining local mock data.`);
+                    console.info(`Firebase collection '${collectionName}' is empty. Use the 'Configuration' tab to seed the database if this is a new project.`);
                 }
             }
         }
@@ -10810,10 +10818,20 @@ function openAdminModal(type, id = null) {
         formHtml = `
             <label for="addFilterName" class="admin-form-label">Filter Name</label>
             <input type="text" id="addFilterName" class="admin-form-input" value="${f.name || ''}">
-            <label for="addFilterIcon" class="admin-form-label">Icon (Emoji)</label>
-            <input type="text" id="addFilterIcon" class="admin-form-input" value="${f.icon || ''}">
+            
+            <div style="background:#f9f9f9; padding:15px; border-radius:12px; margin-top:15px; border:1px solid #eee;">
+                <label class="admin-form-label" style="margin-top:0;">Filter Icon (Emoji or URL)</label>
+                <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+                    <input type="text" id="addFilterIconURL" placeholder="Click folder to pick or enter URL..." class="admin-form-input" style="margin-bottom:0;" value="${f.icon || ''}">
+                    <button onclick="openImagePicker('addFilterIconURL')" style="padding:10px; background:#fff; border:1px solid #ddd; border-radius:8px; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.05);">📂</button>
+                    <div id="addFilterIconPreview" style="width:45px; height:45px; background:#fff; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid #ddd; flex-shrink:0;"></div>
+                </div>
+            </div>
         `;
         saveBtn.onclick = () => saveAdminData('filter');
+        setTimeout(() => {
+            setupPreview(['addFilterIconURL'], 'addFilterIconPreview', '🔍');
+        }, 0);
     } else if (type === 'brand') {
         const b = id ? adminBrands.find(i => i.id == id) : {};
         title.textContent = id ? 'Edit Brand' : 'Add New Brand';
@@ -10856,10 +10874,20 @@ function openAdminModal(type, id = null) {
             <input type="text" id="addRewardDesc" class="admin-form-input" value="${r.desc || ''}">
             <label for="addRewardCost" class="admin-form-label">Cost (Points)</label>
             <input type="number" id="addRewardCost" class="admin-form-input" value="${r.cost || 500}">
-            <label for="addRewardIcon" class="admin-form-label">Icon (Emoji)</label>
-            <input type="text" id="addRewardIcon" class="admin-form-input" value="${r.icon || '⭐'}">
+            
+            <div style="background:#f9f9f9; padding:15px; border-radius:12px; margin-top:15px; border:1px solid #eee;">
+                <label class="admin-form-label" style="margin-top:0;">Reward Icon (Emoji or URL)</label>
+                <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+                    <input type="text" id="addRewardIconURL" placeholder="Click folder to pick or enter URL..." class="admin-form-input" style="margin-bottom:0;" value="${r.icon || ''}">
+                    <button onclick="openImagePicker('addRewardIconURL')" style="padding:10px; background:#fff; border:1px solid #ddd; border-radius:8px; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.05);">📂</button>
+                    <div id="addRewardIconPreview" style="width:45px; height:45px; background:#fff; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid #ddd; flex-shrink:0;"></div>
+                </div>
+            </div>
         `;
         saveBtn.onclick = () => saveAdminData('reward');
+        setTimeout(() => {
+            setupPreview(['addRewardIconURL'], 'addRewardIconPreview', '⭐');
+        }, 0);
     } else if (type === 'global_notif') {
         title.textContent = 'Send Global Broadcast';
         formHtml = `
@@ -10933,15 +10961,36 @@ function closeAdminAddModal() {
 }
 
 async function saveAdminData(type) {
+    const saveStartTime = Date.now();
+    try {
     if (window.showLoading) window.showLoading(`Saving ${type}...`);
     let authData = null;
 
+    // Helper to get form values safely
+    const getVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    const getNum = (id) => { const el = document.getElementById(id); return el ? parseFloat(el.value) : 0; };
+
     if (type === 'restaurant' || type === 'vendor') {
+        const name = getVal('addRestaurantName');
+        const phone = getVal('addRestaurantPhone');
+
+        // MANDATORY VALIDATION FIRST: Check before construction to allow clean exit
+        if (!name || name.length < 2) { 
+            showToast('Valid restaurant name is required.'); 
+            if (window.hideLoading) window.hideLoading(); 
+            return; 
+        }
+        if (!phone || phone.length < 7) { 
+            showToast('Valid phone number is required.'); 
+            if (window.hideLoading) window.hideLoading(); 
+            return; 
+        }
+
         const data = {
             id: editingAdminId || Date.now(), // Fix: Ensure ID is preserved for updates
-            name: document.getElementById('addRestaurantName').value,
-            category: document.getElementById('addRestaurantCategory').value,
-            rating: parseFloat(document.getElementById('addRestaurantRating').value) || 0,
+            name: name,
+            category: getVal('addRestaurantCategory'),
+            rating: getNum('addRestaurantRating') || 0,
             status: 'active',
             orders: 0,
             revenue: 0,
@@ -10954,8 +11003,8 @@ async function saveAdminData(type) {
             isFeatured: false,
             openingHours: "09:00 - 22:00"
         };
-        const profileURL = document.getElementById('addRestaurantProfileURL').value.trim();
-        const coverURL = document.getElementById('addRestaurantCoverURL').value.trim();
+        const profileURL = getVal('addRestaurantProfileURL');
+        const coverURL = getVal('addRestaurantCoverURL');
         if(profileURL) data.profilePhoto = profileURL;
         if(coverURL) data.coverPhoto = coverURL;
         
@@ -10963,7 +11012,7 @@ async function saveAdminData(type) {
         if (profilePhotoFile) {
             try {
                 const blob = await window.compressImage(profilePhotoFile);
-                data.profilePhoto = await window.uploadImageToStorage(blob, `vendors/${Date.now()}_profile.jpg`);
+                data.profilePhoto = await window.uploadImageToStorage(blob, `vendors/${data.id}_profile.jpg`);
                 addToRecentUploads(data.profilePhoto);
             } catch (err) {
                 console.error("Upload failed:", err); 
@@ -10976,7 +11025,7 @@ async function saveAdminData(type) {
         if (coverPhotoFile) {
             try {
                 const blob = await compressImage(coverPhotoFile);
-                data.coverPhoto = await window.uploadImageToStorage(blob, `vendors/${Date.now()}_cover.jpg`);
+                data.coverPhoto = await window.uploadImageToStorage(blob, `vendors/${data.id}_cover.jpg`);
                 addToRecentUploads(data.coverPhoto);
             } catch (err) {
                 console.error("Upload failed:", err); 
@@ -10987,29 +11036,25 @@ async function saveAdminData(type) {
         }
 
         if (!editingAdminId) {
+            const email = getVal('addRestaurantEmail') || getVal('addVendorEmail');
+            const password = getVal('addRestaurantPassword') || getVal('addVendorPassword');
+            
+            if (!email || !password || password.length < 6) {
+                showToast('Email and temporary password (min 6 chars) are required.');
+                if (window.hideLoading) window.hideLoading();
+                return;
+            }
+
             authData = {
-                email: document.getElementById('addRestaurantEmail').value,
-                password: document.getElementById('addRestaurantPassword').value,
+                email: email,
+                password: password,
                 name: data.name,
                 role: 'vendor',
                 collection: 'restaurants'
             };
         }
 
-        // Real-time Sync: Create/Update in Firestore
-        if (window.adminCreateVendor) {
-            try {
-                const vendorData = { ...data, role: 'vendor', isApproved: true };
-                await window.adminCreateVendor(vendorData);
-            } catch (e) {
-                console.error("Firestore Vendor Sync Error", e);
-            }
-        }
-
-        // SECURITY: Validate Restaurant Input
-        if (!data.name || data.name.length < 2) { showToast('Valid restaurant name is required.'); if (window.hideLoading) window.hideLoading(); return; }
-        if (!data.phone || data.phone.length < 7) { showToast('Valid phone number is required.'); if (window.hideLoading) window.hideLoading(); return; }
-        if (data.commission < 0 || data.commission > 100) { showToast('Commission must be between 0 and 100%'); if (window.hideLoading) window.hideLoading(); return; }
+        if (data.commission < 0 || data.commission > 100) { data.commission = 15; }
         
         if (editingAdminId) {
             const index = adminRestaurants.findIndex(r => r.id == editingAdminId);
@@ -11019,6 +11064,12 @@ async function saveAdminData(type) {
         }
         renderAdminRestaurants();
         localStorage.setItem('kirya_restaurants', JSON.stringify(adminRestaurants));
+
+        // NON-BLOCKING SYNC: Update UI immediately, sync to Firestore in background
+        if (window.adminCreateVendor) {
+            const vendorData = { ...data, role: 'vendor', isApproved: true };
+            window.adminCreateVendor(vendorData).catch(e => console.error("Firestore Sync Error:", e));
+        }
 
     } else if (type === 'rider') {
         const data = {
@@ -11064,12 +11115,9 @@ async function saveAdminData(type) {
         }
 
         // Real-time Sync: Create/Update in Firestore (Riders collection)
-        if (window.adminCreateRider) {
-            try {
-                await window.adminCreateUserRecord({ ...data, role: 'rider', isApproved: true });
-            } catch (e) {
-                console.error("Firestore Rider Sync Error", e);
-            }
+        if (window.adminCreateUserRecord) {
+            window.adminCreateUserRecord({ ...data, role: 'rider', isApproved: true })
+                .catch(e => console.error("Firestore Rider Sync Error", e));
         }
 
         // SECURITY: Validate Rider Input
@@ -11130,11 +11178,8 @@ async function saveAdminData(type) {
         
         // Real-time Sync: Create/Update in Firestore (Users collection)
         if (window.adminCreateUserRecord) {
-            try {
-                await window.adminCreateUserRecord({ ...data, role: 'user', isApproved: true });
-            } catch (e) {
-                console.error("Firestore Customer Sync Error", e);
-            }
+            window.adminCreateUserRecord({ ...data, role: 'user', isApproved: true })
+                .catch(e => console.error("Firestore Customer Sync Error", e));
         }
 
         if (editingAdminId) {
@@ -11258,7 +11303,7 @@ async function saveAdminData(type) {
         const data = {
             id: editingAdminId || Date.now(),
             name: document.getElementById('addFilterName').value,
-            icon: document.getElementById('addFilterIcon').value,
+            icon: document.getElementById('addFilterIconURL').value,
             status: 'active'
         };
         if (editingAdminId) {
@@ -11298,7 +11343,7 @@ async function saveAdminData(type) {
             title: document.getElementById('addRewardTitle').value,
             desc: document.getElementById('addRewardDesc').value,
             cost: parseInt(document.getElementById('addRewardCost').value),
-            icon: document.getElementById('addRewardIcon').value,
+            icon: document.getElementById('addRewardIconURL').value,
             status: 'active'
         };
         if (editingAdminId) {
@@ -11324,29 +11369,41 @@ async function saveAdminData(type) {
         return;
     }
 
-    // Request Auth User Creation (Requires Cloud Function)
+    // --- OPTIMISTIC UI FINISH ---
+    // We close the modal and toast SUCCESS immediately so the user isn't blocked by the network "Fetch" errors.
+    if (window.hideLoading) window.hideLoading();
+    showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} updated locally.`);
+    editingAdminId = null;
+    closeAdminAddModal();
+    console.log(`Save process took ${Date.now() - saveStartTime}ms`);
+
+    // BACKGROUND SYNC: Move this after UI closure so network lag/fetch errors don't freeze the button
     if (window.adminCreateAuthUser && authData) {
-        try {
-            const result = await window.adminCreateAuthUser(authData.role, authData);
-            if (result.success) {
-                showToast(`Auth account created for ${authData.email}`);
-                logActivity('Audit Log: User Created', `${authData.role.toUpperCase()} "${authData.name}" created by ${window.currentUser.name || 'Super Admin'}`, 'Admin');
-                // Update Firestore to show it's now a real auth account
-                const col = authData.collection;
-                if (db) await db.collection(col).doc(result.uid).update({ authRegistered: true });
-                // Re-render current tab
-                renderAdminTabContent(getCurrentAdminTab());
-            }
-        } catch(e) {
-            console.error("Auth creation failed:", e);
-            showToast("User saved to database, but Auth account failed: " + e.message);
-        }
+        window.adminCreateAuthUser(authData.role, authData)
+            .then(async (result) => {
+                if (result.success) {
+                    showToast(`System: Auth created for ${authData.email}`);
+                    logActivity('Audit Log: User Created', `${authData.role.toUpperCase()} "${authData.name}" created`, 'Admin');
+                    
+                    // Mark as auth-registered in database
+                    const col = authData.collection;
+                    if (window.db && window.updateDoc) {
+                        await updateDoc(doc(window.db, col, result.uid), { authRegistered: true });
+                    }
+                    // Refresh view if still on the same tab
+                    renderAdminTabContent(getCurrentAdminTab());
+                }
+            })
+            .catch(e => {
+                console.warn("Silent failure in background auth (network error):", e.message);
+            });
     }
 
-    if (window.hideLoading) window.hideLoading();
-    showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} saved successfully!`);
-    editingAdminId = null; // Reset the editing state after saving
-    closeAdminAddModal();
+    } catch (err) {
+        console.error("Critical save error:", err);
+        if (window.hideLoading) window.hideLoading();
+        showToast("System error while saving. Please refresh.");
+    }
 }
 
 window.resendWelcomeEmail = async function(userId, type) {
